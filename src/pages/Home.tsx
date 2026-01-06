@@ -127,6 +127,27 @@ const HomePage = () => {
 
       {/* Content */}
       <main className="container mx-auto px-4 py-6 space-y-8">
+        {/* Microstories Banner */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div 
+            onClick={() => navigate("/microstories")}
+            className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-primary-foreground font-display font-semibold text-lg">✨ Microrrelatos</h3>
+                <p className="text-primary-foreground/80 text-sm">Historias cortas en 500 caracteres</p>
+              </div>
+              <div className="bg-white/20 rounded-full p-3">
+                <TrendingUp className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Trending Section */}
         <section>
           <div className="flex items-center justify-between mb-4">

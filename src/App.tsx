@@ -12,6 +12,9 @@ import ChatsPage from "./pages/Chats";
 import ProfilePage from "./pages/Profile";
 import BookDetailPage from "./pages/BookDetail";
 import WritePage from "./pages/Write";
+import AdvancedWritePage from "./pages/AdvancedWrite";
+import MicrostoriesPage from "./pages/Microstories";
+import UserProfilePage from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,10 @@ const App = () => (
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/book/:id" element={<BookDetailPage />} />
           <Route path="/write" element={<WritePage />} />
+          <Route path="/write/advanced" element={<AdvancedWritePage />} />
+          <Route path="/write/advanced/:bookId" element={<AdvancedWritePage />} />
+          <Route path="/microstories" element={<MicrostoriesPage />} />
+          <Route path="/user/:userId" element={<UserProfilePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
