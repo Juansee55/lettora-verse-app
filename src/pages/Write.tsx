@@ -168,6 +168,15 @@ const WritePage = () => {
             <Plus className="w-4 h-4 mr-1" />
             Añadir a saga
           </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-full ml-auto"
+            onClick={() => navigate("/write/advanced")}
+          >
+            <Sparkles className="w-4 h-4 mr-1" />
+            Modo avanzado
+          </Button>
         </motion.div>
 
         {/* Formatting toolbar */}
