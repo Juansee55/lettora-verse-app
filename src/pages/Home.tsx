@@ -1,18 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Home, 
-  Search, 
-  BookOpen, 
-  MessageCircle, 
-  User,
+import {
+  Search,
+  BookOpen,
   Bell,
   TrendingUp,
   Clock,
-  Heart,
-  Eye,
-  Plus
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,70 +16,83 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 import BookCard from "@/components/books/BookCard";
 
-// Demo data for books
-const demoBooks = [
-  {
-    id: "1",
-    title: "El Último Amanecer",
-    author: "María García",
-    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop",
-    reads: 12500,
-    likes: 3420,
-    category: "Romance",
-  },
-  {
-    id: "2",
-    title: "Sombras del Pasado",
-    author: "Carlos Ruiz",
-    cover: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&h=400&fit=crop",
-    reads: 8900,
-    likes: 2100,
-    category: "Misterio",
-  },
-  {
-    id: "3",
-    title: "Versos del Alma",
-    author: "Ana López",
-    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=300&h=400&fit=crop",
-    reads: 5600,
-    likes: 1800,
-    category: "Poesía",
-  },
-  {
-    id: "4",
-    title: "El Viajero Eterno",
-    author: "Pedro Martín",
-    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300&h=400&fit=crop",
-    reads: 15000,
-    likes: 4200,
-    category: "Fantasía",
-  },
-];
-
-const trendingBooks = [
-  {
-    id: "5",
-    title: "Noches de Luna",
-    author: "Elena Vega",
-    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop",
-    reads: 25000,
-    likes: 8900,
-    category: "Drama",
-  },
-  {
-    id: "6",
-    title: "El Secreto del Mar",
-    author: "Juan Pérez",
-    cover: "https://images.unsplash.com/photo-1509266272358-7701da638078?w=300&h=400&fit=crop",
-    reads: 18000,
-    likes: 6500,
-    category: "Aventura",
-  },
-];
+interface Book {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  genre: string | null;
+  reads_count: number | null;
+  likes_count: number | null;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+  } | null;
+}
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      // Fetch recent books
+      const { data: recentData } = await supabase
+        .from("books")
+        .select(`
+          id,
+          title,
+          cover_url,
+          genre,
+          reads_count,
+          likes_count,
+          profiles:author_id (
+            display_name,
+            username
+          )
+        `)
+        .in("status", ["published", "completed"])
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      // Fetch trending (most reads)
+      const { data: trendingData } = await supabase
+        .from("books")
+        .select(`
+          id,
+          title,
+          cover_url,
+          genre,
+          reads_count,
+          likes_count,
+          profiles:author_id (
+            display_name,
+            username
+          )
+        `)
+        .in("status", ["published", "completed"])
+        .order("reads_count", { ascending: false })
+        .limit(4);
+
+      if (recentData) setBooks(recentData);
+      if (trendingData) setTrendingBooks(trendingData);
+      setLoading(false);
+    };
+
+    fetchBooks();
+  }, []);
+
+  const formatBookForCard = (book: Book) => ({
+    id: book.id,
+    title: book.title,
+    author: book.profiles?.display_name || book.profiles?.username || "Anónimo",
+    cover: book.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop",
+    reads: book.reads_count || 0,
+    likes: book.likes_count || 0,
+    category: book.genre || "General",
+  });
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -104,9 +113,6 @@ const HomePage = () => {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full text-[10px] text-destructive-foreground flex items-center justify-center">
-                  3
-                </span>
               </Button>
             </div>
           </div>
@@ -132,14 +138,18 @@ const HomePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div 
+          <div
             onClick={() => navigate("/microstories")}
             className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform"
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-primary-foreground font-display font-semibold text-lg">✨ Microrrelatos</h3>
-                <p className="text-primary-foreground/80 text-sm">Historias cortas en 500 caracteres</p>
+                <h3 className="text-primary-foreground font-display font-semibold text-lg">
+                  ✨ Microrrelatos
+                </h3>
+                <p className="text-primary-foreground/80 text-sm">
+                  Historias cortas en 500 caracteres
+                </p>
               </div>
               <div className="bg-white/20 rounded-full p-3">
                 <TrendingUp className="w-5 h-5 text-primary-foreground" />
@@ -148,78 +158,116 @@ const HomePage = () => {
           </div>
         </motion.section>
 
-        {/* Trending Section */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-display font-semibold">Tendencias</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver más
-            </Button>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : (
+          <>
+            {/* Trending Section */}
+            {trendingBooks.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <h2 className="text-xl font-display font-semibold">Tendencias</h2>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/explore")}>
+                    Ver más
+                  </Button>
+                </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-            {trendingBooks.map((book, index) => (
-              <motion.div
-                key={book.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex-shrink-0"
-              >
-                <BookCard book={book} variant="featured" />
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Recent Section */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-display font-semibold">Recién publicados</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver más
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {demoBooks.map((book, index) => (
-              <motion.div
-                key={book.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <BookCard book={book} />
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Categories */}
-        <section>
-          <h2 className="text-xl font-display font-semibold mb-4">Categorías</h2>
-          <div className="flex flex-wrap gap-2">
-            {["Romance", "Fantasía", "Misterio", "Poesía", "Drama", "Aventura", "Ciencia Ficción", "Terror"].map(
-              (category, index) => (
-                <motion.button
-                  key={category}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="px-4 py-2 bg-secondary rounded-full text-sm font-medium text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  {category}
-                </motion.button>
-              )
+                <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+                  {trendingBooks.map((book, index) => (
+                    <motion.div
+                      key={book.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex-shrink-0"
+                    >
+                      <BookCard book={formatBookForCard(book)} variant="featured" />
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
             )}
-          </div>
-        </section>
+
+            {/* Recent Section */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-display font-semibold">
+                    {books.length > 0 ? "Recién publicados" : "Sin libros aún"}
+                  </h2>
+                </div>
+                {books.length > 0 && (
+                  <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/explore")}>
+                    Ver más
+                  </Button>
+                )}
+              </div>
+
+              {books.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {books.map((book, index) => (
+                    <motion.div
+                      key={book.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <BookCard book={formatBookForCard(book)} />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">¡Sé el primero en publicar!</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Aún no hay libros publicados. Crea tu primera historia.
+                  </p>
+                  <Button variant="hero" onClick={() => navigate("/write")}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Escribir historia
+                  </Button>
+                </div>
+              )}
+            </section>
+
+            {/* Categories */}
+            <section>
+              <h2 className="text-xl font-display font-semibold mb-4">Categorías</h2>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Romance",
+                  "Fantasía",
+                  "Misterio",
+                  "Poesía",
+                  "Drama",
+                  "Aventura",
+                  "Ciencia Ficción",
+                  "Terror",
+                ].map((category, index) => (
+                  <motion.button
+                    key={category}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => navigate(`/explore?category=${category}`)}
+                    className="px-4 py-2 bg-secondary rounded-full text-sm font-medium text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {category}
+                  </motion.button>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       {/* FAB for creating new book */}

@@ -15,6 +15,7 @@ import WritePage from "./pages/Write";
 import AdvancedWritePage from "./pages/AdvancedWrite";
 import MicrostoriesPage from "./pages/Microstories";
 import UserProfilePage from "./pages/UserProfile";
+import EditProfilePage from "./pages/EditProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/write/advanced/:bookId" element={<AdvancedWritePage />} />
           <Route path="/microstories" element={<MicrostoriesPage />} />
           <Route path="/user/:userId" element={<UserProfilePage />} />
+          <Route path="/edit-profile" element={<EditProfilePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

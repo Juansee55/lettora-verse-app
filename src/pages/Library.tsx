@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Heart, Grid3X3, List, Plus, Download } from "lucide-react";
+import { BookOpen, Clock, Heart, Grid3X3, List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 
 const tabs = [
@@ -11,51 +12,149 @@ const tabs = [
   { key: "favorites", label: "Favoritos", icon: Heart },
 ];
 
-const libraryBooks = [
-  {
-    id: "1",
-    title: "El Último Amanecer",
-    author: "María García",
-    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
-    progress: 65,
-    status: "reading",
-  },
-  {
-    id: "2",
-    title: "Sombras del Pasado",
-    author: "Carlos Ruiz",
-    cover: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=200&h=280&fit=crop",
-    progress: 100,
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Versos del Alma",
-    author: "Ana López",
-    cover: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=200&h=280&fit=crop",
-    progress: 30,
-    status: "reading",
-  },
-  {
-    id: "4",
-    title: "El Viajero Eterno",
-    author: "Pedro Martín",
-    cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=200&h=280&fit=crop",
-    progress: 100,
-    status: "favorites",
-  },
-];
+interface ReadingProgressWithBook {
+  id: string;
+  progress_percent: number | null;
+  status: string | null;
+  books: {
+    id: string;
+    title: string;
+    cover_url: string | null;
+    profiles: {
+      display_name: string | null;
+      username: string | null;
+    } | null;
+  } | null;
+}
+
+interface LikedBook {
+  id: string;
+  likeable_id: string;
+  books: {
+    id: string;
+    title: string;
+    cover_url: string | null;
+    profiles: {
+      display_name: string | null;
+      username: string | null;
+    } | null;
+  } | null;
+}
 
 const LibraryPage = () => {
   const [activeTab, setActiveTab] = useState("reading");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [readingProgress, setReadingProgress] = useState<ReadingProgressWithBook[]>([]);
+  const [likedBooks, setLikedBooks] = useState<LikedBook[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const filteredBooks = libraryBooks.filter((book) => {
-    if (activeTab === "reading") return book.progress < 100;
-    if (activeTab === "completed") return book.progress === 100;
-    return book.status === activeTab;
-  });
+  useEffect(() => {
+    const fetchLibrary = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      // Fetch reading progress
+      const { data: progressData } = await supabase
+        .from("reading_progress")
+        .select(`
+          id,
+          progress_percent,
+          status,
+          books:book_id (
+            id,
+            title,
+            cover_url,
+            profiles:author_id (
+              display_name,
+              username
+            )
+          )
+        `)
+        .eq("user_id", user.id);
+
+      if (progressData) {
+        setReadingProgress(progressData as unknown as ReadingProgressWithBook[]);
+      }
+
+      // Fetch liked books
+      const { data: likesData } = await supabase
+        .from("likes")
+        .select(`
+          id,
+          likeable_id
+        `)
+        .eq("user_id", user.id)
+        .eq("likeable_type", "book");
+
+      if (likesData && likesData.length > 0) {
+        const bookIds = likesData.map(l => l.likeable_id);
+        const { data: booksData } = await supabase
+          .from("books")
+          .select(`
+            id,
+            title,
+            cover_url,
+            profiles:author_id (
+              display_name,
+              username
+            )
+          `)
+          .in("id", bookIds);
+
+        if (booksData) {
+          const likedWithBooks = likesData.map(like => ({
+            ...like,
+            books: booksData.find(b => b.id === like.likeable_id) || null
+          }));
+          setLikedBooks(likedWithBooks as unknown as LikedBook[]);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    fetchLibrary();
+  }, [navigate]);
+
+  const getFilteredBooks = () => {
+    if (activeTab === "favorites") {
+      return likedBooks.map(l => ({
+        id: l.books?.id || l.likeable_id,
+        title: l.books?.title || "Sin título",
+        author: l.books?.profiles?.display_name || l.books?.profiles?.username || "Anónimo",
+        cover: l.books?.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
+        progress: 100,
+      }));
+    }
+
+    return readingProgress
+      .filter(rp => {
+        if (activeTab === "reading") return (rp.progress_percent || 0) < 100;
+        if (activeTab === "completed") return (rp.progress_percent || 0) >= 100;
+        return true;
+      })
+      .map(rp => ({
+        id: rp.books?.id || rp.id,
+        title: rp.books?.title || "Sin título",
+        author: rp.books?.profiles?.display_name || rp.books?.profiles?.username || "Anónimo",
+        cover: rp.books?.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
+        progress: rp.progress_percent || 0,
+      }));
+  };
+
+  const filteredBooks = getFilteredBooks();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
