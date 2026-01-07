@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -15,20 +15,47 @@ import {
   Users,
   Plus,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+const categories = [
+  "Romance",
+  "Fantasía",
+  "Misterio",
+  "Poesía",
+  "Drama",
+  "Aventura",
+  "Ciencia Ficción",
+  "Terror",
+];
 
 const WritePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("Romance");
+  const [showCategories, setShowCategories] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,26 +68,72 @@ const WritePage = () => {
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Borrador guardado",
-      description: "Tu historia ha sido guardada como borrador.",
-    });
-  };
+  const saveBook = async (status: "draft" | "published") => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
 
-  const handlePublish = () => {
-    if (!title || !content) {
+    if (!title) {
       toast({
-        title: "Campos incompletos",
-        description: "Por favor añade un título y contenido.",
+        title: "Título requerido",
+        description: "Por favor añade un título a tu historia.",
         variant: "destructive",
       });
       return;
     }
+
+    const isPublishing = status === "published";
+    if (isPublishing) setPublishing(true);
+    else setSaving(true);
+
+    const { data: book, error } = await supabase
+      .from("books")
+      .insert({
+        title,
+        description,
+        genre: category,
+        cover_url: coverPreview,
+        author_id: user.id,
+        status,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el libro.",
+        variant: "destructive",
+      });
+      setSaving(false);
+      setPublishing(false);
+      return;
+    }
+
+    // Create first chapter if there's content
+    if (content && book) {
+      await supabase.from("chapters").insert({
+        book_id: book.id,
+        title: "Capítulo 1",
+        content,
+        chapter_number: 1,
+        word_count: content.split(/\s+/).filter(Boolean).length,
+        is_published: isPublishing,
+      });
+    }
+
+    setSaving(false);
+    setPublishing(false);
+
     toast({
-      title: "¡Historia publicada!",
-      description: "Tu historia ya está disponible para los lectores.",
+      title: isPublishing ? "¡Historia publicada!" : "Borrador guardado",
+      description: isPublishing
+        ? "Tu historia ya está disponible para los lectores."
+        : "Tu historia ha sido guardada como borrador.",
     });
+
     navigate("/profile");
   };
 
@@ -81,12 +154,30 @@ const WritePage = () => {
               <h1 className="font-display font-semibold">Nueva historia</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleSave}>
-                <Save className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => saveBook("draft")}
+                disabled={saving || publishing}
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
                 Guardar
               </Button>
-              <Button variant="hero" size="sm" onClick={handlePublish}>
-                <Send className="w-4 h-4 mr-2" />
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={() => saveBook("published")}
+                disabled={saving || publishing}
+              >
+                {publishing ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
                 Publicar
               </Button>
             </div>
@@ -149,17 +240,59 @@ const WritePage = () => {
           />
         </motion.div>
 
+        {/* Description */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="mb-4"
+        >
+          <Textarea
+            placeholder="Descripción breve de tu historia..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border-0 bg-transparent px-0 resize-none focus-visible:ring-0 placeholder:text-muted-foreground/50 min-h-[60px]"
+          />
+        </motion.div>
+
         {/* Category and settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex flex-wrap gap-2 mb-6"
+          className="flex flex-wrap gap-2 mb-6 relative"
         >
-          <Button variant="secondary" size="sm" className="rounded-full">
-            {category}
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
+          <div className="relative">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setShowCategories(!showCategories)}
+            >
+              {category}
+              <ChevronDown className="w-4 h-4 ml-1" />
+            </Button>
+            {showCategories && (
+              <div className="absolute top-full mt-2 left-0 bg-card rounded-xl shadow-lg border border-border p-2 z-50 min-w-[150px]">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setCategory(cat);
+                      setShowCategories(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      category === cat
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Button variant="outline" size="sm" className="rounded-full">
             <Users className="w-4 h-4 mr-1" />
             Invitar colaborador
@@ -168,9 +301,9 @@ const WritePage = () => {
             <Plus className="w-4 h-4 mr-1" />
             Añadir a saga
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="rounded-full ml-auto"
             onClick={() => navigate("/write/advanced")}
           >

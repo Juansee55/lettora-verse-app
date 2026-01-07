@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -13,34 +13,47 @@ import {
   ChevronRight,
   Play,
   MoreVertical,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const bookData = {
-  id: "1",
-  title: "El Último Amanecer",
-  author: "María García",
-  authorAvatar: "M",
-  cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
-  description:
-    "Una historia de amor y redención que te llevará a través de los paisajes más hermosos de la Toscana. Cuando Elena descubre una carta olvidada en un viejo libro, su vida cambia para siempre...",
-  reads: 12500,
-  likes: 3420,
-  comments: 856,
-  chapters: 24,
-  status: "Completado",
-  rating: 4.8,
-  category: "Romance",
-  tags: ["Amor", "Drama", "Italia", "Segundas oportunidades"],
-};
+interface BookData {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_url: string | null;
+  genre: string | null;
+  reads_count: number | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  status: string | null;
+  tags: string[] | null;
+  profiles: {
+    id: string;
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+}
 
-const chapters = [
-  { id: 1, title: "El comienzo", reads: 12500 },
-  { id: 2, title: "La carta", reads: 11800 },
-  { id: 3, title: "Un viaje inesperado", reads: 10500 },
-  { id: 4, title: "Toscana", reads: 9800 },
-  { id: 5, title: "El encuentro", reads: 9200 },
-];
+interface Chapter {
+  id: string;
+  title: string;
+  chapter_number: number;
+  word_count: number | null;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string | null;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+  } | null;
+}
 
 const formatNumber = (num: number): string => {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
@@ -51,16 +64,168 @@ const formatNumber = (num: number): string => {
 const BookDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [book, setBook] = useState<BookData | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBook = async () => {
+      if (!id) return;
+
+      // Fetch book
+      const { data: bookData, error } = await supabase
+        .from("books")
+        .select(`
+          id,
+          title,
+          description,
+          cover_url,
+          genre,
+          reads_count,
+          likes_count,
+          comments_count,
+          status,
+          tags,
+          profiles:author_id (
+            id,
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error || !bookData) {
+        navigate("/home");
+        return;
+      }
+
+      setBook(bookData as unknown as BookData);
+
+      // Fetch chapters
+      const { data: chaptersData } = await supabase
+        .from("chapters")
+        .select("id, title, chapter_number, word_count")
+        .eq("book_id", id)
+        .eq("is_published", true)
+        .order("chapter_number", { ascending: true });
+
+      if (chaptersData) setChapters(chaptersData);
+
+      // Fetch comments
+      const { data: commentsData } = await supabase
+        .from("comments")
+        .select(`
+          id,
+          content,
+          created_at,
+          profiles:user_id (
+            display_name,
+            username
+          )
+        `)
+        .eq("commentable_id", id)
+        .eq("commentable_type", "book")
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      if (commentsData) setComments(commentsData as unknown as Comment[]);
+
+      // Check if liked
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: likeData } = await supabase
+          .from("likes")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("likeable_id", id)
+          .eq("likeable_type", "book")
+          .single();
+
+        setLiked(!!likeData);
+      }
+
+      setLoading(false);
+    };
+
+    fetchBook();
+  }, [id, navigate]);
+
+  const handleLike = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    if (liked) {
+      await supabase
+        .from("likes")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("likeable_id", id)
+        .eq("likeable_type", "book");
+      setLiked(false);
+    } else {
+      await supabase.from("likes").insert({
+        user_id: user.id,
+        likeable_id: id!,
+        likeable_type: "book",
+      });
+      setLiked(true);
+    }
+  };
+
+  const handleFollow = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    if (!book?.profiles?.id) return;
+
+    await supabase.from("followers").insert({
+      follower_id: user.id,
+      following_id: book.profiles.id,
+    });
+
+    toast({
+      title: "¡Siguiendo!",
+      description: `Ahora sigues a ${book.profiles.display_name || book.profiles.username}`,
+    });
+  };
+
+  const timeAgo = (date: string | null) => {
+    if (!date) return "";
+    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+    return `${Math.floor(seconds / 86400)}d`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!book) return null;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[400px]">
         <img
-          src={bookData.cover}
-          alt={bookData.title}
+          src={book.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop"}
+          alt={book.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -87,16 +252,37 @@ const BookDetailPage = () => {
           className="absolute bottom-0 left-0 right-0 p-6"
         >
           <span className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full mb-3">
-            {bookData.category}
+            {book.genre || "General"}
           </span>
-          <h1 className="text-3xl font-display font-bold mb-2">{bookData.title}</h1>
+          <h1 className="text-3xl font-display font-bold mb-2">{book.title}</h1>
 
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-sm font-bold text-primary-foreground">
-              {bookData.authorAvatar}
+            <div
+              onClick={() => navigate(`/user/${book.profiles?.id}`)}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-sm font-bold text-primary-foreground overflow-hidden cursor-pointer"
+            >
+              {book.profiles?.avatar_url ? (
+                <img
+                  src={book.profiles.avatar_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                book.profiles?.display_name?.[0]?.toUpperCase() || "?"
+              )}
             </div>
-            <span className="font-medium">{bookData.author}</span>
-            <Button variant="outline" size="sm" className="rounded-full h-7 text-xs">
+            <span
+              onClick={() => navigate(`/user/${book.profiles?.id}`)}
+              className="font-medium cursor-pointer hover:text-primary"
+            >
+              {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full h-7 text-xs"
+              onClick={handleFollow}
+            >
               Seguir
             </Button>
           </div>
@@ -105,19 +291,15 @@ const BookDetailPage = () => {
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Eye className="w-4 h-4" />
-              {formatNumber(bookData.reads)}
+              {formatNumber(book.reads_count || 0)}
             </span>
             <span className="flex items-center gap-1">
               <Heart className="w-4 h-4" />
-              {formatNumber(bookData.likes)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              {bookData.rating}
+              {formatNumber(book.likes_count || 0)}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {bookData.chapters} cap.
+              {chapters.length} cap.
             </span>
           </div>
         </motion.div>
@@ -135,7 +317,7 @@ const BookDetailPage = () => {
             variant={liked ? "default" : "outline"}
             size="lg"
             className={`rounded-xl ${liked ? "bg-destructive hover:bg-destructive/90" : ""}`}
-            onClick={() => setLiked(!liked)}
+            onClick={handleLike}
           >
             <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
           </Button>
@@ -153,93 +335,100 @@ const BookDetailPage = () => {
         </div>
 
         {/* Description */}
-        <div>
-          <h2 className="font-display font-semibold text-lg mb-2">Sinopsis</h2>
-          <p className="text-muted-foreground leading-relaxed">{bookData.description}</p>
-        </div>
+        {book.description && (
+          <div>
+            <h2 className="font-display font-semibold text-lg mb-2">Sinopsis</h2>
+            <p className="text-muted-foreground leading-relaxed">{book.description}</p>
+          </div>
+        )}
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2">
-          {bookData.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Chapters */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-semibold text-lg">
-              Capítulos ({bookData.chapters})
-            </h2>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todos
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {chapters.map((chapter, index) => (
-              <motion.div
-                key={chapter.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-4 p-3 bg-card rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+        {book.tags && book.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {book.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full"
               >
-                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-medium text-sm">
-                  {chapter.id}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{chapter.title}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {formatNumber(chapter.reads)} lecturas
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </motion.div>
+                #{tag}
+              </span>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Chapters */}
+        {chapters.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display font-semibold text-lg">
+                Capítulos ({chapters.length})
+              </h2>
+            </div>
+
+            <div className="space-y-2">
+              {chapters.slice(0, 5).map((chapter, index) => (
+                <motion.div
+                  key={chapter.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="flex items-center gap-4 p-3 bg-card rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                >
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-medium text-sm">
+                    {chapter.chapter_number}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{chapter.title}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {chapter.word_count || 0} palabras
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Comments preview */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-lg flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-primary" />
-              Comentarios ({bookData.comments})
+              Comentarios ({book.comments_count || 0})
             </h2>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todos
-            </Button>
           </div>
 
-          <div className="space-y-3">
-            {[
-              { user: "Elena V.", comment: "¡Una historia increíble! No pude parar de leer.", time: "2h" },
-              { user: "Juan P.", comment: "El final me dejó sin palabras. Muy recomendado.", time: "5h" },
-            ].map((comment, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="p-4 bg-card rounded-xl"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-xs font-bold text-primary-foreground">
-                    {comment.user[0]}
+          {comments.length > 0 ? (
+            <div className="space-y-3">
+              {comments.map((comment, index) => (
+                <motion.div
+                  key={comment.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="p-4 bg-card rounded-xl"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-xs font-bold text-primary-foreground">
+                      {(comment.profiles?.display_name || comment.profiles?.username)?.[0]?.toUpperCase() || "?"}
+                    </div>
+                    <span className="font-medium text-sm">
+                      {comment.profiles?.display_name || comment.profiles?.username || "Usuario"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {timeAgo(comment.created_at)}
+                    </span>
                   </div>
-                  <span className="font-medium text-sm">{comment.user}</span>
-                  <span className="text-xs text-muted-foreground">{comment.time}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{comment.comment}</p>
-              </motion.div>
-            ))}
-          </div>
+                  <p className="text-sm text-muted-foreground">{comment.content}</p>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-6">
+              No hay comentarios aún. ¡Sé el primero en comentar!
+            </p>
+          )}
         </div>
       </div>
     </div>
