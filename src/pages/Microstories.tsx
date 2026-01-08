@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
+import ShareAsImage from "@/components/microstories/ShareAsImage";
 
 interface Microstory {
   id: string;
@@ -47,6 +48,7 @@ const MicrostoriesPage = () => {
   const [newContent, setNewContent] = useState("");
   const [activeTab, setActiveTab] = useState<"recent" | "trending">("recent");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [shareStory, setShareStory] = useState<Microstory | null>(null);
 
   useEffect(() => {
     fetchMicrostories();
@@ -398,7 +400,10 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
                     <MessageCircle className="w-5 h-5" />
                     <span className="text-sm">{story.comments_count}</span>
                   </button>
-                  <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors ml-auto">
+                  <button 
+                    onClick={() => setShareStory(story)}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors ml-auto"
+                  >
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -407,6 +412,15 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
           </div>
         )}
       </main>
+
+      {/* Share as Image Modal */}
+      {shareStory && (
+        <ShareAsImage
+          isOpen={!!shareStory}
+          onClose={() => setShareStory(null)}
+          story={shareStory}
+        />
+      )}
 
       <BottomNav />
     </div>
