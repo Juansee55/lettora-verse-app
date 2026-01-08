@@ -156,9 +156,16 @@ const MicrostoriesPage = () => {
       .eq("likeable_id", microstoryId)
       .maybeSingle();
 
+    const currentStory = microstories.find(m => m.id === microstoryId);
+    const currentCount = currentStory?.likes_count || 0;
+
     if (existingLike) {
       // Unlike
       await supabase.from("likes").delete().eq("id", existingLike.id);
+      await supabase
+        .from("microstories")
+        .update({ likes_count: Math.max(0, currentCount - 1) })
+        .eq("id", microstoryId);
     } else {
       // Like
       await supabase.from("likes").insert({
@@ -166,6 +173,10 @@ const MicrostoriesPage = () => {
         likeable_type: "microstory",
         likeable_id: microstoryId,
       });
+      await supabase
+        .from("microstories")
+        .update({ likes_count: currentCount + 1 })
+        .eq("id", microstoryId);
     }
     
     fetchMicrostories();

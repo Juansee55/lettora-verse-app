@@ -1,68 +1,182 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Plus, MessageCircle, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Search, Plus, MessageCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/navigation/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const chats = [
-  {
-    id: "1",
-    name: "María García",
-    avatar: "M",
-    lastMessage: "¡Me encantó tu último capítulo!",
-    time: "2m",
-    unread: 3,
-    online: true,
-  },
-  {
-    id: "2",
-    name: "Carlos Ruiz",
-    avatar: "C",
-    lastMessage: "¿Quieres colaborar en mi nueva saga?",
-    time: "15m",
-    unread: 1,
-    online: true,
-  },
-  {
-    id: "3",
-    name: "Club de Lectura",
-    avatar: "📚",
-    lastMessage: "Ana: El próximo libro será...",
-    time: "1h",
-    unread: 0,
-    online: false,
-    isGroup: true,
-  },
-  {
-    id: "4",
-    name: "Pedro Martín",
-    avatar: "P",
-    lastMessage: "Gracias por el feedback",
-    time: "3h",
-    unread: 0,
-    online: false,
-  },
-  {
-    id: "5",
-    name: "Escritores Fantasy",
-    avatar: "✨",
-    lastMessage: "Elena: Nuevo desafío de escritura",
-    time: "5h",
-    unread: 12,
-    online: false,
-    isGroup: true,
-  },
-];
+interface Conversation {
+  id: string;
+  name: string | null;
+  is_group: boolean;
+  avatar: string | null;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count: number;
+  other_user?: {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
 
 const ChatsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const filteredChats = chats.filter((chat) =>
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    checkUserAndFetch();
+  }, []);
+
+  const checkUserAndFetch = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setCurrentUserId(user.id);
+    fetchConversations(user.id);
+  };
+
+  const fetchConversations = async (userId: string) => {
+    setLoading(true);
+
+    // Get all conversations where user is a participant
+    const { data: participations, error: partError } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", userId);
+
+    if (partError) {
+      toast.error("Error al cargar conversaciones");
+      setLoading(false);
+      return;
+    }
+
+    if (!participations || participations.length === 0) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
+
+    const conversationIds = participations.map(p => p.conversation_id);
+
+    // Get conversation details
+    const { data: convData, error: convError } = await supabase
+      .from("conversations")
+      .select("*")
+      .in("id", conversationIds)
+      .order("updated_at", { ascending: false });
+
+    if (convError) {
+      toast.error("Error al cargar conversaciones");
+      setLoading(false);
+      return;
+    }
+
+    // Get other participants for each conversation
+    const enrichedConversations: Conversation[] = await Promise.all(
+      (convData || []).map(async (conv) => {
+        // Get other participant
+        const { data: otherParticipants } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", conv.id)
+          .neq("user_id", userId)
+          .limit(1);
+
+        let otherUser = null;
+        if (otherParticipants && otherParticipants.length > 0) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .eq("id", otherParticipants[0].user_id)
+            .maybeSingle();
+          otherUser = profile;
+        }
+
+        // Get last message
+        const { data: lastMessages } = await supabase
+          .from("messages")
+          .select("content, created_at")
+          .eq("conversation_id", conv.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        // Get unread count
+        const { data: myParticipation } = await supabase
+          .from("conversation_participants")
+          .select("last_read_at")
+          .eq("conversation_id", conv.id)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const { count: unreadCount } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("conversation_id", conv.id)
+          .neq("sender_id", userId)
+          .gt("created_at", myParticipation?.last_read_at || "1970-01-01");
+
+        return {
+          id: conv.id,
+          name: conv.name,
+          is_group: conv.is_group || false,
+          avatar: conv.avatar,
+          last_message: lastMessages?.[0]?.content,
+          last_message_time: lastMessages?.[0]?.created_at,
+          unread_count: unreadCount || 0,
+          other_user: otherUser
+        };
+      })
+    );
+
+    setConversations(enrichedConversations);
+    setLoading(false);
+  };
+
+  const formatTime = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Ahora";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return "Ayer";
+    return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  };
+
+  const filteredConversations = conversations.filter((conv) => {
+    const name = conv.is_group 
+      ? conv.name 
+      : conv.other_user?.display_name || conv.other_user?.username;
+    return name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const getDisplayName = (conv: Conversation) => {
+    if (conv.is_group) return conv.name || "Grupo";
+    return conv.other_user?.display_name || conv.other_user?.username || "Usuario";
+  };
+
+  const getAvatar = (conv: Conversation) => {
+    if (conv.is_group) return conv.avatar || "👥";
+    if (conv.other_user?.avatar_url) return conv.other_user.avatar_url;
+    return (getDisplayName(conv)).charAt(0).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -94,79 +208,65 @@ const ChatsPage = () => {
         </div>
       </motion.header>
 
-      {/* Online users */}
-      <div className="px-4 py-4 border-b border-border">
-        <div className="flex gap-4 overflow-x-auto">
-          {chats
-            .filter((c) => c.online)
-            .map((chat, index) => (
-              <motion.div
-                key={chat.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-lg font-display font-bold text-primary-foreground">
-                    {chat.avatar}
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-background rounded-full" />
-                </div>
-                <span className="text-xs text-muted-foreground truncate max-w-[60px]">
-                  {chat.name.split(" ")[0]}
-                </span>
-              </motion.div>
-            ))}
-        </div>
-      </div>
-
-      {/* Chat list */}
+      {/* Content */}
       <div className="px-4 py-2">
-        {filteredChats.map((chat, index) => (
-          <motion.div
-            key={chat.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-            onClick={() => navigate(`/chat/${chat.id}`)}
-            className="flex items-center gap-3 py-3 border-b border-border/50 cursor-pointer hover:bg-muted/30 transition-colors rounded-xl px-2 -mx-2"
-          >
-            <div className="relative flex-shrink-0">
-              <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-display font-bold ${
-                  chat.isGroup
-                    ? "bg-secondary text-2xl"
-                    : "bg-gradient-to-br from-violet-400 to-violet-600 text-primary-foreground"
-                }`}
-              >
-                {chat.avatar}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="text-center py-12">
+            <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No hay conversaciones</h3>
+            <p className="text-muted-foreground">Inicia una conversación con otro usuario</p>
+          </div>
+        ) : (
+          filteredConversations.map((conv, index) => (
+            <motion.div
+              key={conv.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              onClick={() => navigate(`/chat/${conv.id}`)}
+              className="flex items-center gap-3 py-3 border-b border-border/50 cursor-pointer hover:bg-muted/30 transition-colors rounded-xl px-2 -mx-2"
+            >
+              <div className="relative flex-shrink-0">
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-display font-bold overflow-hidden ${
+                    conv.is_group
+                      ? "bg-secondary text-2xl"
+                      : "bg-gradient-to-br from-violet-400 to-violet-600 text-primary-foreground"
+                  }`}
+                >
+                  {typeof getAvatar(conv) === "string" && getAvatar(conv).startsWith("http") ? (
+                    <img src={getAvatar(conv)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    getAvatar(conv)
+                  )}
+                </div>
               </div>
-              {chat.online && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-background rounded-full" />
-              )}
-            </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-medium truncate">{chat.name}</h3>
-                <span className="text-xs text-muted-foreground flex-shrink-0">
-                  {chat.time}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground truncate pr-2">
-                  {chat.lastMessage}
-                </p>
-                {chat.unread > 0 && (
-                  <span className="flex-shrink-0 w-5 h-5 bg-primary rounded-full text-[10px] text-primary-foreground flex items-center justify-center font-medium">
-                    {chat.unread > 9 ? "9+" : chat.unread}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-medium truncate">{getDisplayName(conv)}</h3>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {formatTime(conv.last_message_time)}
                   </span>
-                )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground truncate pr-2">
+                    {conv.last_message || "Sin mensajes"}
+                  </p>
+                  {conv.unread_count > 0 && (
+                    <span className="flex-shrink-0 w-5 h-5 bg-primary rounded-full text-[10px] text-primary-foreground flex items-center justify-center font-medium">
+                      {conv.unread_count > 9 ? "9+" : conv.unread_count}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))
+        )}
       </div>
 
       {/* FAB for new message */}
