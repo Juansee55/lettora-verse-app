@@ -9,7 +9,6 @@ import {
   Bookmark,
   Eye,
   Clock,
-  Star,
   ChevronRight,
   Play,
   MoreVertical,
@@ -18,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 
 interface BookData {
   id: string;
@@ -71,6 +71,7 @@ const BookDetailPage = () => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -136,7 +137,7 @@ const BookDetailPage = () => {
 
       if (commentsData) setComments(commentsData as unknown as Comment[]);
 
-      // Check if liked
+      // Check if liked and saved
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: likeData } = await supabase
@@ -145,9 +146,18 @@ const BookDetailPage = () => {
           .eq("user_id", user.id)
           .eq("likeable_id", id)
           .eq("likeable_type", "book")
-          .single();
+          .maybeSingle();
 
         setLiked(!!likeData);
+
+        const { data: savedData } = await supabase
+          .from("saved_books")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("book_id", id)
+          .maybeSingle();
+
+        setSaved(!!savedData);
       }
 
       setLoading(false);
@@ -325,11 +335,33 @@ const BookDetailPage = () => {
             variant={saved ? "default" : "outline"}
             size="lg"
             className="rounded-xl"
-            onClick={() => setSaved(!saved)}
+            onClick={async () => {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) {
+                navigate("/auth");
+                return;
+              }
+              if (saved) {
+                await supabase
+                  .from("saved_books")
+                  .delete()
+                  .eq("user_id", user.id)
+                  .eq("book_id", id);
+                setSaved(false);
+                toast({ title: "Libro eliminado de guardados" });
+              } else {
+                await supabase.from("saved_books").insert({
+                  user_id: user.id,
+                  book_id: id!,
+                });
+                setSaved(true);
+                toast({ title: "¡Libro guardado!" });
+              }
+            }}
           >
             <Bookmark className={`w-5 h-5 ${saved ? "fill-current" : ""}`} />
           </Button>
-          <Button variant="outline" size="lg" className="rounded-xl">
+          <Button variant="outline" size="lg" className="rounded-xl" onClick={() => setShowShare(true)}>
             <Share2 className="w-5 h-5" />
           </Button>
         </div>
@@ -431,6 +463,27 @@ const BookDetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Share Modal */}
+      {book && (
+        <ShareBookAsImage
+          isOpen={showShare}
+          onClose={() => setShowShare(false)}
+          book={{
+            title: book.title,
+            cover_url: book.cover_url,
+            genre: book.genre,
+            author: {
+              display_name: book.profiles?.display_name || null,
+              username: book.profiles?.username || null,
+            },
+          }}
+          stats={{
+            reads: book.reads_count || 0,
+            likes: book.likes_count || 0,
+          }}
+        />
+      )}
     </div>
   );
 };

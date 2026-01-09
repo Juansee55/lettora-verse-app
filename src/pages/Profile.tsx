@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Settings,
   Edit3,
   BookOpen,
   Users,
@@ -13,10 +12,12 @@ import {
   Plus,
   Loader2,
   LogOut,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
+import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 
 interface Profile {
   id: string;
@@ -32,6 +33,7 @@ interface Book {
   title: string;
   cover_url: string | null;
   reads_count: number | null;
+  likes_count: number | null;
   status: string | null;
 }
 
@@ -40,6 +42,7 @@ interface Stats {
   followers: number;
   following: number;
   totalReads: number;
+  totalLikes: number;
 }
 
 const ProfilePage = () => {
@@ -47,8 +50,9 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<"books" | "likes" | "sagas">("books");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
-  const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0 });
+  const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -70,14 +74,15 @@ const ProfilePage = () => {
       // Fetch user's books
       const { data: booksData } = await supabase
         .from("books")
-        .select("id, title, cover_url, reads_count, status")
+        .select("id, title, cover_url, reads_count, likes_count, status")
         .eq("author_id", user.id)
         .order("created_at", { ascending: false });
 
       if (booksData) {
         setBooks(booksData);
         const totalReads = booksData.reduce((acc, book) => acc + (book.reads_count || 0), 0);
-        setStats((prev) => ({ ...prev, books: booksData.length, totalReads }));
+        const totalLikes = booksData.reduce((acc, book) => acc + (book.likes_count || 0), 0);
+        setStats((prev) => ({ ...prev, books: booksData.length, totalReads, totalLikes }));
       }
 
       // Fetch followers count
@@ -193,6 +198,9 @@ const ProfilePage = () => {
             <div className="flex gap-2">
               <Button variant="outline" size="icon" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setShowShare(true)}>
+                <Share2 className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="icon" onClick={() => navigate("/edit-profile")}>
                 <Edit3 className="w-4 h-4" />
@@ -311,6 +319,20 @@ const ProfilePage = () => {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {profile && (
+        <ShareProfileAsImage
+          isOpen={showShare}
+          onClose={() => setShowShare(false)}
+          profile={profile}
+          stats={{
+            followers: stats.followers,
+            totalLikes: stats.totalLikes,
+            totalReads: stats.totalReads,
+          }}
+        />
+      )}
 
       <BottomNav />
     </div>

@@ -14,11 +14,13 @@ import {
   UserPlus,
   UserCheck,
   MessageCircle,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
+import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 
 interface UserProfile {
   id: string;
@@ -53,6 +55,8 @@ const UserProfilePage = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"books" | "microstories">("books");
+  const [showShare, setShowShare] = useState(false);
+  const [totalLikes, setTotalLikes] = useState(0);
 
   useEffect(() => {
     if (userId) {
@@ -101,8 +105,10 @@ const UserProfilePage = () => {
       .in("status", ["published", "completed"])
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      setBooks(data || []);
+    if (!error && data) {
+      setBooks(data);
+      const likes = data.reduce((acc, b) => acc + (b.likes_count || 0), 0);
+      setTotalLikes(likes);
     }
   };
 
@@ -164,6 +170,65 @@ const UserProfilePage = () => {
         });
       }
     }
+  };
+
+  const startConversation = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Inicia sesión",
+        description: "Necesitas iniciar sesión para enviar mensajes.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    // Check if conversation already exists
+    const { data: myConversations } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (myConversations) {
+      for (const conv of myConversations) {
+        const { data: otherParticipant } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", conv.conversation_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (otherParticipant) {
+          navigate(`/chat/${conv.conversation_id}`);
+          return;
+        }
+      }
+    }
+
+    // Create new conversation
+    const { data: newConv, error: convError } = await supabase
+      .from("conversations")
+      .insert({ is_group: false })
+      .select()
+      .single();
+
+    if (convError || !newConv) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la conversación.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add participants
+    await supabase.from("conversation_participants").insert([
+      { conversation_id: newConv.id, user_id: user.id },
+      { conversation_id: newConv.id, user_id: userId },
+    ]);
+
+    navigate(`/chat/${newConv.id}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -284,8 +349,11 @@ const UserProfilePage = () => {
                     </>
                   )}
                 </Button>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={startConversation}>
                   <MessageCircle className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => setShowShare(true)}>
+                  <Share2 className="w-4 h-4" />
                 </Button>
               </div>
             )}
@@ -414,6 +482,20 @@ const UserProfilePage = () => {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {profile && (
+        <ShareProfileAsImage
+          isOpen={showShare}
+          onClose={() => setShowShare(false)}
+          profile={profile}
+          stats={{
+            followers: followersCount,
+            totalLikes: totalLikes,
+            totalReads: books.reduce((acc, b) => acc + b.reads_count, 0),
+          }}
+        />
+      )}
 
       <BottomNav />
     </div>
