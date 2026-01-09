@@ -9,6 +9,7 @@ import HomePage from "./pages/Home";
 import ExplorePage from "./pages/Explore";
 import LibraryPage from "./pages/Library";
 import ChatsPage from "./pages/Chats";
+import ChatConversationPage from "./pages/ChatConversation";
 import ProfilePage from "./pages/Profile";
 import BookDetailPage from "./pages/BookDetail";
 import WritePage from "./pages/Write";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/chats" element={<ChatsPage />} />
+          <Route path="/chat/:conversationId" element={<ChatConversationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/book/:id" element={<BookDetailPage />} />
           <Route path="/write" element={<WritePage />} />
