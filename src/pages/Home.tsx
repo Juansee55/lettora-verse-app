@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 import BookCard from "@/components/books/BookCard";
+import TopMicrostories from "@/components/microstories/TopMicrostories";
 
 interface Book {
   id: string;
@@ -156,6 +157,15 @@ const HomePage = () => {
               </div>
             </div>
           </div>
+        </motion.section>
+
+        {/* Top 5 Microstories */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <TopMicrostories limit={5} />
         </motion.section>
 
         {loading ? (

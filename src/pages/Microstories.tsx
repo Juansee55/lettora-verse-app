@@ -12,6 +12,9 @@ import {
   Clock,
   TrendingUp,
   X,
+  Users,
+  Send,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +23,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
 import ShareAsImage from "@/components/microstories/ShareAsImage";
+import MicrostoryComments from "@/components/microstories/MicrostoryComments";
+import ShareMicrostoryInChat from "@/components/microstories/ShareMicrostoryInChat";
+import CollaboratorsModal from "@/components/microstories/CollaboratorsModal";
+import TopMicrostories from "@/components/microstories/TopMicrostories";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Microstory {
   id: string;
@@ -28,6 +41,7 @@ interface Microstory {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  author_id: string;
   author: {
     id: string;
     display_name: string;
@@ -46,23 +60,43 @@ const MicrostoriesPage = () => {
   const [showCompose, setShowCompose] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [activeTab, setActiveTab] = useState<"recent" | "trending">("recent");
+  const [activeTab, setActiveTab] = useState<"recent" | "trending" | "top">("recent");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [shareStory, setShareStory] = useState<Microstory | null>(null);
+  const [commentsStory, setCommentsStory] = useState<Microstory | null>(null);
+  const [chatShareStory, setChatShareStory] = useState<Microstory | null>(null);
+  const [collaboratorsStory, setCollaboratorsStory] = useState<Microstory | null>(null);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchMicrostories();
     checkUser();
-  }, []);
+  }, [activeTab]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setCurrentUser(user);
+    if (user) {
+      fetchUserLikes(user.id);
+    }
+  };
+
+  const fetchUserLikes = async (userId: string) => {
+    const { data } = await supabase
+      .from("likes")
+      .select("likeable_id")
+      .eq("user_id", userId)
+      .eq("likeable_type", "microstory");
+    
+    if (data) {
+      setUserLikes(new Set(data.map(l => l.likeable_id)));
+    }
   };
 
   const fetchMicrostories = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    let query = supabase
       .from("microstories")
       .select(`
         *,
@@ -72,9 +106,15 @@ const MicrostoriesPage = () => {
           username,
           avatar_url
         )
-      `)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      `);
+
+    if (activeTab === "trending") {
+      query = query.order("likes_count", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query.limit(50);
 
     if (error) {
       console.error("Error fetching microstories:", error);
@@ -149,25 +189,44 @@ const MicrostoriesPage = () => {
       return;
     }
 
-    // Check if already liked
-    const { data: existingLike } = await supabase
-      .from("likes")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("likeable_type", "microstory")
-      .eq("likeable_id", microstoryId)
-      .maybeSingle();
-
     const currentStory = microstories.find(m => m.id === microstoryId);
     const currentCount = currentStory?.likes_count || 0;
+    const isLiked = userLikes.has(microstoryId);
 
-    if (existingLike) {
+    // Optimistic update
+    setMicrostories(prev => prev.map(m => 
+      m.id === microstoryId 
+        ? { ...m, likes_count: isLiked ? Math.max(0, m.likes_count - 1) : m.likes_count + 1 }
+        : m
+    ));
+    
+    if (isLiked) {
+      setUserLikes(prev => {
+        const next = new Set(prev);
+        next.delete(microstoryId);
+        return next;
+      });
+    } else {
+      setUserLikes(prev => new Set(prev).add(microstoryId));
+    }
+
+    if (isLiked) {
       // Unlike
-      await supabase.from("likes").delete().eq("id", existingLike.id);
-      await supabase
-        .from("microstories")
-        .update({ likes_count: Math.max(0, currentCount - 1) })
-        .eq("id", microstoryId);
+      const { data: existingLike } = await supabase
+        .from("likes")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("likeable_type", "microstory")
+        .eq("likeable_id", microstoryId)
+        .maybeSingle();
+      
+      if (existingLike) {
+        await supabase.from("likes").delete().eq("id", existingLike.id);
+        await supabase
+          .from("microstories")
+          .update({ likes_count: Math.max(0, currentCount - 1) })
+          .eq("id", microstoryId);
+      }
     } else {
       // Like
       await supabase.from("likes").insert({
@@ -180,8 +239,12 @@ const MicrostoriesPage = () => {
         .update({ likes_count: currentCount + 1 })
         .eq("id", microstoryId);
     }
-    
-    fetchMicrostories();
+  };
+
+  const handleCommentsCountChange = (storyId: string, count: number) => {
+    setMicrostories(prev => prev.map(m => 
+      m.id === storyId ? { ...m, comments_count: count } : m
+    ));
   };
 
   const formatDate = (dateString: string) => {
@@ -226,10 +289,10 @@ const MicrostoriesPage = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex mt-3 gap-2">
+          <div className="flex mt-3 gap-2 overflow-x-auto">
             <button
               onClick={() => setActiveTab("recent")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
                 activeTab === "recent"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground"
@@ -240,7 +303,7 @@ const MicrostoriesPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("trending")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
                 activeTab === "trending"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground"
@@ -248,6 +311,17 @@ const MicrostoriesPage = () => {
             >
               <TrendingUp className="w-4 h-4" />
               Populares
+            </button>
+            <button
+              onClick={() => setActiveTab("top")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
+                activeTab === "top"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              Top 10
             </button>
           </div>
         </div>
@@ -312,7 +386,9 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
 
       {/* Content */}
       <main className="container mx-auto px-4 py-6">
-        {loading ? (
+        {activeTab === "top" ? (
+          <TopMicrostories limit={10} showHeader={false} />
+        ) : loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-card rounded-2xl p-4 animate-pulse">
@@ -356,10 +432,12 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
               >
                 {/* Author header */}
                 <div 
-                  className="flex items-center gap-3 mb-3 cursor-pointer"
-                  onClick={() => navigate(`/user/${story.author.id}`)}
+                  className="flex items-center gap-3 mb-3"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold">
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold cursor-pointer"
+                    onClick={() => navigate(`/user/${story.author.id}`)}
+                  >
                     {story.author.avatar_url ? (
                       <img 
                         src={story.author.avatar_url} 
@@ -370,15 +448,38 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
                       story.author.display_name?.[0] || "?"
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => navigate(`/user/${story.author.id}`)}
+                  >
                     <p className="font-medium">{story.author.display_name || "Usuario"}</p>
                     <p className="text-sm text-muted-foreground">
                       @{story.author.username || "user"} • {formatDate(story.created_at)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setChatShareStory(story)}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Enviar en chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShareStory(story)}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Compartir imagen
+                      </DropdownMenuItem>
+                      {currentUser?.id === story.author_id && (
+                        <DropdownMenuItem onClick={() => setCollaboratorsStory(story)}>
+                          <Users className="w-4 h-4 mr-2" />
+                          Colaboradores
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Content */}
@@ -391,14 +492,27 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
                   <button 
                     onClick={() => handleLike(story.id)}
-                    className="flex items-center gap-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                    className={`flex items-center gap-1.5 transition-colors ${
+                      userLikes.has(story.id) 
+                        ? "text-destructive" 
+                        : "text-muted-foreground hover:text-destructive"
+                    }`}
                   >
-                    <Heart className="w-5 h-5" />
+                    <Heart className={`w-5 h-5 ${userLikes.has(story.id) ? "fill-current" : ""}`} />
                     <span className="text-sm">{story.likes_count}</span>
                   </button>
-                  <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+                  <button 
+                    onClick={() => setCommentsStory(story)}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  >
                     <MessageCircle className="w-5 h-5" />
                     <span className="text-sm">{story.comments_count}</span>
+                  </button>
+                  <button 
+                    onClick={() => setChatShareStory(story)}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Send className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={() => setShareStory(story)}
@@ -419,6 +533,35 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
           isOpen={!!shareStory}
           onClose={() => setShareStory(null)}
           story={shareStory}
+        />
+      )}
+
+      {/* Comments Modal */}
+      {commentsStory && (
+        <MicrostoryComments
+          isOpen={!!commentsStory}
+          onClose={() => setCommentsStory(null)}
+          microstoryId={commentsStory.id}
+          onCommentsCountChange={(count) => handleCommentsCountChange(commentsStory.id, count)}
+        />
+      )}
+
+      {/* Share in Chat Modal */}
+      {chatShareStory && (
+        <ShareMicrostoryInChat
+          isOpen={!!chatShareStory}
+          onClose={() => setChatShareStory(null)}
+          story={chatShareStory}
+        />
+      )}
+
+      {/* Collaborators Modal */}
+      {collaboratorsStory && (
+        <CollaboratorsModal
+          isOpen={!!collaboratorsStory}
+          onClose={() => setCollaboratorsStory(null)}
+          microstoryId={collaboratorsStory.id}
+          authorId={collaboratorsStory.author_id}
         />
       )}
 
