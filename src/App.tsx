@@ -17,6 +17,7 @@ import AdvancedWritePage from "./pages/AdvancedWrite";
 import MicrostoriesPage from "./pages/Microstories";
 import UserProfilePage from "./pages/UserProfile";
 import EditProfilePage from "./pages/EditProfile";
+import AdminPage from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/microstories" element={<MicrostoriesPage />} />
           <Route path="/user/:userId" element={<UserProfilePage />} />
           <Route path="/edit-profile" element={<EditProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

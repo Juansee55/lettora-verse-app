@@ -13,11 +13,13 @@ import {
   Play,
   MoreVertical,
   Loader2,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ShareBookAsImage from "@/components/share/ShareBookAsImage";
+import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 
 interface BookData {
   id: string;
@@ -72,6 +74,8 @@ const BookDetailPage = () => {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -137,7 +141,7 @@ const BookDetailPage = () => {
 
       if (commentsData) setComments(commentsData as unknown as Comment[]);
 
-      // Check if liked and saved
+      // Check if liked, saved, and if user is author
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: likeData } = await supabase
@@ -158,6 +162,7 @@ const BookDetailPage = () => {
           .maybeSingle();
 
         setSaved(!!savedData);
+        setIsAuthor(user.id === bookData.author_id);
       }
 
       setLoading(false);
@@ -364,6 +369,11 @@ const BookDetailPage = () => {
           <Button variant="outline" size="lg" className="rounded-xl" onClick={() => setShowShare(true)}>
             <Share2 className="w-5 h-5" />
           </Button>
+          {isAuthor && (
+            <Button variant="outline" size="lg" className="rounded-xl" onClick={() => setShowCollaborators(true)}>
+              <Users className="w-5 h-5" />
+            </Button>
+          )}
         </div>
 
         {/* Description */}
@@ -482,6 +492,16 @@ const BookDetailPage = () => {
             reads: book.reads_count || 0,
             likes: book.likes_count || 0,
           }}
+        />
+      )}
+
+      {/* Collaborators Modal */}
+      {book && isAuthor && (
+        <BookCollaboratorsModal
+          isOpen={showCollaborators}
+          onClose={() => setShowCollaborators(false)}
+          bookId={book.id}
+          bookTitle={book.title}
         />
       )}
     </div>

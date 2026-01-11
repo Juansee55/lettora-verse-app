@@ -5,6 +5,7 @@ import { Search, Plus, MessageCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/navigation/BottomNav";
+import NewConversationModal from "@/components/chat/NewConversationModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,6 +30,7 @@ const ChatsPage = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showNewConversation, setShowNewConversation] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -189,7 +191,7 @@ const ChatsPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-display font-bold">Mensajes</h1>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => setShowNewConversation(true)}>
               <Plus className="w-5 h-5" />
             </Button>
           </div>
@@ -218,7 +220,11 @@ const ChatsPage = () => {
           <div className="text-center py-12">
             <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No hay conversaciones</h3>
-            <p className="text-muted-foreground">Inicia una conversación con otro usuario</p>
+            <p className="text-muted-foreground mb-4">Inicia una conversación con otro usuario</p>
+            <Button variant="hero" onClick={() => setShowNewConversation(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva conversación
+            </Button>
           </div>
         ) : (
           filteredConversations.map((conv, index) => (
@@ -274,10 +280,17 @@ const ChatsPage = () => {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.5, type: "spring" }}
+        onClick={() => setShowNewConversation(true)}
         className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-hero rounded-2xl shadow-glow flex items-center justify-center z-50"
       >
         <MessageCircle className="w-6 h-6 text-primary-foreground" />
       </motion.button>
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={showNewConversation}
+        onClose={() => setShowNewConversation(false)}
+      />
 
       <BottomNav />
     </div>
