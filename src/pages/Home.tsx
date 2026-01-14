@@ -9,6 +9,7 @@ import {
   Clock,
   Plus,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 import BookCard from "@/components/books/BookCard";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
+import PromotionsSection from "@/components/promotions/PromotionsSection";
+import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
 
 interface Book {
   id: string;
@@ -36,6 +39,8 @@ const HomePage = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [refreshPromotions, setRefreshPromotions] = useState(0);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -154,6 +159,42 @@ const HomePage = () => {
               </div>
               <div className="bg-white/20 rounded-full p-3">
                 <TrendingUp className="w-5 h-5 text-primary-foreground" />
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Promotions Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <PromotionsSection key={refreshPromotions} />
+        </motion.section>
+
+        {/* Create Promotion Banner */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+        >
+          <div
+            onClick={() => setShowPromoModal(true)}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-display font-semibold text-lg flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Crear Promoción
+                </h3>
+                <p className="text-white/80 text-sm">
+                  Destaca tu libro y llega a más lectores
+                </p>
+              </div>
+              <div className="bg-white/20 rounded-full p-3">
+                <Plus className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
@@ -292,6 +333,13 @@ const HomePage = () => {
       </motion.button>
 
       <BottomNav />
+
+      {/* Promotion Modal */}
+      <CreatePromotionModal
+        isOpen={showPromoModal}
+        onClose={() => setShowPromoModal(false)}
+        onCreated={() => setRefreshPromotions((r) => r + 1)}
+      />
     </div>
   );
 };

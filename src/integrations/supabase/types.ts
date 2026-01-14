@@ -56,6 +56,57 @@ export type Database = {
           },
         ]
       }
+      book_promotions: {
+        Row: {
+          book_id: string
+          created_at: string
+          description: string | null
+          duration_hours: number
+          ends_at: string
+          id: string
+          starts_at: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          description?: string | null
+          duration_hours?: number
+          ends_at: string
+          id?: string
+          starts_at?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          description?: string | null
+          duration_hours?: number
+          ends_at?: string
+          id?: string
+          starts_at?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_promotions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_promotions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author_id: string
