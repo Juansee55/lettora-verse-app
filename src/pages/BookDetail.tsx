@@ -95,6 +95,7 @@ const BookDetailPage = () => {
           comments_count,
           status,
           tags,
+          author_id,
           profiles:author_id (
             id,
             display_name,
