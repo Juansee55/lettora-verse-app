@@ -325,7 +325,13 @@ const BookDetailPage = () => {
       <div className="px-4 py-6 space-y-6">
         {/* Actions */}
         <div className="flex gap-3">
-          <Button variant="hero" size="lg" className="flex-1">
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="flex-1"
+            onClick={() => navigate(`/book/${id}/chapter/1`)}
+            disabled={chapters.length === 0}
+          >
             <Play className="w-5 h-5 mr-2" />
             Empezar a leer
           </Button>
@@ -415,6 +421,7 @@ const BookDetailPage = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
+                  onClick={() => navigate(`/book/${id}/chapter/${chapter.chapter_number}`)}
                   className="flex items-center gap-4 p-3 bg-card rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
                 >
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-medium text-sm">

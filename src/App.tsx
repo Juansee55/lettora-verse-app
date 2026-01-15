@@ -18,6 +18,7 @@ import MicrostoriesPage from "./pages/Microstories";
 import UserProfilePage from "./pages/UserProfile";
 import EditProfilePage from "./pages/EditProfile";
 import AdminPage from "./pages/Admin";
+import ChapterReaderPage from "./pages/ChapterReader";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/chat/:conversationId" element={<ChatConversationPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/book/:id" element={<BookDetailPage />} />
+          <Route path="/book/:bookId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
           <Route path="/write" element={<WritePage />} />
           <Route path="/write/advanced" element={<AdvancedWritePage />} />
           <Route path="/write/advanced/:bookId" element={<AdvancedWritePage />} />
