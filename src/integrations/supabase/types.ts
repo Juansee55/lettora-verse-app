@@ -179,6 +179,27 @@ export type Database = {
           },
         ]
       }
+      chapter_likes: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           book_id: string
@@ -187,6 +208,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_published: boolean | null
+          likes_count: number | null
           title: string
           updated_at: string | null
           word_count: number | null
@@ -198,6 +220,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_published?: boolean | null
+          likes_count?: number | null
           title: string
           updated_at?: string | null
           word_count?: number | null
@@ -209,6 +232,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_published?: boolean | null
+          likes_count?: number | null
           title?: string
           updated_at?: string | null
           word_count?: number | null
@@ -474,6 +498,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -513,6 +570,27 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      promotion_views: {
+        Row: {
+          id: string
+          promotion_id: string
+          user_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          promotion_id: string
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          promotion_id?: string
+          user_id?: string | null
+          viewed_at?: string
         }
         Relationships: []
       }
