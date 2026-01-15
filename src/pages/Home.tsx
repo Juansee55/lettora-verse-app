@@ -10,6 +10,7 @@ import {
   Plus,
   Loader2,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,8 @@ import BookCard from "@/components/books/BookCard";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import PromotionsSection from "@/components/promotions/PromotionsSection";
 import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
+import NotificationsPanel from "@/components/notifications/NotificationsPanel";
+import PromotionStats from "@/components/promotions/PromotionStats";
 
 interface Book {
   id: string;
@@ -41,6 +44,46 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [refreshPromotions, setRefreshPromotions] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showPromoStats, setShowPromoStats] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadNotifications = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+
+      setUnreadCount(count || 0);
+    };
+
+    fetchUnreadNotifications();
+
+    // Subscribe to realtime notifications
+    const channel = supabase
+      .channel("home-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+        },
+        () => {
+          setUnreadCount((c) => c + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -117,8 +160,26 @@ const HomePage = () => {
               <h1 className="text-2xl font-display font-bold text-gradient">Lettora</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => setShowPromoStats(true)}
+              >
+                <BarChart3 className="w-5 h-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => setShowNotifications(true)}
+              >
                 <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center font-medium">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Button>
             </div>
           </div>
@@ -339,6 +400,21 @@ const HomePage = () => {
         isOpen={showPromoModal}
         onClose={() => setShowPromoModal(false)}
         onCreated={() => setRefreshPromotions((r) => r + 1)}
+      />
+
+      {/* Notifications Panel */}
+      <NotificationsPanel
+        isOpen={showNotifications}
+        onClose={() => {
+          setShowNotifications(false);
+          setUnreadCount(0);
+        }}
+      />
+
+      {/* Promotion Stats */}
+      <PromotionStats
+        isOpen={showPromoStats}
+        onClose={() => setShowPromoStats(false)}
       />
     </div>
   );
