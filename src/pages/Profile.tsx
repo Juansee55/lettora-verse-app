@@ -13,6 +13,7 @@ import {
   Loader2,
   LogOut,
   Share2,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,6 +197,9 @@ const ProfilePage = () => {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={() => navigate("/settings")}>
+                <Settings className="w-4 h-4" />
+              </Button>
               <Button variant="outline" size="icon" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
               </Button>

@@ -44,13 +44,22 @@ const slides = [
   },
 ];
 
-const Onboarding = () => {
+interface OnboardingProps {
+  onComplete?: () => void;
+}
+
+const Onboarding = ({ onComplete }: OnboardingProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
+  const handleComplete = () => {
+    onComplete?.();
+    navigate("/auth");
+  };
+
   const nextSlide = () => {
     if (currentSlide === slides.length - 1) {
-      navigate("/auth");
+      handleComplete();
     } else {
       setCurrentSlide((prev) => prev + 1);
     }
@@ -99,7 +108,7 @@ const Onboarding = () => {
         >
           <Button
             variant="ghost"
-            onClick={() => navigate("/auth")}
+            onClick={handleComplete}
             className="text-muted-foreground hover:text-foreground"
           >
             Saltar
