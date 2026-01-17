@@ -1,8 +1,12 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
+import LoadingScreen from "@/components/LoadingScreen";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import HomePage from "./pages/Home";
@@ -24,34 +28,145 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppContent = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if user has seen onboarding
+    const seen = localStorage.getItem("lettora_onboarding_seen");
+    setHasSeenOnboarding(seen === "true");
+
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Keep loading for a bit for smooth transition
+        if (loading) {
+          setTimeout(() => setLoading(false), 1500);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      // Minimum loading time for animation
+      setTimeout(() => setLoading(false), 1500);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const markOnboardingSeen = () => {
+    localStorage.setItem("lettora_onboarding_seen", "true");
+    setHasSeenOnboarding(true);
+  };
+
+  if (loading || hasSeenOnboarding === null) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          !hasSeenOnboarding ? (
+            <Onboarding onComplete={markOnboardingSeen} />
+          ) : user ? (
+            <Navigate to="/home" replace />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        } 
+      />
+      <Route 
+        path="/auth" 
+        element={user ? <Navigate to="/home" replace /> : <Auth />} 
+      />
+      <Route 
+        path="/home" 
+        element={user ? <HomePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/explore" 
+        element={user ? <ExplorePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/library" 
+        element={user ? <LibraryPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/chats" 
+        element={user ? <ChatsPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/chat/:conversationId" 
+        element={user ? <ChatConversationPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/profile" 
+        element={user ? <ProfilePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/book/:id" 
+        element={user ? <BookDetailPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/book/:bookId/chapter/:chapterNumber" 
+        element={user ? <ChapterReaderPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/write" 
+        element={user ? <WritePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/write/advanced" 
+        element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/write/advanced/:bookId" 
+        element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/microstories" 
+        element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/user/:userId" 
+        element={user ? <UserProfilePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/edit-profile" 
+        element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/settings" 
+        element={user ? <SettingsPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/admin" 
+        element={user ? <AdminPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Onboarding />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/chats" element={<ChatsPage />} />
-          <Route path="/chat/:conversationId" element={<ChatConversationPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/book/:id" element={<BookDetailPage />} />
-          <Route path="/book/:bookId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
-          <Route path="/write" element={<WritePage />} />
-          <Route path="/write/advanced" element={<AdvancedWritePage />} />
-          <Route path="/write/advanced/:bookId" element={<AdvancedWritePage />} />
-          <Route path="/microstories" element={<MicrostoriesPage />} />
-          <Route path="/user/:userId" element={<UserProfilePage />} />
-          <Route path="/edit-profile" element={<EditProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
