@@ -383,76 +383,72 @@ const ChapterReaderPage = () => {
 
   return (
     <div className={`min-h-screen ${themeStyles.bg} ${themeStyles.text}`}>
-      {/* Progress bar */}
+      {/* Progress bar - iOS style */}
       {settings.showProgress && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: showControls ? 1 : 0.3 }}
-          className="fixed top-0 left-0 right-0 z-50 h-1"
+          className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-muted"
         >
-          <Progress value={scrollProgress} className="h-full rounded-none" />
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${scrollProgress}%` }}
+            transition={{ ease: "linear" }}
+          />
         </motion.div>
       )}
 
-      {/* Header */}
+      {/* iOS Header */}
       <AnimatePresence>
         {showControls && (
           <motion.header
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={`fixed top-0 left-0 right-0 z-40 ${themeStyles.bg}/95 backdrop-blur-xl border-b ${themeStyles.accent}`}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            className={`fixed top-0 left-0 right-0 z-40 ${themeStyles.bg}/70 backdrop-blur-2xl border-b border-border/30`}
           >
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/book/${bookId}`)}
-                  className="rounded-xl shrink-0"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div className="min-w-0">
-                  <h1 className="font-display font-semibold truncate text-sm">
-                    {chapter.books?.title}
-                  </h1>
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                    {isOnline ? (
-                      <Wifi className="w-3 h-3" />
-                    ) : (
-                      <WifiOff className="w-3 h-3" />
-                    )}
-                    Capítulo {currentNum} de {totalChapters}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between px-4 h-[52px]">
+              <button
+                onClick={() => navigate(`/book/${bookId}`)}
+                className="flex items-center gap-1 text-primary font-normal text-[17px] active:opacity-60 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline">Libro</span>
+              </button>
+              
+              <div className="flex-1 text-center px-4 min-w-0">
+                <p className="text-[13px] text-muted-foreground truncate flex items-center justify-center gap-1">
+                  {isOnline ? (
+                    <Wifi className="w-3 h-3" />
+                  ) : (
+                    <WifiOff className="w-3 h-3" />
+                  )}
+                  Capítulo {currentNum} de {totalChapters}
+                </p>
               </div>
 
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={downloadBook}
                   disabled={downloading || isDownloaded}
-                  className="rounded-xl"
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors disabled:opacity-50"
                 >
                   {downloading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   ) : isDownloaded ? (
                     <Check className="w-5 h-5 text-green-500" />
                   ) : (
-                    <Download className="w-5 h-5" />
+                    <Download className="w-5 h-5 text-primary" />
                   )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                </button>
+                <button
                   onClick={() => setShowSettings(true)}
-                  className="rounded-xl"
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors"
                 >
-                  <Settings className="w-5 h-5" />
-                </Button>
+                  <Settings className="w-5 h-5 text-primary" />
+                </button>
               </div>
             </div>
           </motion.header>
@@ -467,7 +463,7 @@ const ChapterReaderPage = () => {
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
         style={{ x, opacity, scale }}
-        className={`container mx-auto py-24 ${getMarginClass()}`}
+        className={`container mx-auto py-20 ${getMarginClass()}`}
         onClick={handleTap}
       >
         <PageTransition
@@ -476,14 +472,14 @@ const ChapterReaderPage = () => {
           direction={direction}
         >
           <motion.article
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <h2 className="text-3xl font-display font-bold mb-2">
+            <h2 className="text-2xl font-bold mb-2">
               {chapter.title}
             </h2>
-            <p className="text-muted-foreground text-sm mb-8">
+            <p className="text-[15px] text-muted-foreground mb-8">
               Capítulo {currentNum} • {chapter.word_count || 0} palabras
             </p>
             
@@ -502,96 +498,97 @@ const ChapterReaderPage = () => {
           </motion.article>
         </PageTransition>
 
-        {/* Chapter end actions */}
+        {/* Chapter end actions - iOS style */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className={`mt-16 py-8 border-t ${themeStyles.accent}`}
+          className={`mt-12 py-6 border-t border-border/50`}
         >
           <div className="flex items-center justify-center gap-3 mb-8">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant={liked ? "default" : "outline"}
-                size="lg"
-                className={`rounded-2xl h-14 px-6 ${
-                  liked ? "bg-pink-500 hover:bg-pink-600 border-pink-500" : ""
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleLike();
-                }}
-              >
-                <Heart className={`w-5 h-5 mr-2 ${liked ? "fill-current" : ""}`} />
-                {likesCount}
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="lg" className="rounded-2xl h-14 px-6">
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Comentar
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="icon" className="rounded-2xl h-14 w-14">
-                <BookmarkPlus className="w-5 h-5" />
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="icon" className="rounded-2xl h-14 w-14">
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </motion.div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike();
+              }}
+              className={`flex items-center gap-2 px-5 py-3 rounded-full font-semibold transition-all ${
+                liked 
+                  ? "bg-rose-500 text-white" 
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
+              {likesCount}
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-muted text-foreground font-semibold hover:bg-muted/80 transition-colors"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Comentar
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            >
+              <BookmarkPlus className="w-5 h-5" />
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="w-12 h-12 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            >
+              <Share2 className="w-5 h-5" />
+            </motion.button>
           </div>
 
-          {/* Next chapter preview */}
+          {/* Next chapter */}
           {currentNum < totalChapters && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center"
             >
-              <p className="text-muted-foreground text-sm mb-4">
+              <p className="text-[15px] text-muted-foreground mb-3">
                 Continúa leyendo
               </p>
-              <Button
-                variant="hero"
-                size="lg"
-                className="rounded-2xl"
+              <button
                 onClick={() => goToChapter(currentNum + 1, 'next')}
+                className="h-[50px] px-8 bg-primary text-primary-foreground font-semibold rounded-full active:scale-95 transition-transform"
               >
                 Siguiente capítulo
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
+              </button>
             </motion.div>
           )}
         </motion.div>
       </motion.main>
 
-      {/* Bottom navigation */}
+      {/* iOS Bottom navigation */}
       <AnimatePresence>
         {showControls && (
           <motion.footer
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={`fixed bottom-0 left-0 right-0 z-40 ${themeStyles.bg}/95 backdrop-blur-xl border-t ${themeStyles.accent}`}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            className={`fixed bottom-0 left-0 right-0 z-40 ${themeStyles.bg}/70 backdrop-blur-2xl border-t border-border/30 pb-safe`}
           >
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <Button
-                variant="ghost"
+            <div className="flex items-center justify-between px-4 h-[52px]">
+              <button
                 disabled={currentNum <= 1}
                 onClick={() => goToChapter(currentNum - 1, 'prev')}
-                className="rounded-xl"
+                className="flex items-center gap-1 text-primary font-normal text-[17px] disabled:opacity-40 active:opacity-60 transition-opacity"
               >
-                <ChevronLeft className="w-5 h-5 mr-1" />
+                <ChevronLeft className="w-5 h-5" />
                 Anterior
-              </Button>
+              </button>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{currentNum}</span>
-                <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="flex items-center gap-3">
+                <span className="text-[15px] font-semibold">{currentNum}</span>
+                <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-primary rounded-full"
                     initial={{ width: 0 }}
@@ -599,18 +596,17 @@ const ChapterReaderPage = () => {
                     transition={{ type: 'spring', stiffness: 200 }}
                   />
                 </div>
-                <span className="text-sm text-muted-foreground">{totalChapters}</span>
+                <span className="text-[15px] text-muted-foreground">{totalChapters}</span>
               </div>
 
-              <Button
-                variant="ghost"
+              <button
                 disabled={currentNum >= totalChapters}
                 onClick={() => goToChapter(currentNum + 1, 'next')}
-                className="rounded-xl"
+                className="flex items-center gap-1 text-primary font-normal text-[17px] disabled:opacity-40 active:opacity-60 transition-opacity"
               >
                 Siguiente
-                <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </motion.footer>
         )}

@@ -11,7 +11,7 @@ const navItems = [
   { path: "/profile", icon: User, label: "Perfil" },
 ];
 
-const BottomNav = () => {
+const IOSBottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -48,4 +48,4 @@ const BottomNav = () => {
   );
 };
 
-export default BottomNav;
+export default IOSBottomNav;
