@@ -13,9 +13,8 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import BottomNav from "@/components/navigation/BottomNav";
+import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import BookCard from "@/components/books/BookCard";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import PromotionsSection from "@/components/promotions/PromotionsSection";
@@ -39,6 +38,7 @@ interface Book {
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,6 @@ const HomePage = () => {
 
     fetchUnreadNotifications();
 
-    // Subscribe to realtime notifications
     const channel = supabase
       .channel("home-notifications")
       .on(
@@ -87,7 +86,6 @@ const HomePage = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
-      // Fetch recent books
       const { data: recentData } = await supabase
         .from("books")
         .select(`
@@ -106,7 +104,6 @@ const HomePage = () => {
         .order("created_at", { ascending: false })
         .limit(8);
 
-      // Fetch trending (most reads)
       const { data: trendingData } = await supabase
         .from("books")
         .select(`
@@ -145,38 +142,33 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border"
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-hero rounded-xl flex items-center justify-center shadow-glow">
-                <BookOpen className="w-5 h-5 text-primary-foreground" />
+      {/* iOS Header */}
+      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-gradient-hero rounded-xl flex items-center justify-center">
+                <BookOpen className="w-[18px] h-[18px] text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-display font-bold text-gradient">Lettora</h1>
+              <h1 className="text-[22px] font-bold">Lettora</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button 
-                variant="ghost" 
+                variant="ios-ghost" 
                 size="icon" 
-                className="relative"
                 onClick={() => setShowPromoStats(true)}
               >
-                <BarChart3 className="w-5 h-5" />
+                <BarChart3 className="w-[22px] h-[22px]" />
               </Button>
               <Button 
-                variant="ghost" 
+                variant="ios-ghost" 
                 size="icon" 
                 className="relative"
                 onClick={() => setShowNotifications(true)}
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-[22px] h-[22px]" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center font-medium">
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-destructive rounded-full text-[10px] text-white flex items-center justify-center font-semibold">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -184,112 +176,108 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Search */}
+          {/* iOS Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground" />
+            <input
               type="text"
-              placeholder="Buscar libros, autores, géneros..."
+              placeholder="Buscar"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 rounded-xl bg-muted/50"
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="w-full h-[36px] pl-9 pr-4 rounded-xl bg-muted/60 text-[17px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
             />
           </div>
         </div>
-      </motion.header>
+      </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-6 space-y-8">
+      <main className="px-4 py-5 space-y-6">
         {/* Microstories Banner */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate("/microstories")}
+          className="bg-gradient-hero rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
         >
-          <div
-            onClick={() => navigate("/microstories")}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-primary-foreground font-display font-semibold text-lg">
-                  ✨ Microrrelatos
-                </h3>
-                <p className="text-primary-foreground/80 text-sm">
-                  Historias cortas en 500 caracteres
-                </p>
-              </div>
-              <div className="bg-white/20 rounded-full p-3">
-                <TrendingUp className="w-5 h-5 text-primary-foreground" />
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-primary-foreground font-semibold text-[17px]">
+                ✨ Microrrelatos
+              </h3>
+              <p className="text-primary-foreground/80 text-[15px]">
+                Historias cortas en 500 caracteres
+              </p>
+            </div>
+            <div className="bg-white/20 rounded-full p-2.5">
+              <TrendingUp className="w-5 h-5 text-primary-foreground" />
             </div>
           </div>
-        </motion.section>
+        </motion.div>
 
-        {/* Promotions Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Promotions */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
           <PromotionsSection key={refreshPromotions} />
-        </motion.section>
+        </motion.div>
 
-        {/* Create Promotion Banner */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Create Promotion */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
+          onClick={() => setShowPromoModal(true)}
+          className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
         >
-          <div
-            onClick={() => setShowPromoModal(true)}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-white font-display font-semibold text-lg flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Crear Promoción
-                </h3>
-                <p className="text-white/80 text-sm">
-                  Destaca tu libro y llega a más lectores
-                </p>
-              </div>
-              <div className="bg-white/20 rounded-full p-3">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-semibold text-[17px] flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                Crear Promoción
+              </h3>
+              <p className="text-white/80 text-[15px]">
+                Destaca tu libro y llega a más lectores
+              </p>
+            </div>
+            <div className="bg-white/20 rounded-full p-2.5">
+              <Plus className="w-5 h-5 text-white" />
             </div>
           </div>
-        </motion.section>
+        </motion.div>
 
-        {/* Top 5 Microstories */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Top Microstories */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
           <TopMicrostories limit={5} />
-        </motion.section>
+        </motion.div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <Loader2 className="w-7 h-7 animate-spin text-primary" />
           </div>
         ) : (
           <>
-            {/* Trending Section */}
+            {/* Trending */}
             {trendingBooks.length > 0 && (
               <section>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-display font-semibold">Tendencias</h2>
+                    <h2 className="text-[20px] font-bold">Tendencias</h2>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/explore")}>
+                  <Button variant="ios-ghost" size="ios-sm" className="text-primary" onClick={() => navigate("/explore")}>
                     Ver más
                   </Button>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                   {trendingBooks.map((book, index) => (
                     <motion.div
                       key={book.id}
@@ -305,30 +293,30 @@ const HomePage = () => {
               </section>
             )}
 
-            {/* Recent Section */}
+            {/* Recent */}
             <section>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-primary" />
-                  <h2 className="text-xl font-display font-semibold">
+                  <h2 className="text-[20px] font-bold">
                     {books.length > 0 ? "Recién publicados" : "Sin libros aún"}
                   </h2>
                 </div>
                 {books.length > 0 && (
-                  <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate("/explore")}>
+                  <Button variant="ios-ghost" size="ios-sm" className="text-primary" onClick={() => navigate("/explore")}>
                     Ver más
                   </Button>
                 )}
               </div>
 
               {books.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {books.map((book, index) => (
                     <motion.div
                       key={book.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
                       <BookCard book={formatBookForCard(book)} />
                     </motion.div>
@@ -339,11 +327,11 @@ const HomePage = () => {
                   <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <BookOpen className="w-10 h-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">¡Sé el primero en publicar!</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="text-[17px] font-semibold mb-1">¡Sé el primero en publicar!</h3>
+                  <p className="text-[15px] text-muted-foreground mb-4">
                     Aún no hay libros publicados. Crea tu primera historia.
                   </p>
-                  <Button variant="hero" onClick={() => navigate("/write")}>
+                  <Button variant="ios" size="ios-lg" onClick={() => navigate("/write")}>
                     <Plus className="w-4 h-4 mr-2" />
                     Escribir historia
                   </Button>
@@ -353,7 +341,7 @@ const HomePage = () => {
 
             {/* Categories */}
             <section>
-              <h2 className="text-xl font-display font-semibold mb-4">Categorías</h2>
+              <h2 className="text-[20px] font-bold mb-3">Categorías</h2>
               <div className="flex flex-wrap gap-2">
                 {[
                   "Romance",
@@ -367,11 +355,11 @@ const HomePage = () => {
                 ].map((category, index) => (
                   <motion.button
                     key={category}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.03 }}
                     onClick={() => navigate(`/explore?category=${category}`)}
-                    className="px-4 py-2 bg-secondary rounded-full text-sm font-medium text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="px-4 py-2 bg-muted/60 rounded-full text-[15px] font-medium active:scale-95 transition-all hover:bg-primary hover:text-primary-foreground"
                   >
                     {category}
                   </motion.button>
@@ -382,27 +370,25 @@ const HomePage = () => {
         )}
       </main>
 
-      {/* FAB for creating new book */}
+      {/* FAB */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.5, type: "spring" }}
         onClick={() => navigate("/write")}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-hero rounded-2xl shadow-glow flex items-center justify-center z-50"
+        className="fixed bottom-[80px] right-4 w-14 h-14 bg-gradient-hero rounded-full shadow-glow flex items-center justify-center z-40 active:scale-95 transition-transform"
       >
         <Plus className="w-6 h-6 text-primary-foreground" />
       </motion.button>
 
-      <BottomNav />
+      <IOSBottomNav />
 
-      {/* Promotion Modal */}
       <CreatePromotionModal
         isOpen={showPromoModal}
         onClose={() => setShowPromoModal(false)}
         onCreated={() => setRefreshPromotions((r) => r + 1)}
       />
 
-      {/* Notifications Panel */}
       <NotificationsPanel
         isOpen={showNotifications}
         onClose={() => {
@@ -411,7 +397,6 @@ const HomePage = () => {
         }}
       />
 
-      {/* Promotion Stats */}
       <PromotionStats
         isOpen={showPromoStats}
         onClose={() => setShowPromoStats(false)}

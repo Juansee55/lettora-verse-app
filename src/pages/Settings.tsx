@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   User,
   Bell,
   Moon,
@@ -19,16 +18,19 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Check,
-  ChevronRight,
   Palette,
   Book,
+  ChevronRight,
+  Wifi,
+  Heart,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { IOSHeader } from "@/components/ios/IOSHeader";
+import { IOSSettingItem, IOSSettingSection } from "@/components/ios/IOSSettingItem";
+import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,46 +41,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-interface SettingItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-  onClick?: () => void;
-  danger?: boolean;
-}
-
-const SettingItem = ({ icon, title, description, action, onClick, danger }: SettingItemProps) => (
-  <motion.div
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.99 }}
-    onClick={onClick}
-    className={`flex items-center gap-4 p-4 rounded-2xl border border-border bg-card transition-colors cursor-pointer ${
-      danger ? 'hover:bg-destructive/10 hover:border-destructive/50' : 'hover:bg-muted/50'
-    }`}
-  >
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-      danger ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'
-    }`}>
-      {icon}
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className={`font-medium ${danger ? 'text-destructive' : ''}`}>{title}</p>
-      {description && (
-        <p className="text-sm text-muted-foreground truncate">{description}</p>
-      )}
-    </div>
-    {action || (onClick && <ChevronRight className="w-5 h-5 text-muted-foreground" />)}
-  </motion.div>
-);
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -89,7 +51,6 @@ const SettingsPage = () => {
   const [user, setUser] = useState<any>(null);
   const [storageUsed, setStorageUsed] = useState(0);
   
-  // Settings state
   const [darkMode, setDarkMode] = useState(() => 
     document.documentElement.classList.contains('dark')
   );
@@ -97,11 +58,8 @@ const SettingsPage = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [privateProfile, setPrivateProfile] = useState(false);
   const [showReadingActivity, setShowReadingActivity] = useState(true);
-  const [language, setLanguage] = useState('es');
   
-  // Dialogs
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showDeleteDataDialog, setShowDeleteDataDialog] = useState(false);
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
 
   useEffect(() => {
@@ -113,11 +71,9 @@ const SettingsPage = () => {
       }
       setUser(user);
 
-      // Load storage usage
       const usage = await getStorageUsage();
       setStorageUsed(usage.used);
 
-      // Load saved settings from localStorage
       const savedSettings = localStorage.getItem('lettora_settings');
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
@@ -125,7 +81,6 @@ const SettingsPage = () => {
         setEmailNotifications(parsed.emailNotifications ?? true);
         setPrivateProfile(parsed.privateProfile ?? false);
         setShowReadingActivity(parsed.showReadingActivity ?? true);
-        setLanguage(parsed.language ?? 'es');
       }
 
       setLoading(false);
@@ -144,10 +99,6 @@ const SettingsPage = () => {
     setDarkMode(newValue);
     document.documentElement.classList.toggle('dark', newValue);
     localStorage.setItem('theme', newValue ? 'dark' : 'light');
-    toast({
-      title: newValue ? "Modo oscuro activado" : "Modo claro activado",
-      description: "El tema ha sido actualizado.",
-    });
   };
 
   const handleLogout = async () => {
@@ -183,295 +134,257 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border"
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-xl">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-display font-bold">Configuración</h1>
-          </div>
-        </div>
-      </motion.header>
+    <div className="min-h-screen bg-muted/30 pb-24">
+      <IOSHeader title="Configuración" large />
 
-      <main className="container mx-auto px-4 py-6 max-w-2xl space-y-6">
-        {/* Account Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+      <main className="space-y-7 pt-2">
+        {/* Profile Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
+          className="mx-4"
         >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Cuenta
-          </h2>
-          
-          <SettingItem
-            icon={<User className="w-5 h-5" />}
-            title="Editar perfil"
-            description="Cambia tu foto, nombre y biografía"
+          <div
             onClick={() => navigate("/edit-profile")}
-          />
-          
-          <SettingItem
-            icon={<Mail className="w-5 h-5" />}
-            title="Correo electrónico"
-            description={user?.email}
-          />
-          
-          <SettingItem
-            icon={<Lock className="w-5 h-5" />}
-            title="Cambiar contraseña"
-            description="Actualiza tu contraseña de acceso"
-            onClick={() => {
-              toast({
-                title: "Próximamente",
-                description: "Esta función estará disponible pronto.",
-              });
-            }}
-          />
-        </motion.section>
+            className="flex items-center gap-4 p-4 bg-card rounded-2xl active:bg-muted/60 transition-colors cursor-pointer"
+          >
+            <div className="w-[60px] h-[60px] rounded-full bg-gradient-hero flex items-center justify-center text-2xl font-bold text-primary-foreground">
+              {user?.email?.[0]?.toUpperCase() || "U"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[17px] font-semibold">Mi cuenta</p>
+              <p className="text-[15px] text-muted-foreground truncate">{user?.email}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+          </div>
+        </motion.div>
 
-        {/* Preferences Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Appearance */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <IOSSettingSection title="Apariencia">
+            <IOSSettingItem
+              icon={darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              iconBg="bg-indigo-500"
+              title="Modo oscuro"
+              action={
+                <Switch
+                  checked={darkMode}
+                  onCheckedChange={toggleDarkMode}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<Palette className="w-4 h-4" />}
+              iconBg="bg-pink-500"
+              title="Tema de lectura"
+              subtitle="Personaliza tu experiencia"
+              onClick={() => toast({ title: "Próximamente" })}
+            />
+            <IOSSettingItem
+              icon={<Globe className="w-4 h-4" />}
+              iconBg="bg-cyan-500"
+              title="Idioma"
+              value="Español"
+              onClick={() => toast({ title: "Próximamente" })}
+            />
+          </IOSSettingSection>
+        </motion.div>
+
+        {/* Notifications */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="space-y-3"
         >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Preferencias
-          </h2>
-          
-          <SettingItem
-            icon={darkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-            title="Modo oscuro"
-            description="Cambia el aspecto de la aplicación"
-            action={
-              <Switch
-                checked={darkMode}
-                onCheckedChange={toggleDarkMode}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-          />
+          <IOSSettingSection title="Notificaciones">
+            <IOSSettingItem
+              icon={<Bell className="w-4 h-4" />}
+              iconBg="bg-red-500"
+              title="Notificaciones push"
+              action={
+                <Switch
+                  checked={notifications}
+                  onCheckedChange={(v) => {
+                    setNotifications(v);
+                    saveSettings('notifications', v);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<Mail className="w-4 h-4" />}
+              iconBg="bg-blue-500"
+              title="Notificaciones por email"
+              action={
+                <Switch
+                  checked={emailNotifications}
+                  onCheckedChange={(v) => {
+                    setEmailNotifications(v);
+                    saveSettings('emailNotifications', v);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+          </IOSSettingSection>
+        </motion.div>
 
-          <SettingItem
-            icon={<Palette className="w-5 h-5" />}
-            title="Tema de lectura"
-            description="Personaliza tu experiencia de lectura"
-            onClick={() => navigate("/reading-settings")}
-          />
-          
-          <SettingItem
-            icon={<Globe className="w-5 h-5" />}
-            title="Idioma"
-            description="Selecciona tu idioma preferido"
-            action={
-              <Select
-                value={language}
-                onValueChange={(value) => {
-                  setLanguage(value);
-                  saveSettings('language', value);
-                }}
-              >
-                <SelectTrigger className="w-28" onClick={(e) => e.stopPropagation()}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="pt">Português</SelectItem>
-                </SelectContent>
-              </Select>
-            }
-          />
+        {/* Privacy */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <IOSSettingSection title="Privacidad">
+            <IOSSettingItem
+              icon={<Shield className="w-4 h-4" />}
+              iconBg="bg-green-500"
+              title="Perfil privado"
+              action={
+                <Switch
+                  checked={privateProfile}
+                  onCheckedChange={(v) => {
+                    setPrivateProfile(v);
+                    saveSettings('privateProfile', v);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={showReadingActivity ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              iconBg="bg-purple-500"
+              title="Mostrar actividad de lectura"
+              action={
+                <Switch
+                  checked={showReadingActivity}
+                  onCheckedChange={(v) => {
+                    setShowReadingActivity(v);
+                    saveSettings('showReadingActivity', v);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<Lock className="w-4 h-4" />}
+              iconBg="bg-gray-500"
+              title="Cambiar contraseña"
+              onClick={() => toast({ title: "Próximamente" })}
+            />
+          </IOSSettingSection>
+        </motion.div>
 
-          <SettingItem
-            icon={<Book className="w-5 h-5" />}
-            title="Géneros favoritos"
-            description="Personaliza tus recomendaciones"
-            onClick={() => {
-              toast({
-                title: "Próximamente",
-                description: "Esta función estará disponible pronto.",
-              });
-            }}
-          />
-        </motion.section>
-
-        {/* Notifications Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="space-y-3"
         >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Notificaciones
-          </h2>
-          
-          <SettingItem
-            icon={<Bell className="w-5 h-5" />}
-            title="Notificaciones push"
-            description="Recibe alertas en tu dispositivo"
-            action={
-              <Switch
-                checked={notifications}
-                onCheckedChange={(value) => {
-                  setNotifications(value);
-                  saveSettings('notifications', value);
-                  toast({
-                    title: value ? "Notificaciones activadas" : "Notificaciones desactivadas",
-                  });
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-          />
-          
-          <SettingItem
-            icon={<Mail className="w-5 h-5" />}
-            title="Notificaciones por email"
-            description="Recibe actualizaciones en tu correo"
-            action={
-              <Switch
-                checked={emailNotifications}
-                onCheckedChange={(value) => {
-                  setEmailNotifications(value);
-                  saveSettings('emailNotifications', value);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-          />
-        </motion.section>
+          <IOSSettingSection title="Contenido">
+            <IOSSettingItem
+              icon={<Book className="w-4 h-4" />}
+              iconBg="bg-orange-500"
+              title="Géneros favoritos"
+              subtitle="Personaliza tus recomendaciones"
+              onClick={() => toast({ title: "Próximamente" })}
+            />
+            <IOSSettingItem
+              icon={<Heart className="w-4 h-4" />}
+              iconBg="bg-rose-500"
+              title="Autores favoritos"
+              onClick={() => toast({ title: "Próximamente" })}
+            />
+          </IOSSettingSection>
+        </motion.div>
 
-        {/* Privacy Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Storage */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <IOSSettingSection title="Almacenamiento">
+            <IOSSettingItem
+              icon={<HardDrive className="w-4 h-4" />}
+              iconBg="bg-gray-600"
+              title="Espacio usado"
+              value={formatBytes(storageUsed)}
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<Download className="w-4 h-4" />}
+              iconBg="bg-teal-500"
+              title="Libros descargados"
+              value={`${offlineBooks.length}`}
+              onClick={() => navigate("/library?tab=offline")}
+            />
+            <IOSSettingItem
+              icon={<Wifi className="w-4 h-4" />}
+              iconBg="bg-blue-400"
+              title="Solo Wi-Fi para descargas"
+              action={<Switch defaultChecked onClick={(e) => e.stopPropagation()} />}
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<Trash2 className="w-4 h-4" />}
+              title="Limpiar caché"
+              onClick={() => setShowClearCacheDialog(true)}
+              danger
+            />
+          </IOSSettingSection>
+        </motion.div>
+
+        {/* About */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="space-y-3"
         >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Privacidad
-          </h2>
-          
-          <SettingItem
-            icon={<Shield className="w-5 h-5" />}
-            title="Perfil privado"
-            description="Solo tus seguidores pueden verte"
-            action={
-              <Switch
-                checked={privateProfile}
-                onCheckedChange={(value) => {
-                  setPrivateProfile(value);
-                  saveSettings('privateProfile', value);
-                  toast({
-                    title: value ? "Perfil privado" : "Perfil público",
-                    description: value 
-                      ? "Solo tus seguidores pueden ver tu perfil"
-                      : "Cualquiera puede ver tu perfil",
-                  });
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-          />
-          
-          <SettingItem
-            icon={showReadingActivity ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-            title="Mostrar actividad de lectura"
-            description="Permite que otros vean qué lees"
-            action={
-              <Switch
-                checked={showReadingActivity}
-                onCheckedChange={(value) => {
-                  setShowReadingActivity(value);
-                  saveSettings('showReadingActivity', value);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-          />
-        </motion.section>
+          <IOSSettingSection>
+            <IOSSettingItem
+              icon={<Info className="w-4 h-4" />}
+              iconBg="bg-gray-400"
+              title="Versión"
+              value="1.0.0"
+              showChevron={false}
+            />
+          </IOSSettingSection>
+        </motion.div>
 
-        {/* Storage Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Logout */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-3"
+          transition={{ delay: 0.35 }}
         >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Almacenamiento
-          </h2>
-          
-          <SettingItem
-            icon={<HardDrive className="w-5 h-5" />}
-            title="Almacenamiento usado"
-            description={`${formatBytes(storageUsed)} • ${offlineBooks.length} libros descargados`}
-          />
-          
-          <SettingItem
-            icon={<Download className="w-5 h-5" />}
-            title="Libros descargados"
-            description="Gestiona tus libros offline"
-            onClick={() => navigate("/library?tab=offline")}
-          />
-          
-          <SettingItem
-            icon={<Trash2 className="w-5 h-5" />}
-            title="Limpiar caché"
-            description="Elimina todos los libros descargados"
-            onClick={() => setShowClearCacheDialog(true)}
-            danger
-          />
-        </motion.section>
-
-        {/* About Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="space-y-3"
-        >
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-2">
-            Acerca de
-          </h2>
-          
-          <SettingItem
-            icon={<Info className="w-5 h-5" />}
-            title="Versión de la app"
-            description="1.0.0 (Build 2024)"
-          />
-        </motion.section>
-
-        {/* Logout Button */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <SettingItem
-            icon={<LogOut className="w-5 h-5" />}
-            title="Cerrar sesión"
-            description={user?.email}
-            onClick={() => setShowLogoutDialog(true)}
-            danger
-          />
-        </motion.section>
+          <IOSSettingSection>
+            <IOSSettingItem
+              icon={<LogOut className="w-4 h-4" />}
+              title="Cerrar sesión"
+              onClick={() => setShowLogoutDialog(true)}
+              danger
+            />
+          </IOSSettingSection>
+        </motion.div>
       </main>
+
+      <IOSBottomNav />
 
       {/* Logout Dialog */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -479,8 +392,8 @@ const SettingsPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-destructive hover:bg-destructive/90 rounded-xl">
               Cerrar sesión
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -489,16 +402,16 @@ const SettingsPage = () => {
 
       {/* Clear Cache Dialog */}
       <AlertDialog open={showClearCacheDialog} onOpenChange={setShowClearCacheDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar libros descargados?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminarán {offlineBooks.length} libros de tu dispositivo. No podrás leerlos sin conexión hasta que los descargues de nuevo.
+              Se eliminarán {offlineBooks.length} libros de tu dispositivo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={clearOfflineBooks} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={clearOfflineBooks} className="bg-destructive hover:bg-destructive/90 rounded-xl">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
