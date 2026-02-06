@@ -10,6 +10,7 @@ import {
   Check,
   X,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -120,6 +121,10 @@ const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps) => {
         return <UserPlus className="w-4 h-4 text-green-500" />;
       case "new_chapter":
         return <BookOpen className="w-4 h-4 text-amber-500" />;
+      case "new_reader":
+        return <Eye className="w-4 h-4 text-blue-500" />;
+      case "message":
+        return <MessageCircle className="w-4 h-4 text-emerald-500" />;
       case "promotion":
         return <Sparkles className="w-4 h-4 text-violet-500" />;
       default:
