@@ -9,7 +9,6 @@ import {
   Underline,
   AlignLeft,
   AlignCenter,
-  AlignRight,
   List,
   ListOrdered,
   Quote,
@@ -21,14 +20,13 @@ import {
   Users,
   Plus,
   Sparkles,
-  FileText,
-  Settings,
   Eye,
   Trash2,
-  GripVertical,
   ChevronUp,
   StickyNote,
   BookOpen,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Chapter {
   id: string;
+  dbId?: string;
   title: string;
   content: string;
   chapter_number: number;
@@ -45,49 +44,96 @@ interface Chapter {
   notes: string;
 }
 
+const genres = [
+  "Romance", "Fantasía", "Misterio", "Poesía",
+  "Drama", "Aventura", "Ciencia Ficción", "Terror",
+];
+
 const AdvancedWritePage = () => {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Book state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [genre, setGenre] = useState("Romance");
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published">("draft");
   
-  // Chapters state
   const [chapters, setChapters] = useState<Chapter[]>([
     { id: "1", title: "Capítulo 1", content: "", chapter_number: 1, word_count: 0, notes: "" }
   ]);
   const [activeChapterId, setActiveChapterId] = useState("1");
-  const [showChapterPanel, setShowChapterPanel] = useState(true);
+  const [showChapterPanel, setShowChapterPanel] = useState(false);
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   
-  // Editor state
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!bookId);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
 
   const activeChapter = chapters.find(c => c.id === activeChapterId) || chapters[0];
 
-  // Auto-save every 30 seconds
+  // Load existing book data
   useEffect(() => {
-    const interval = setInterval(() => {
-      handleAutoSave();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [chapters, title, description]);
+    if (bookId) {
+      loadBookData();
+    }
+  }, [bookId]);
+
+  const loadBookData = async () => {
+    setIsLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate("/auth"); return; }
+
+    const { data: bookData, error } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", bookId)
+      .eq("author_id", user.id)
+      .single();
+
+    if (error || !bookData) {
+      toast({ title: "Error", description: "No se pudo cargar el libro.", variant: "destructive" });
+      navigate("/profile");
+      return;
+    }
+
+    setTitle(bookData.title);
+    setDescription(bookData.description || "");
+    setGenre(bookData.genre || "Romance");
+    setCoverPreview(bookData.cover_url);
+    setStatus((bookData.status as "draft" | "published") || "draft");
+
+    // Load chapters
+    const { data: chaptersData } = await supabase
+      .from("chapters")
+      .select("*")
+      .eq("book_id", bookId!)
+      .order("chapter_number", { ascending: true });
+
+    if (chaptersData && chaptersData.length > 0) {
+      setChapters(chaptersData.map(c => ({
+        id: c.id,
+        dbId: c.id,
+        title: c.title,
+        content: c.content || "",
+        chapter_number: c.chapter_number,
+        word_count: c.word_count || 0,
+        notes: "",
+      })));
+      setActiveChapterId(chaptersData[0].id);
+    }
+
+    setIsLoading(false);
+  };
 
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setCoverPreview(e.target?.result as string);
-      };
+      reader.onload = (e) => setCoverPreview(e.target?.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -100,9 +146,9 @@ const AdvancedWritePage = () => {
     ));
   };
 
-  const updateChapterTitle = (title: string) => {
+  const updateChapterTitle = (newTitle: string) => {
     setChapters(prev => prev.map(c => 
-      c.id === activeChapterId ? { ...c, title } : c
+      c.id === activeChapterId ? { ...c, title: newTitle } : c
     ));
   };
 
@@ -123,435 +169,428 @@ const AdvancedWritePage = () => {
     };
     setChapters(prev => [...prev, newChapter]);
     setActiveChapterId(newChapter.id);
+    setShowChapterPanel(false);
   };
 
   const deleteChapter = (id: string) => {
     if (chapters.length <= 1) {
-      toast({
-        title: "No se puede eliminar",
-        description: "Debe haber al menos un capítulo.",
-        variant: "destructive",
-      });
+      toast({ title: "No se puede eliminar", description: "Debe haber al menos un capítulo.", variant: "destructive" });
       return;
     }
-    setChapters(prev => prev.filter(c => c.id !== id));
-    if (activeChapterId === id) {
-      setActiveChapterId(chapters[0].id);
-    }
+    const remaining = chapters.filter(c => c.id !== id);
+    remaining.forEach((c, i) => c.chapter_number = i + 1);
+    setChapters(remaining);
+    if (activeChapterId === id) setActiveChapterId(remaining[0].id);
   };
 
   const moveChapter = (id: string, direction: "up" | "down") => {
     const index = chapters.findIndex(c => c.id === id);
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === chapters.length - 1)
-    ) return;
-
+    if ((direction === "up" && index === 0) || (direction === "down" && index === chapters.length - 1)) return;
     const newChapters = [...chapters];
     const swapIndex = direction === "up" ? index - 1 : index + 1;
     [newChapters[index], newChapters[swapIndex]] = [newChapters[swapIndex], newChapters[index]];
-    
-    // Update chapter numbers
     newChapters.forEach((c, i) => c.chapter_number = i + 1);
     setChapters(newChapters);
   };
 
-  const handleAutoSave = async () => {
-    setIsSaving(true);
-    // Simulate save
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setLastSaved(new Date());
-    setIsSaving(false);
-  };
-
-  const handleSave = async () => {
+  const handleSave = async (saveStatus: "draft" | "published") => {
     setIsSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      toast({
-        title: "Inicia sesión",
-        description: "Necesitas iniciar sesión para guardar.",
-        variant: "destructive",
-      });
-      navigate("/auth");
+    if (!user) { navigate("/auth"); return; }
+
+    if (!title.trim()) {
+      toast({ title: "Título requerido", description: "Añade un título a tu libro.", variant: "destructive" });
+      setIsSaving(false);
       return;
     }
 
     try {
       if (bookId) {
         // Update existing book
-        await supabase
-          .from("books")
-          .update({
-            title,
-            description,
-            genre,
-            cover_url: coverPreview,
-            status,
-          })
-          .eq("id", bookId);
+        await supabase.from("books").update({
+          title, description, genre,
+          cover_url: coverPreview,
+          status: saveStatus,
+        }).eq("id", bookId);
+
+        // Update/create chapters
+        for (const chapter of chapters) {
+          if (chapter.dbId) {
+            await supabase.from("chapters").update({
+              title: chapter.title,
+              content: chapter.content,
+              chapter_number: chapter.chapter_number,
+              word_count: chapter.word_count,
+              is_published: saveStatus === "published",
+            }).eq("id", chapter.dbId);
+          } else {
+            const { data: newChapter } = await supabase.from("chapters").insert({
+              book_id: bookId,
+              title: chapter.title,
+              content: chapter.content,
+              chapter_number: chapter.chapter_number,
+              word_count: chapter.word_count,
+              is_published: saveStatus === "published",
+            }).select().single();
+            
+            if (newChapter) {
+              setChapters(prev => prev.map(c => 
+                c.id === chapter.id ? { ...c, dbId: newChapter.id } : c
+              ));
+            }
+          }
+        }
+
+        // Delete removed chapters
+        if (bookId) {
+          const currentDbIds = chapters.filter(c => c.dbId).map(c => c.dbId!);
+          const { data: existingChapters } = await supabase
+            .from("chapters")
+            .select("id")
+            .eq("book_id", bookId);
+          
+          if (existingChapters) {
+            const toDelete = existingChapters.filter(c => !currentDbIds.includes(c.id));
+            for (const ch of toDelete) {
+              await supabase.from("chapters").delete().eq("id", ch.id);
+            }
+          }
+        }
       } else {
         // Create new book
-        const { data: newBook, error } = await supabase
-          .from("books")
-          .insert({
-            author_id: user.id,
-            title: title || "Sin título",
-            description,
-            genre,
-            cover_url: coverPreview,
-            status,
-          })
-          .select()
-          .single();
+        const { data: newBook, error } = await supabase.from("books").insert({
+          author_id: user.id,
+          title: title || "Sin título",
+          description, genre,
+          cover_url: coverPreview,
+          status: saveStatus,
+        }).select().single();
 
-        if (error) throw error;
+        if (error || !newBook) throw error;
 
-        // Create chapters
-        if (newBook) {
-          await supabase.from("chapters").insert(
-            chapters.map(c => ({
-              book_id: newBook.id,
-              title: c.title,
-              content: c.content,
-              chapter_number: c.chapter_number,
-              word_count: c.word_count,
-              is_published: status === "published",
-            }))
-          );
-        }
+        await supabase.from("chapters").insert(
+          chapters.map(c => ({
+            book_id: newBook.id,
+            title: c.title,
+            content: c.content,
+            chapter_number: c.chapter_number,
+            word_count: c.word_count,
+            is_published: saveStatus === "published",
+          }))
+        );
       }
 
       setLastSaved(new Date());
       toast({
-        title: status === "published" ? "¡Publicado!" : "Guardado",
-        description: status === "published" 
+        title: saveStatus === "published" ? "¡Publicado!" : "Guardado",
+        description: saveStatus === "published"
           ? "Tu libro ya está disponible para los lectores."
           : "Tu borrador ha sido guardado.",
       });
 
-      if (status === "published") {
-        navigate("/profile");
-      }
+      if (saveStatus === "published" && !bookId) navigate("/profile");
     } catch (error) {
-      console.error("Error saving:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo guardar.", variant: "destructive" });
     }
     setIsSaving(false);
   };
 
-  const insertFormatting = (format: string) => {
-    // This would integrate with a rich text editor in a full implementation
-    toast({
-      title: "Formato aplicado",
-      description: `Se aplicó: ${format}`,
-    });
-  };
-
   const totalWordCount = chapters.reduce((acc, c) => acc + c.word_count, 0);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border"
-      >
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <Input
-                  type="text"
-                  placeholder="Título del libro..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="text-lg font-display font-bold border-0 bg-transparent px-0 h-auto py-0 focus-visible:ring-0"
-                />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {isSaving ? (
-                    <span>Guardando...</span>
-                  ) : lastSaved ? (
-                    <span>Guardado a las {lastSaved.toLocaleTimeString()}</span>
-                  ) : null}
-                  <span>•</span>
-                  <span>{totalWordCount} palabras</span>
-                  <span>•</span>
-                  <span>{chapters.length} capítulos</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowPreview(!showPreview)}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowNotesPanel(!showNotesPanel)}
-              >
-                <StickyNote className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => { setStatus("draft"); handleSave(); }}>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar
-              </Button>
-              <Button variant="hero" size="sm" onClick={() => { setStatus("published"); handleSave(); }}>
-                <Send className="w-4 h-4 mr-2" />
-                Publicar
-              </Button>
-            </div>
+      {/* iOS Header */}
+      <div className="ios-header">
+        <div className="flex items-center justify-between px-4 h-[52px]">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary active:opacity-60">
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-[17px]">Atrás</span>
+          </button>
+          <div className="flex items-center gap-2">
+            {lastSaved && (
+              <span className="text-[11px] text-muted-foreground">
+                <Check className="w-3 h-3 inline mr-0.5" />
+                {lastSaved.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            <Button
+              variant="ios-ghost"
+              size="ios-sm"
+              onClick={() => handleSave("draft")}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ios"
+              size="ios-sm"
+              onClick={() => handleSave("published")}
+              disabled={isSaving}
+            >
+              <Send className="w-4 h-4 mr-1" />
+              Publicar
+            </Button>
           </div>
         </div>
-      </motion.header>
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Chapters Panel */}
-        <AnimatePresence>
-          {showChapterPanel && (
-            <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="border-r border-border bg-muted/30 overflow-y-auto"
+      {/* Book Info Bar */}
+      <div className="border-b border-border bg-card/50">
+        <div className="px-4 py-3 flex items-center gap-3">
+          {/* Cover thumbnail */}
+          <input type="file" ref={fileInputRef} onChange={handleCoverUpload} accept="image/*" className="hidden" />
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="w-12 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 cursor-pointer border border-border"
+          >
+            {coverPreview ? (
+              <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Image className="w-5 h-5 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <Input
+              type="text"
+              placeholder="Título del libro..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-[17px] font-semibold border-0 bg-transparent px-0 h-auto py-0 focus-visible:ring-0 font-display"
+            />
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[12px] text-muted-foreground">{totalWordCount} palabras</span>
+              <span className="text-[12px] text-muted-foreground">•</span>
+              <span className="text-[12px] text-muted-foreground">{chapters.length} cap.</span>
+            </div>
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+              className="px-3 py-1.5 bg-secondary text-secondary-foreground text-[13px] rounded-full font-medium flex items-center gap-1"
             >
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-semibold text-sm">Capítulos</h3>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={addChapter}>
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Cover */}
-                <div className="mb-4">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleCoverUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`aspect-[3/4] rounded-xl overflow-hidden cursor-pointer border-2 border-dashed transition-colors ${
-                      coverPreview ? "border-transparent" : "border-border hover:border-primary"
+              {genre}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showGenreDropdown && (
+              <div className="absolute top-full mt-1 right-0 bg-card rounded-xl shadow-lg border border-border p-1 z-50 min-w-[140px]">
+                {genres.map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => { setGenre(g); setShowGenreDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[13px] transition-colors ${
+                      genre === g ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                     }`}
                   >
-                    {coverPreview ? (
-                      <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted/50">
-                        <Image className="w-8 h-8 mb-2" />
-                        <p className="text-xs">Añadir portada</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Chapter list */}
-                <div className="space-y-1">
-                  {chapters.map((chapter, index) => (
-                    <motion.div
-                      key={chapter.id}
-                      layout
-                      className={`group p-3 rounded-lg cursor-pointer transition-colors ${
-                        chapter.id === activeChapterId
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      }`}
-                      onClick={() => setActiveChapterId(chapter.id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <GripVertical className="w-4 h-4 opacity-50" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{chapter.title}</p>
-                          <p className={`text-xs ${chapter.id === activeChapterId ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                            {chapter.word_count} palabras
-                          </p>
-                        </div>
-                        <div className={`flex gap-1 opacity-0 group-hover:opacity-100 ${chapter.id === activeChapterId ? "opacity-100" : ""}`}>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); moveChapter(chapter.id, "up"); }}
-                            className="p-1 hover:bg-background/20 rounded"
-                            disabled={index === 0}
-                          >
-                            <ChevronUp className="w-3 h-3" />
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); deleteChapter(chapter.id); }}
-                            className="p-1 hover:bg-destructive/20 rounded text-destructive"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Add chapter button */}
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4" 
-                  onClick={addChapter}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo capítulo
-                </Button>
+                    {g}
+                  </button>
+                ))}
               </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
+            )}
+          </div>
+        </div>
+      </div>
 
-        {/* Main Editor */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-6">
-            {/* Formatting toolbar */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-1 p-2 bg-muted/50 rounded-xl mb-6 sticky top-0 z-10"
+      {/* Chapter Navigation Strip */}
+      <div className="border-b border-border bg-background">
+        <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto">
+          {chapters.map((chapter) => (
+            <button
+              key={chapter.id}
+              onClick={() => setActiveChapterId(chapter.id)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-medium transition-colors ${
+                chapter.id === activeChapterId
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground"
+              }`}
             >
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("bold")}>
-                <Bold className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("italic")}>
-                <Italic className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("underline")}>
-                <Underline className="w-4 h-4" />
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("h1")}>
-                <Heading1 className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("h2")}>
-                <Heading2 className="w-4 h-4" />
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("align-left")}>
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("align-center")}>
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("align-right")}>
-                <AlignRight className="w-4 h-4" />
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("list")}>
-                <List className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("ordered-list")}>
-                <ListOrdered className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => insertFormatting("quote")}>
-                <Quote className="w-4 h-4" />
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Image className="w-4 h-4" />
-              </Button>
-              <div className="flex-1" />
-              <Button variant="ghost" size="sm" className="text-primary">
-                <Sparkles className="w-4 h-4 mr-1" />
-                Asistente IA
-              </Button>
-            </motion.div>
+              Cap. {chapter.chapter_number}
+            </button>
+          ))}
+          <button
+            onClick={addChapter}
+            className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => setShowChapterPanel(!showChapterPanel)}
+            className="flex-shrink-0 px-3 py-1.5 text-primary text-[13px] font-medium"
+          >
+            Gestionar
+          </button>
+        </div>
+      </div>
 
-            {/* Chapter title */}
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Editor */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-5 py-6">
+            {/* Chapter Title */}
             <Input
               type="text"
               placeholder="Título del capítulo..."
               value={activeChapter.title}
               onChange={(e) => updateChapterTitle(e.target.value)}
-              className="text-2xl font-display font-bold border-0 bg-transparent px-0 h-auto py-2 mb-4 focus-visible:ring-0"
+              className="text-[22px] font-display font-bold border-0 bg-transparent px-0 h-auto py-2 mb-2 focus-visible:ring-0"
             />
 
-            {/* Content editor */}
+            {/* Minimal Formatting Bar */}
+            <div className="flex items-center gap-0.5 py-2 mb-4 border-b border-border">
+              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
+                <Bold className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
+                <Italic className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
+                <Heading1 className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
+                <Quote className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
+                <List className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <div className="flex-1" />
+              <button
+                onClick={() => setShowNotesPanel(!showNotesPanel)}
+                className={`p-2 rounded-lg transition-colors ${showNotesPanel ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"}`}
+              >
+                <StickyNote className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content Editor */}
             <Textarea
               placeholder="Empieza a escribir tu capítulo aquí...
 
-Usa la barra de herramientas para dar formato a tu texto. Puedes usar negritas, cursivas, encabezados, listas y más.
-
-Consejo: Guarda frecuentemente con Ctrl+S o el botón de guardar."
+La primera línea es siempre la más importante. ¿Qué quieres que sienta el lector?"
               value={activeChapter.content}
               onChange={(e) => updateChapterContent(e.target.value)}
-              className="min-h-[500px] border-0 bg-transparent px-0 resize-none focus-visible:ring-0 text-lg leading-relaxed"
+              className="min-h-[500px] border-0 bg-transparent px-0 resize-none focus-visible:ring-0 text-[17px] leading-[1.8] placeholder:text-muted-foreground/40"
             />
 
             {/* Word count */}
-            <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
-              <span>{activeChapter.word_count} palabras en este capítulo</span>
+            <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-[13px] text-muted-foreground">
+              <span>{activeChapter.word_count} palabras</span>
               <span>{activeChapter.content.length} caracteres</span>
             </div>
           </div>
         </main>
 
-        {/* Notes Panel */}
+        {/* Notes Side Panel */}
         <AnimatePresence>
           {showNotesPanel && (
             <motion.aside
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 300, opacity: 1 }}
+              animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="border-l border-border bg-muted/30 overflow-y-auto"
+              className="border-l border-border bg-card overflow-y-auto hidden md:block"
             >
               <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-semibold text-sm flex items-center gap-2">
-                    <StickyNote className="w-4 h-4" />
-                    Notas del capítulo
-                  </h3>
-                </div>
+                <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <StickyNote className="w-4 h-4" />
+                  Notas
+                </h3>
                 <Textarea
-                  placeholder="Escribe notas, ideas o recordatorios para este capítulo...
-
-Estas notas son privadas y no se publicarán."
+                  placeholder="Notas privadas para este capítulo..."
                   value={activeChapter.notes}
                   onChange={(e) => updateChapterNotes(e.target.value)}
-                  className="min-h-[300px] bg-card/50 resize-none"
+                  className="min-h-[200px] bg-muted/30 resize-none text-[14px]"
                 />
-
-                <div className="mt-6">
-                  <h4 className="font-medium text-sm mb-3">Configuración</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Género</span>
-                      <Button variant="outline" size="sm" className="rounded-full">
-                        {genre}
-                        <ChevronDown className="w-3 h-3 ml-1" />
-                      </Button>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Users className="w-4 h-4 mr-2" />
-                      Invitar colaboradores
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      Añadir a saga
-                    </Button>
-                  </div>
+                <div className="mt-4">
+                  <Textarea
+                    placeholder="Descripción del libro..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="bg-muted/30 resize-none text-[14px] min-h-[80px]"
+                  />
+                  <label className="text-[11px] text-muted-foreground mt-1 block">Sinopsis del libro</label>
                 </div>
               </div>
             </motion.aside>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Chapter Management Sheet */}
+      <AnimatePresence>
+        {showChapterPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/40"
+            onClick={() => setShowChapterPanel(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl max-h-[70vh] overflow-y-auto"
+            >
+              <div className="p-4">
+                <div className="ios-pull-indicator" />
+                <h3 className="text-[17px] font-semibold text-center mb-4">Capítulos</h3>
+                <div className="space-y-1">
+                  {chapters.map((chapter, index) => (
+                    <div
+                      key={chapter.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        chapter.id === activeChapterId ? "bg-primary/10" : ""
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-[13px] font-bold">
+                        {chapter.chapter_number}
+                      </div>
+                      <div className="flex-1 min-w-0" onClick={() => { setActiveChapterId(chapter.id); setShowChapterPanel(false); }}>
+                        <p className="text-[15px] font-medium truncate">{chapter.title}</p>
+                        <p className="text-[12px] text-muted-foreground">{chapter.word_count} palabras</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveChapter(chapter.id, "up")}
+                          disabled={index === 0}
+                          className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteChapter(chapter.id)}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={addChapter}
+                  className="w-full mt-3 py-3 rounded-xl bg-primary/10 text-primary text-[15px] font-medium flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nuevo capítulo
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

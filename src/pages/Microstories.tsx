@@ -15,6 +15,7 @@ import {
   Users,
   Send,
   Trophy,
+  Repeat2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ interface Microstory {
   content: string;
   likes_count: number;
   comments_count: number;
+  reposts_count: number;
   created_at: string;
   author_id: string;
   author: {
@@ -67,6 +69,7 @@ const MicrostoriesPage = () => {
   const [chatShareStory, setChatShareStory] = useState<Microstory | null>(null);
   const [collaboratorsStory, setCollaboratorsStory] = useState<Microstory | null>(null);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [userReposts, setUserReposts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchMicrostories();
@@ -78,6 +81,7 @@ const MicrostoriesPage = () => {
     setCurrentUser(user);
     if (user) {
       fetchUserLikes(user.id);
+      fetchUserReposts(user.id);
     }
   };
 
@@ -87,15 +91,19 @@ const MicrostoriesPage = () => {
       .select("likeable_id")
       .eq("user_id", userId)
       .eq("likeable_type", "microstory");
-    
-    if (data) {
-      setUserLikes(new Set(data.map(l => l.likeable_id)));
-    }
+    if (data) setUserLikes(new Set(data.map(l => l.likeable_id)));
+  };
+
+  const fetchUserReposts = async (userId: string) => {
+    const { data } = await supabase
+      .from("microstory_reposts" as any)
+      .select("microstory_id")
+      .eq("user_id", userId) as any;
+    if (data) setUserReposts(new Set(data.map((r: any) => r.microstory_id)));
   };
 
   const fetchMicrostories = async () => {
     setLoading(true);
-    
     let query = supabase
       .from("microstories")
       .select(`
@@ -115,44 +123,23 @@ const MicrostoriesPage = () => {
     }
 
     const { data, error } = await query.limit(50);
-
-    if (error) {
-      console.error("Error fetching microstories:", error);
-    } else {
-      setMicrostories(data || []);
+    if (!error) {
+      setMicrostories((data || []).map(d => ({ ...d, reposts_count: (d as any).reposts_count || 0 })));
     }
     setLoading(false);
   };
 
   const handlePublish = async () => {
     if (!newContent.trim()) {
-      toast({
-        title: "Contenido requerido",
-        description: "Escribe algo antes de publicar.",
-        variant: "destructive",
-      });
+      toast({ title: "Contenido requerido", description: "Escribe algo antes de publicar.", variant: "destructive" });
       return;
     }
-
     if (newContent.length > MAX_CHARS) {
-      toast({
-        title: "Demasiado largo",
-        description: `Los microrrelatos tienen un máximo de ${MAX_CHARS} caracteres.`,
-        variant: "destructive",
-      });
+      toast({ title: "Demasiado largo", description: `Máximo ${MAX_CHARS} caracteres.`, variant: "destructive" });
       return;
     }
-
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "Inicia sesión",
-        description: "Necesitas iniciar sesión para publicar.",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
+    if (!user) { navigate("/auth"); return; }
 
     const { error } = await supabase.from("microstories").insert({
       author_id: user.id,
@@ -161,16 +148,9 @@ const MicrostoriesPage = () => {
     });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo publicar. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo publicar.", variant: "destructive" });
     } else {
-      toast({
-        title: "¡Publicado!",
-        description: "Tu microrrelato ya está visible para todos.",
-      });
+      toast({ title: "¡Publicado!", description: "Tu microrrelato ya es visible." });
       setNewTitle("");
       setNewContent("");
       setShowCompose(false);
@@ -180,71 +160,66 @@ const MicrostoriesPage = () => {
 
   const handleLike = async (microstoryId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "Inicia sesión",
-        description: "Necesitas iniciar sesión para dar like.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) { toast({ title: "Inicia sesión", variant: "destructive" }); return; }
 
+    const isLiked = userLikes.has(microstoryId);
     const currentStory = microstories.find(m => m.id === microstoryId);
     const currentCount = currentStory?.likes_count || 0;
-    const isLiked = userLikes.has(microstoryId);
 
     // Optimistic update
-    setMicrostories(prev => prev.map(m => 
-      m.id === microstoryId 
-        ? { ...m, likes_count: isLiked ? Math.max(0, m.likes_count - 1) : m.likes_count + 1 }
-        : m
+    setMicrostories(prev => prev.map(m =>
+      m.id === microstoryId ? { ...m, likes_count: isLiked ? Math.max(0, m.likes_count - 1) : m.likes_count + 1 } : m
     ));
-    
     if (isLiked) {
-      setUserLikes(prev => {
-        const next = new Set(prev);
-        next.delete(microstoryId);
-        return next;
-      });
+      setUserLikes(prev => { const next = new Set(prev); next.delete(microstoryId); return next; });
     } else {
       setUserLikes(prev => new Set(prev).add(microstoryId));
     }
 
     if (isLiked) {
-      // Unlike
-      const { data: existingLike } = await supabase
-        .from("likes")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("likeable_type", "microstory")
-        .eq("likeable_id", microstoryId)
-        .maybeSingle();
-      
+      const { data: existingLike } = await supabase.from("likes").select("id")
+        .eq("user_id", user.id).eq("likeable_type", "microstory").eq("likeable_id", microstoryId).maybeSingle();
       if (existingLike) {
         await supabase.from("likes").delete().eq("id", existingLike.id);
-        await supabase
-          .from("microstories")
-          .update({ likes_count: Math.max(0, currentCount - 1) })
-          .eq("id", microstoryId);
+        await supabase.from("microstories").update({ likes_count: Math.max(0, currentCount - 1) }).eq("id", microstoryId);
       }
     } else {
-      // Like
-      await supabase.from("likes").insert({
-        user_id: user.id,
-        likeable_type: "microstory",
-        likeable_id: microstoryId,
-      });
-      await supabase
-        .from("microstories")
-        .update({ likes_count: currentCount + 1 })
-        .eq("id", microstoryId);
+      await supabase.from("likes").insert({ user_id: user.id, likeable_type: "microstory", likeable_id: microstoryId });
+      await supabase.from("microstories").update({ likes_count: currentCount + 1 }).eq("id", microstoryId);
+    }
+  };
+
+  const handleRepost = async (microstoryId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast({ title: "Inicia sesión", variant: "destructive" }); return; }
+
+    const isReposted = userReposts.has(microstoryId);
+    const currentStory = microstories.find(m => m.id === microstoryId);
+    const currentCount = currentStory?.reposts_count || 0;
+
+    // Optimistic update
+    setMicrostories(prev => prev.map(m =>
+      m.id === microstoryId ? { ...m, reposts_count: isReposted ? Math.max(0, m.reposts_count - 1) : m.reposts_count + 1 } : m
+    ));
+    if (isReposted) {
+      setUserReposts(prev => { const next = new Set(prev); next.delete(microstoryId); return next; });
+    } else {
+      setUserReposts(prev => new Set(prev).add(microstoryId));
+    }
+
+    if (isReposted) {
+      await (supabase.from("microstory_reposts" as any).delete() as any)
+        .eq("user_id", user.id).eq("microstory_id", microstoryId);
+      await supabase.from("microstories").update({ reposts_count: Math.max(0, currentCount - 1) } as any).eq("id", microstoryId);
+    } else {
+      await (supabase.from("microstory_reposts" as any).insert({ user_id: user.id, microstory_id: microstoryId } as any) as any);
+      await supabase.from("microstories").update({ reposts_count: currentCount + 1 } as any).eq("id", microstoryId);
+      toast({ title: "¡Reposteado!", description: "Microrrelato compartido en tu perfil." });
     }
   };
 
   const handleCommentsCountChange = (storyId: string, count: number) => {
-    setMicrostories(prev => prev.map(m => 
-      m.id === storyId ? { ...m, comments_count: count } : m
-    ));
+    setMicrostories(prev => prev.map(m => m.id === storyId ? { ...m, comments_count: count } : m));
   };
 
   const formatDate = (dateString: string) => {
@@ -252,7 +227,6 @@ const MicrostoriesPage = () => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
-    
     if (hours < 1) return "Hace un momento";
     if (hours < 24) return `Hace ${hours}h`;
     if (hours < 48) return "Ayer";
@@ -261,28 +235,20 @@ const MicrostoriesPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border"
-      >
-        <div className="container mx-auto px-4 py-3">
+      {/* iOS Header */}
+      <div className="ios-header">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <button onClick={() => navigate(-1)} className="text-primary active:opacity-60">
                 <ArrowLeft className="w-5 h-5" />
-              </Button>
+              </button>
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <h1 className="font-display font-semibold text-lg">Microrrelatos</h1>
+                <h1 className="font-display font-semibold text-[17px]">Microrrelatos</h1>
               </div>
             </div>
-            <Button 
-              variant="hero" 
-              size="sm" 
-              onClick={() => setShowCompose(true)}
-            >
+            <Button variant="ios" size="ios-sm" onClick={() => setShowCompose(true)}>
               <Plus className="w-4 h-4 mr-1" />
               Crear
             </Button>
@@ -290,42 +256,27 @@ const MicrostoriesPage = () => {
 
           {/* Tabs */}
           <div className="flex mt-3 gap-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("recent")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
-                activeTab === "recent"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              <Clock className="w-4 h-4" />
-              Recientes
-            </button>
-            <button
-              onClick={() => setActiveTab("trending")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
-                activeTab === "trending"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Populares
-            </button>
-            <button
-              onClick={() => setActiveTab("top")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${
-                activeTab === "top"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              Top 10
-            </button>
+            {[
+              { key: "recent" as const, icon: Clock, label: "Recientes" },
+              { key: "trending" as const, icon: TrendingUp, label: "Populares" },
+              { key: "top" as const, icon: Trophy, label: "Top 10" },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium transition-colors flex-shrink-0 ${
+                  activeTab === tab.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
-      </motion.header>
+      </div>
 
       {/* Compose Modal */}
       <AnimatePresence>
@@ -334,67 +285,62 @@ const MicrostoriesPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-background"
           >
-            <div className="container mx-auto px-4 py-4 max-w-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <Button variant="ghost" size="icon" onClick={() => setShowCompose(false)}>
-                  <X className="w-5 h-5" />
-                </Button>
-                <h2 className="font-display font-semibold">Nuevo microrrelato</h2>
-                <Button variant="hero" size="sm" onClick={handlePublish}>
+            <div className="ios-header">
+              <div className="flex items-center justify-between px-4 h-[52px]">
+                <button onClick={() => setShowCompose(false)} className="text-primary text-[17px]">
+                  Cancelar
+                </button>
+                <h2 className="font-semibold text-[17px]">Nuevo microrrelato</h2>
+                <Button variant="ios" size="ios-sm" onClick={handlePublish}>
                   Publicar
                 </Button>
               </div>
+            </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                <Input
-                  placeholder="Título (opcional)"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="text-lg font-display border-0 bg-muted/50 focus-visible:ring-1"
-                />
-                <Textarea
-                  placeholder="Escribe tu microrrelato aquí...
+            <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+              <Input
+                placeholder="Título (opcional)"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="text-[17px] font-display border-0 bg-muted/50 focus-visible:ring-1 rounded-xl h-12"
+              />
+              <Textarea
+                placeholder="Escribe tu microrrelato aquí...
 
-Un microrrelato es una historia muy corta que captura un momento, una emoción o una idea en pocas palabras."
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value.slice(0, MAX_CHARS))}
-                  className="min-h-[300px] text-lg leading-relaxed border-0 bg-muted/50 focus-visible:ring-1 resize-none"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <span className={`${newContent.length > MAX_CHARS * 0.9 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {newContent.length} / {MAX_CHARS}
-                  </span>
-                  <div className="h-1 flex-1 mx-4 bg-muted rounded-full overflow-hidden">
-                    <motion.div
-                      className={`h-full ${newContent.length > MAX_CHARS * 0.9 ? "bg-destructive" : "bg-primary"}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(newContent.length / MAX_CHARS) * 100}%` }}
-                    />
-                  </div>
+Un microrrelato captura un momento o una emoción en pocas palabras."
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value.slice(0, MAX_CHARS))}
+                className="min-h-[300px] text-[17px] leading-relaxed border-0 bg-muted/50 focus-visible:ring-1 resize-none rounded-xl"
+              />
+              <div className="flex items-center justify-between text-[13px]">
+                <span className={newContent.length > MAX_CHARS * 0.9 ? "text-destructive" : "text-muted-foreground"}>
+                  {newContent.length} / {MAX_CHARS}
+                </span>
+                <div className="h-1 flex-1 mx-4 bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full ${newContent.length > MAX_CHARS * 0.9 ? "bg-destructive" : "bg-primary"}`}
+                    animate={{ width: `${(newContent.length / MAX_CHARS) * 100}%` }}
+                  />
                 </div>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="px-4 py-4">
         {activeTab === "top" ? (
           <TopMicrostories limit={10} showHeader={false} />
         ) : loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card rounded-2xl p-4 animate-pulse">
+              <div key={i} className="ios-section p-4 animate-pulse">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-muted" />
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <div className="w-24 h-4 bg-muted rounded" />
                     <div className="w-16 h-3 bg-muted rounded" />
                   </div>
@@ -407,61 +353,48 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
             ))}
           </div>
         ) : microstories.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
-          >
+          <div className="text-center py-16">
             <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display font-semibold text-lg mb-2">Sin microrrelatos aún</h3>
-            <p className="text-muted-foreground mb-4">¡Sé el primero en compartir una historia corta!</p>
-            <Button variant="hero" onClick={() => setShowCompose(true)}>
+            <h3 className="text-[17px] font-semibold mb-2">Sin microrrelatos aún</h3>
+            <p className="text-[15px] text-muted-foreground mb-5">¡Sé el primero en compartir!</p>
+            <Button variant="ios" size="ios-lg" onClick={() => setShowCompose(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Crear microrrelato
             </Button>
-          </motion.div>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {microstories.map((story, index) => (
               <motion.article
                 key={story.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-2xl p-4 shadow-soft"
+                transition={{ delay: index * 0.04 }}
+                className="ios-section p-4"
               >
                 {/* Author header */}
-                <div 
-                  className="flex items-center gap-3 mb-3"
-                >
-                  <div 
-                    className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold cursor-pointer"
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold cursor-pointer overflow-hidden"
                     onClick={() => navigate(`/user/${story.author.id}`)}
                   >
                     {story.author.avatar_url ? (
-                      <img 
-                        src={story.author.avatar_url} 
-                        alt="" 
-                        className="w-full h-full rounded-full object-cover" 
-                      />
+                      <img src={story.author.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       story.author.display_name?.[0] || "?"
                     )}
                   </div>
-                  <div 
-                    className="flex-1 cursor-pointer"
-                    onClick={() => navigate(`/user/${story.author.id}`)}
-                  >
-                    <p className="font-medium">{story.author.display_name || "Usuario"}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 cursor-pointer" onClick={() => navigate(`/user/${story.author.id}`)}>
+                    <p className="font-medium text-[15px]">{story.author.display_name || "Usuario"}</p>
+                    <p className="text-[12px] text-muted-foreground">
                       @{story.author.username || "user"} • {formatDate(story.created_at)}
                     </p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <button className="p-2 rounded-lg hover:bg-muted">
+                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setChatShareStory(story)}>
@@ -484,41 +417,49 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
 
                 {/* Content */}
                 {story.title && (
-                  <h3 className="font-display font-semibold mb-2">{story.title}</h3>
+                  <h3 className="font-display font-semibold text-[15px] mb-1.5">{story.title}</h3>
                 )}
-                <p className="text-foreground leading-relaxed whitespace-pre-wrap">{story.content}</p>
+                <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap">{story.content}</p>
 
                 {/* Actions */}
-                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
-                  <button 
+                <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border">
+                  <button
                     onClick={() => handleLike(story.id)}
-                    className={`flex items-center gap-1.5 transition-colors ${
-                      userLikes.has(story.id) 
-                        ? "text-destructive" 
-                        : "text-muted-foreground hover:text-destructive"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                      userLikes.has(story.id) ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    <Heart className={`w-5 h-5 ${userLikes.has(story.id) ? "fill-current" : ""}`} />
-                    <span className="text-sm">{story.likes_count}</span>
+                    <Heart className={`w-[18px] h-[18px] ${userLikes.has(story.id) ? "fill-current" : ""}`} />
+                    <span className="text-[13px] font-medium">{story.likes_count}</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setCommentsStory(story)}
-                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors"
                   >
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="text-sm">{story.comments_count}</span>
+                    <MessageCircle className="w-[18px] h-[18px]" />
+                    <span className="text-[13px] font-medium">{story.comments_count}</span>
                   </button>
-                  <button 
+                  <button
+                    onClick={() => handleRepost(story.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+                      userReposts.has(story.id) ? "text-green-600 bg-green-500/10" : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Repeat2 className="w-[18px] h-[18px]" />
+                    <span className="text-[13px] font-medium">{story.reposts_count}</span>
+                  </button>
+                  <div className="flex-1" />
+                  <button
                     onClick={() => setChatShareStory(story)}
-                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                    className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
                   >
-                    <Send className="w-5 h-5" />
+                    <Send className="w-[18px] h-[18px]" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShareStory(story)}
-                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors ml-auto"
+                    className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors"
                   >
-                    <Share2 className="w-5 h-5" />
+                    <Share2 className="w-[18px] h-[18px]" />
                   </button>
                 </div>
               </motion.article>
@@ -527,16 +468,10 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
         )}
       </main>
 
-      {/* Share as Image Modal */}
+      {/* Modals */}
       {shareStory && (
-        <ShareAsImage
-          isOpen={!!shareStory}
-          onClose={() => setShareStory(null)}
-          story={shareStory}
-        />
+        <ShareAsImage isOpen={!!shareStory} onClose={() => setShareStory(null)} story={shareStory} />
       )}
-
-      {/* Comments Modal */}
       {commentsStory && (
         <MicrostoryComments
           isOpen={!!commentsStory}
@@ -545,17 +480,9 @@ Un microrrelato es una historia muy corta que captura un momento, una emoción o
           onCommentsCountChange={(count) => handleCommentsCountChange(commentsStory.id, count)}
         />
       )}
-
-      {/* Share in Chat Modal */}
       {chatShareStory && (
-        <ShareMicrostoryInChat
-          isOpen={!!chatShareStory}
-          onClose={() => setChatShareStory(null)}
-          story={chatShareStory}
-        />
+        <ShareMicrostoryInChat isOpen={!!chatShareStory} onClose={() => setChatShareStory(null)} story={chatShareStory} />
       )}
-
-      {/* Collaborators Modal */}
       {collaboratorsStory && (
         <CollaboratorsModal
           isOpen={!!collaboratorsStory}

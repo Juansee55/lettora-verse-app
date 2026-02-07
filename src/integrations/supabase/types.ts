@@ -466,6 +466,7 @@ export type Database = {
           id: string
           likes_count: number | null
           max_length: number | null
+          reposts_count: number | null
           title: string | null
         }
         Insert: {
@@ -476,6 +477,7 @@ export type Database = {
           id?: string
           likes_count?: number | null
           max_length?: number | null
+          reposts_count?: number | null
           title?: string | null
         }
         Update: {
@@ -486,12 +488,88 @@ export type Database = {
           id?: string
           likes_count?: number | null
           max_length?: number | null
+          reposts_count?: number | null
           title?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "microstories_author_id_fkey"
             columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microstory_collaborators: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string | null
+          microstory_id: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          microstory_id: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          microstory_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microstory_collaborators_microstory_id_fkey"
+            columns: ["microstory_id"]
+            isOneToOne: false
+            referencedRelation: "microstories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "microstory_collaborators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microstory_reposts: {
+        Row: {
+          created_at: string
+          id: string
+          microstory_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          microstory_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          microstory_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microstory_reposts_microstory_id_fkey"
+            columns: ["microstory_id"]
+            isOneToOne: false
+            referencedRelation: "microstories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "microstory_reposts_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
