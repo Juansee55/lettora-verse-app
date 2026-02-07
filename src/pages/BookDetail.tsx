@@ -17,6 +17,7 @@ import {
   Star,
   BookOpen,
   Send,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -317,16 +318,25 @@ const BookDetailPage = () => {
         </div>
       </motion.div>
 
-      {/* CTA Button */}
-      <div className="px-5 py-3">
+      {/* CTA Buttons */}
+      <div className="px-5 py-3 flex gap-2">
         <button
           onClick={() => navigate(`/book/${id}/chapter/1`)}
           disabled={chapters.length === 0}
-          className="w-full h-[50px] bg-primary text-primary-foreground rounded-2xl font-semibold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+          className="flex-1 h-[50px] bg-primary text-primary-foreground rounded-2xl font-semibold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
         >
           <Play className="w-5 h-5 fill-current" />
           Empezar a leer
         </button>
+        {isAuthor && (
+          <button
+            onClick={() => navigate(`/write/advanced/${id}`)}
+            className="h-[50px] px-5 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          >
+            <Edit3 className="w-5 h-5" />
+            Editar
+          </button>
+        )}
       </div>
 
       {/* Action Bar - iOS style */}
