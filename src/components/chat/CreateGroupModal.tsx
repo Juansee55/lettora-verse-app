@@ -65,38 +65,40 @@ const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setCreating(false); return; }
 
-    // Create conversation
-    const { data: conv, error } = await supabase
-      .from("conversations")
-      .insert({ is_group: true, name: groupName.trim() })
-      .select()
-      .single();
+    // Generate ID client-side to avoid .select() which fails RLS (user isn't participant yet)
+    const convId = crypto.randomUUID();
 
-    if (error || !conv) {
+    const { error } = await supabase
+      .from("conversations")
+      .insert({ id: convId, is_group: true, name: groupName.trim() });
+
+    if (error) {
       toast({ title: "Error al crear grupo", variant: "destructive" });
       setCreating(false);
       return;
     }
 
-    // Add self as owner
+    // Add self as owner first
     await supabase.from("conversation_participants").insert({
-      conversation_id: conv.id,
+      conversation_id: convId,
       user_id: user.id,
       role: "owner",
     });
 
     // Add selected members
-    for (const member of selectedMembers) {
-      await supabase.from("conversation_participants").insert({
-        conversation_id: conv.id,
-        user_id: member.id,
-        role: "member",
-      });
+    if (selectedMembers.length > 0) {
+      await supabase.from("conversation_participants").insert(
+        selectedMembers.map(member => ({
+          conversation_id: convId,
+          user_id: member.id,
+          role: "member",
+        }))
+      );
     }
 
     toast({ title: "¡Grupo creado!" });
     onClose();
-    navigate(`/chat/${conv.id}`);
+    navigate(`/chat/${convId}`);
     setCreating(false);
   };
 

@@ -137,14 +137,14 @@ const NewConversationModal = ({ isOpen, onClose }: NewConversationModalProps) =>
       }
     }
 
-    // Create new conversation
-    const { data: newConv, error: convError } = await supabase
-      .from("conversations")
-      .insert({ is_group: false })
-      .select()
-      .single();
+    // Generate ID client-side to avoid .select() which fails RLS (user isn't participant yet)
+    const convId = crypto.randomUUID();
 
-    if (convError || !newConv) {
+    const { error: convError } = await supabase
+      .from("conversations")
+      .insert({ id: convId, is_group: false });
+
+    if (convError) {
       toast({
         title: "Error",
         description: "No se pudo crear la conversación.",
@@ -156,7 +156,7 @@ const NewConversationModal = ({ isOpen, onClose }: NewConversationModalProps) =>
 
     // Add current user first (satisfies RLS: user_id = auth.uid())
     const { error: selfError } = await supabase.from("conversation_participants").insert({
-      conversation_id: newConv.id,
+      conversation_id: convId,
       user_id: user.id,
     });
 
@@ -172,12 +172,12 @@ const NewConversationModal = ({ isOpen, onClose }: NewConversationModalProps) =>
 
     // Now add the other user (RLS passes because current user is already a participant)
     await supabase.from("conversation_participants").insert({
-      conversation_id: newConv.id,
+      conversation_id: convId,
       user_id: targetUserId,
     });
 
     onClose();
-    navigate(`/chat/${newConv.id}`);
+    navigate(`/chat/${convId}`);
     setStartingChat(null);
   };
 
