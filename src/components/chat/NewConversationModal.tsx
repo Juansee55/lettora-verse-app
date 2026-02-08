@@ -154,11 +154,27 @@ const NewConversationModal = ({ isOpen, onClose }: NewConversationModalProps) =>
       return;
     }
 
-    // Add participants
-    await supabase.from("conversation_participants").insert([
-      { conversation_id: newConv.id, user_id: user.id },
-      { conversation_id: newConv.id, user_id: targetUserId },
-    ]);
+    // Add current user first (satisfies RLS: user_id = auth.uid())
+    const { error: selfError } = await supabase.from("conversation_participants").insert({
+      conversation_id: newConv.id,
+      user_id: user.id,
+    });
+
+    if (selfError) {
+      toast({
+        title: "Error",
+        description: "No se pudo unir a la conversación.",
+        variant: "destructive",
+      });
+      setStartingChat(null);
+      return;
+    }
+
+    // Now add the other user (RLS passes because current user is already a participant)
+    await supabase.from("conversation_participants").insert({
+      conversation_id: newConv.id,
+      user_id: targetUserId,
+    });
 
     onClose();
     navigate(`/chat/${newConv.id}`);

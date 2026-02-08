@@ -96,10 +96,10 @@ const MicrostoriesPage = () => {
 
   const fetchUserReposts = async (userId: string) => {
     const { data } = await supabase
-      .from("microstory_reposts" as any)
+      .from("microstory_reposts")
       .select("microstory_id")
-      .eq("user_id", userId) as any;
-    if (data) setUserReposts(new Set(data.map((r: any) => r.microstory_id)));
+      .eq("user_id", userId);
+    if (data) setUserReposts(new Set(data.map((r) => r.microstory_id)));
   };
 
   const fetchMicrostories = async () => {
@@ -124,7 +124,7 @@ const MicrostoriesPage = () => {
 
     const { data, error } = await query.limit(50);
     if (!error) {
-      setMicrostories((data || []).map(d => ({ ...d, reposts_count: (d as any).reposts_count || 0 })));
+      setMicrostories((data || []).map(d => ({ ...d, reposts_count: d.reposts_count || 0 })));
     }
     setLoading(false);
   };
@@ -208,12 +208,14 @@ const MicrostoriesPage = () => {
     }
 
     if (isReposted) {
-      await (supabase.from("microstory_reposts" as any).delete() as any)
-        .eq("user_id", user.id).eq("microstory_id", microstoryId);
-      await supabase.from("microstories").update({ reposts_count: Math.max(0, currentCount - 1) } as any).eq("id", microstoryId);
+      await supabase.from("microstory_reposts")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("microstory_id", microstoryId);
+      await supabase.from("microstories").update({ reposts_count: Math.max(0, currentCount - 1) }).eq("id", microstoryId);
     } else {
-      await (supabase.from("microstory_reposts" as any).insert({ user_id: user.id, microstory_id: microstoryId } as any) as any);
-      await supabase.from("microstories").update({ reposts_count: currentCount + 1 } as any).eq("id", microstoryId);
+      await supabase.from("microstory_reposts").insert({ user_id: user.id, microstory_id: microstoryId });
+      await supabase.from("microstories").update({ reposts_count: currentCount + 1 }).eq("id", microstoryId);
       toast({ title: "¡Reposteado!", description: "Microrrelato compartido en tu perfil." });
     }
   };

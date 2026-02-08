@@ -21,6 +21,7 @@ import PromotionsSection from "@/components/promotions/PromotionsSection";
 import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import PromotionStats from "@/components/promotions/PromotionStats";
+import AnnouncementBanner from "@/components/announcements/AnnouncementBanner";
 
 interface Book {
   id: string;
@@ -401,6 +402,8 @@ const HomePage = () => {
         isOpen={showPromoStats}
         onClose={() => setShowPromoStats(false)}
       />
+
+      <AnnouncementBanner />
     </div>
   );
 };
