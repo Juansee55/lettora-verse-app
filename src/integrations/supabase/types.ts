@@ -463,33 +463,53 @@ export type Database = {
       }
       conversations: {
         Row: {
+          admin_only_messages: boolean
           avatar: string | null
           created_at: string
           description: string | null
           id: string
           is_group: boolean | null
+          is_public: boolean
           name: string | null
+          pinned_message_id: string | null
+          slow_mode_seconds: number
           updated_at: string
         }
         Insert: {
+          admin_only_messages?: boolean
           avatar?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_group?: boolean | null
+          is_public?: boolean
           name?: string | null
+          pinned_message_id?: string | null
+          slow_mode_seconds?: number
           updated_at?: string
         }
         Update: {
+          admin_only_messages?: boolean
           avatar?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_group?: boolean | null
+          is_public?: boolean
           name?: string | null
+          pinned_message_id?: string | null
+          slow_mode_seconds?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_pinned_message_id_fkey"
+            columns: ["pinned_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       followers: {
         Row: {
