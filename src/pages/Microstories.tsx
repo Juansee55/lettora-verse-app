@@ -30,6 +30,7 @@ import ShareMicrostoryInChat from "@/components/microstories/ShareMicrostoryInCh
 import CollaboratorsModal from "@/components/microstories/CollaboratorsModal";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import ReportContentModal from "@/components/reports/ReportContentModal";
+import MentionInput from "@/components/mentions/MentionInput";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,7 @@ const MicrostoriesPage = () => {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [userReposts, setUserReposts] = useState<Set<string>>(new Set());
   const [reportStory, setReportStory] = useState<Microstory | null>(null);
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchMicrostories();
