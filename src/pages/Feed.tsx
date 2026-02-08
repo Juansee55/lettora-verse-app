@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Plus, Heart, MessageCircle, Share2,
-  MoreHorizontal, Image, Film, Loader2, X,
+  MoreHorizontal, Image, Film, Loader2, X, Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,10 +44,7 @@ const FeedPage = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchPosts();
-    checkUser();
-  }, []);
+  useEffect(() => { fetchPosts(); checkUser(); }, []);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -70,33 +67,19 @@ const FeedPage = () => {
       .limit(50);
     
     if (error) {
-      console.error("Error fetching posts:", error);
-      // Fallback: fetch posts without join and then fetch profiles separately
       const { data: postsOnly } = await supabase
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .from("posts").select("*").order("created_at", { ascending: false }).limit(50);
       
       if (postsOnly && postsOnly.length > 0) {
         const userIds = [...new Set(postsOnly.map(p => p.user_id))];
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, username, avatar_url")
-          .in("id", userIds);
+          .from("profiles").select("id, display_name, username, avatar_url").in("id", userIds);
         
         const profileMap: Record<string, any> = {};
         (profiles || []).forEach(p => { profileMap[p.id] = p; });
-        
-        const enriched = postsOnly.map(p => ({
-          ...p,
-          profiles: profileMap[p.user_id] || null,
-        }));
-        setPosts(enriched as Post[]);
+        setPosts(postsOnly.map(p => ({ ...p, profiles: profileMap[p.user_id] || null })) as Post[]);
       }
-    } else if (data) {
-      setPosts(data as Post[]);
-    }
+    } else if (data) setPosts(data as Post[]);
     setLoading(false);
   };
 
@@ -122,27 +105,20 @@ const FeedPage = () => {
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("posts").upload(path, mediaFile);
       if (!uploadError) {
-        const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
-        mediaUrl = urlData.publicUrl;
+        mediaUrl = supabase.storage.from("posts").getPublicUrl(path).data.publicUrl;
         mediaType = mediaFile.type.startsWith("video") ? "video" : "image";
       }
     }
 
     const { error } = await supabase.from("posts").insert({
-      user_id: user.id,
-      content: newContent.trim() || null,
-      media_url: mediaUrl,
-      media_type: mediaUrl ? mediaType : "text",
+      user_id: user.id, content: newContent.trim() || null,
+      media_url: mediaUrl, media_type: mediaUrl ? mediaType : "text",
     });
 
-    if (error) {
-      toast({ title: t("publishError"), variant: "destructive" });
-    } else {
+    if (error) toast({ title: t("publishError"), variant: "destructive" });
+    else {
       toast({ title: t("published") });
-      setNewContent("");
-      setMediaFile(null);
-      setMediaPreview(null);
-      setShowCompose(false);
+      setNewContent(""); setMediaFile(null); setMediaPreview(null); setShowCompose(false);
       fetchPosts();
     }
     setPublishing(false);
@@ -179,20 +155,27 @@ const FeedPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* iOS Header */}
       <div className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
-          <button onClick={() => navigate(-1)} className="text-primary">
+          <button onClick={() => navigate(-1)} className="text-primary p-1">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="font-display font-semibold text-[17px]">{t("publications")}</h1>
-          <Button variant="ghost" size="sm" onClick={() => setShowCompose(true)}>
-            <Plus className="w-4 h-4 mr-1" /> {t("create")}
+          <h1 className="text-[18px] font-bold" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("publications")}</h1>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCompose(true)}
+            className="rounded-full h-9 px-3 bg-primary/10 text-primary font-semibold text-[13px]"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" /> {t("create")}
           </Button>
         </div>
       </div>
 
       <StoriesBar />
 
+      {/* Compose Sheet */}
       <AnimatePresence>
         {showCompose && (
           <motion.div
@@ -203,22 +186,35 @@ const FeedPage = () => {
           >
             <div className="ios-header">
               <div className="flex items-center justify-between px-4 h-[52px]">
-                <button onClick={() => setShowCompose(false)} className="text-primary text-[17px]">{t("cancel")}</button>
-                <h2 className="font-semibold text-[17px]">{t("newPost")}</h2>
-                <Button variant="ghost" size="sm" onClick={handlePublish} disabled={publishing || (!newContent.trim() && !mediaFile)}>
+                <button
+                  onClick={() => setShowCompose(false)}
+                  className="text-primary text-[16px] font-medium"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {t("cancel")}
+                </button>
+                <h2 className="font-bold text-[17px]" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("newPost")}</h2>
+                <Button
+                  size="sm"
+                  onClick={handlePublish}
+                  disabled={publishing || (!newContent.trim() && !mediaFile)}
+                  className="rounded-full h-9 px-5 bg-primary text-primary-foreground font-semibold text-[14px] disabled:opacity-30"
+                >
                   {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : t("publish")}
                 </Button>
               </div>
             </div>
-            <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+            <div className="px-4 py-5 max-w-2xl mx-auto space-y-4">
               <Textarea
                 placeholder={t("whatToShare")}
                 value={newContent}
                 onChange={e => setNewContent(e.target.value)}
-                className="min-h-[150px] text-[17px] border-0 bg-muted/50 rounded-xl resize-none"
+                className="min-h-[160px] text-[17px] border-0 bg-transparent rounded-xl resize-none focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                autoFocus
               />
               {mediaPreview && (
-                <div className="relative rounded-2xl overflow-hidden">
+                <div className="relative rounded-2xl overflow-hidden shadow-md">
                   {mediaFile?.type.startsWith("video") ? (
                     <video src={mediaPreview} controls className="w-full max-h-80 object-cover rounded-2xl" />
                   ) : (
@@ -226,19 +222,19 @@ const FeedPage = () => {
                   )}
                   <button
                     onClick={() => { setMediaFile(null); setMediaPreview(null); }}
-                    className="absolute top-2 right-2 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center"
+                    className="absolute top-3 right-3 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
                   >
                     <X className="w-4 h-4 text-white" />
                   </button>
                 </div>
               )}
-              <div className="flex gap-2">
-                <label className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 rounded-xl text-[15px] cursor-pointer hover:bg-muted transition-colors">
-                  <Image className="w-5 h-5 text-primary" /> {t("photo")}
+              <div className="flex gap-2 pt-2 border-t border-border/30">
+                <label className="flex items-center gap-2 px-4 py-2.5 bg-muted/40 rounded-xl text-[14px] cursor-pointer hover:bg-muted/60 transition-colors font-medium">
+                  <Image className="w-4.5 h-4.5 text-primary" /> {t("photo")}
                   <input type="file" accept="image/*" className="hidden" onChange={handleMediaSelect} />
                 </label>
-                <label className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 rounded-xl text-[15px] cursor-pointer hover:bg-muted transition-colors">
-                  <Film className="w-5 h-5 text-primary" /> {t("video")}
+                <label className="flex items-center gap-2 px-4 py-2.5 bg-muted/40 rounded-xl text-[14px] cursor-pointer hover:bg-muted/60 transition-colors font-medium">
+                  <Film className="w-4.5 h-4.5 text-primary" /> {t("video")}
                   <input type="file" accept="video/*" className="hidden" onChange={handleMediaSelect} />
                 </label>
               </div>
@@ -247,81 +243,123 @@ const FeedPage = () => {
         )}
       </AnimatePresence>
 
-      <main className="px-4 py-4">
+      {/* Posts */}
+      <main className="px-0 py-1">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-7 h-7 animate-spin text-primary/50" />
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-16">
-            <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-[17px] font-semibold mb-2">{t("noPostsYet")}</h3>
-            <p className="text-[15px] text-muted-foreground mb-5">{t("beFirst")}</p>
-            <Button onClick={() => setShowCompose(true)}>
+          <div className="text-center py-20 px-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="w-20 h-20 rounded-full bg-muted/50 mx-auto flex items-center justify-center mb-5"
+            >
+              <MessageCircle className="w-9 h-9 text-muted-foreground/40" />
+            </motion.div>
+            <h3 className="text-xl font-bold mb-1.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>{t("noPostsYet")}</h3>
+            <p className="text-[14px] text-muted-foreground/60 mb-6">{t("beFirst")}</p>
+            <Button onClick={() => setShowCompose(true)} className="rounded-full h-11 px-7 font-semibold shadow-md shadow-primary/20">
               <Plus className="w-4 h-4 mr-2" /> {t("createPost")}
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="divide-y divide-border/30">
             {posts.map((post, i) => {
               const author = getAuthor(post);
+              const isLiked = userLikes.has(post.id);
               return (
                 <motion.article
                   key={post.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="bg-card rounded-2xl overflow-hidden border border-border/50"
+                  transition={{ delay: i * 0.03, duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="bg-background"
                 >
-                  <div className="flex items-center gap-3 p-4 pb-2">
+                  {/* Author header */}
+                  <div className="flex items-center gap-3 px-4 py-3">
                     <div
-                      className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold cursor-pointer overflow-hidden"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center text-primary-foreground font-bold cursor-pointer overflow-hidden shadow-sm"
                       onClick={() => navigate(`/user/${author.id}`)}
                     >
                       {author.avatar_url ? (
                         <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        (author.display_name || "?")[0]
+                        <span className="text-sm">{(author.display_name || "?")[0]}</span>
                       )}
                     </div>
-                    <div className="flex-1" onClick={() => navigate(`/user/${author.id}`)}>
-                      <p className="font-medium text-[15px]">{author.display_name || "Usuario"}</p>
-                      <p className="text-[12px] text-muted-foreground">{formatDate(post.created_at)}</p>
+                    <div className="flex-1 min-w-0" onClick={() => navigate(`/user/${author.id}`)}>
+                      <p className="font-semibold text-[14px] leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                        {author.display_name || "Usuario"}
+                      </p>
+                      <p className="text-[12px] text-muted-foreground/60 leading-tight mt-0.5">
+                        @{author.username || "user"} · {formatDate(post.created_at)}
+                      </p>
                     </div>
-                    <button className="p-2"><MoreHorizontal className="w-4 h-4 text-muted-foreground" /></button>
+                    <button className="p-2 -mr-1 rounded-full hover:bg-muted/40 transition-colors">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground/60" />
+                    </button>
                   </div>
 
-                  {post.content && (
-                    <p className="px-4 pb-2 text-[15px] leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                  )}
-
+                  {/* Media */}
                   {post.media_url && (
-                    post.media_type === "video" ? (
-                      <video src={post.media_url} controls className="w-full max-h-[500px] object-cover" />
-                    ) : (
-                      <img src={post.media_url} alt="" className="w-full max-h-[500px] object-cover" />
-                    )
+                    <div className="relative">
+                      {post.media_type === "video" ? (
+                        <video src={post.media_url} controls className="w-full max-h-[500px] object-cover" />
+                      ) : (
+                        <img src={post.media_url} alt="" className="w-full max-h-[500px] object-cover" />
+                      )}
+                    </div>
                   )}
 
-                  <div className="flex items-center gap-1 px-4 py-3 border-t border-border">
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                        userLikes.has(post.id) ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <Heart className={`w-[18px] h-[18px] ${userLikes.has(post.id) ? "fill-current" : ""}`} />
-                      <span className="text-[13px] font-medium">{post.likes_count}</span>
-                    </button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted">
-                      <MessageCircle className="w-[18px] h-[18px]" />
-                      <span className="text-[13px] font-medium">{post.comments_count}</span>
-                    </button>
+                  {/* Actions */}
+                  <div className="flex items-center px-3 py-2">
+                    <div className="flex items-center gap-3">
+                      <motion.button
+                        onClick={() => handleLike(post.id)}
+                        whileTap={{ scale: 0.8 }}
+                        className="p-2 rounded-full active:bg-destructive/10 transition-colors"
+                      >
+                        <Heart className={`w-[22px] h-[22px] transition-colors ${isLiked ? "fill-destructive text-destructive" : "text-foreground"}`} />
+                      </motion.button>
+                      <button className="p-2 rounded-full">
+                        <MessageCircle className="w-[22px] h-[22px] text-foreground" />
+                      </button>
+                      <button className="p-2 rounded-full">
+                        <Share2 className="w-[20px] h-[20px] text-foreground" />
+                      </button>
+                    </div>
                     <div className="flex-1" />
-                    <button className="p-2 rounded-full text-muted-foreground hover:bg-muted">
-                      <Share2 className="w-[18px] h-[18px]" />
+                    <button className="p-2 rounded-full">
+                      <Bookmark className="w-[20px] h-[20px] text-foreground" />
                     </button>
                   </div>
+
+                  {/* Likes count */}
+                  {post.likes_count > 0 && (
+                    <p className="px-4 text-[13px] font-bold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                      {post.likes_count.toLocaleString()} {post.likes_count === 1 ? "me gusta" : "me gusta"}
+                    </p>
+                  )}
+
+                  {/* Content */}
+                  {post.content && (
+                    <p className="px-4 pb-1 text-[14px] leading-[1.5]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                      <span className="font-semibold mr-1.5">{author.display_name || author.username}</span>
+                      <span className="text-foreground/90 whitespace-pre-wrap">{post.content}</span>
+                    </p>
+                  )}
+
+                  {/* Comments */}
+                  {post.comments_count > 0 && (
+                    <button className="px-4 py-1.5 text-[13px] text-muted-foreground/60">
+                      Ver {post.comments_count === 1 ? "el comentario" : `los ${post.comments_count} comentarios`}
+                    </button>
+                  )}
+
+                  <div className="h-1" />
                 </motion.article>
               );
             })}
@@ -329,12 +367,13 @@ const FeedPage = () => {
         )}
       </main>
 
+      {/* FAB */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.5, type: "spring" }}
         onClick={() => setShowCompose(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-hero rounded-2xl shadow-glow flex items-center justify-center z-40"
+        className="fixed bottom-24 right-4 w-14 h-14 bg-primary rounded-full shadow-lg shadow-primary/25 flex items-center justify-center z-40 active:scale-90 transition-transform"
       >
         <Plus className="w-6 h-6 text-primary-foreground" />
       </motion.button>

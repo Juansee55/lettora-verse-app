@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Send, Loader2, MoreHorizontal, Image, X, Users, Pin } from "lucide-react";
+import { ChevronLeft, Send, Loader2, MoreHorizontal, Image, X, Users, Pin, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -126,7 +126,6 @@ const ChatConversationPage = () => {
       }
     }
 
-    // Fetch messages
     const { data: messagesData, error } = await supabase
       .from("messages")
       .select("id, content, sender_id, created_at, media_url, media_type")
@@ -136,7 +135,6 @@ const ChatConversationPage = () => {
     if (error) toast.error("Error al cargar mensajes");
     else setMessages(messagesData || []);
 
-    // Fetch pinned message
     if (conv?.pinned_message_id) {
       const { data: pinned } = await supabase
         .from("messages")
@@ -144,19 +142,15 @@ const ChatConversationPage = () => {
         .eq("id", conv.pinned_message_id)
         .single();
       if (pinned) setPinnedMessage(pinned);
-    } else {
-      setPinnedMessage(null);
-    }
+    } else setPinnedMessage(null);
 
     setLoading(false);
   };
 
   const updateLastRead = async (userId: string) => {
-    await supabase
-      .from("conversation_participants")
+    await supabase.from("conversation_participants")
       .update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId)
-      .eq("user_id", userId);
+      .eq("conversation_id", conversationId).eq("user_id", userId);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,8 +160,7 @@ const ChatConversationPage = () => {
     const isVideo = file.type.startsWith("video/");
     if (!isImage && !isVideo) { toast.error("Solo se permiten imágenes y videos"); return; }
     if (file.size > 20 * 1024 * 1024) { toast.error("El archivo no puede superar 20MB"); return; }
-    const url = URL.createObjectURL(file);
-    setMediaPreview({ file, url, type: isImage ? "image" : "video" });
+    setMediaPreview({ file, url: URL.createObjectURL(file), type: isImage ? "image" : "video" });
   };
 
   const clearMediaPreview = () => {
@@ -181,24 +174,16 @@ const ChatConversationPage = () => {
     const path = `${currentUserId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (error) { toast.error("Error al subir archivo"); return null; }
-    const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
-    return data.publicUrl;
+    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
   };
 
   const canSendMessage = (): boolean => {
     if (!convInfo?.is_group) return true;
-    const isAdminOrOwner = currentRole === "owner" || currentRole === "admin";
-    if (convInfo.admin_only_messages && !isAdminOrOwner) {
-      toast.error("Solo los administradores pueden enviar mensajes");
-      return false;
-    }
-    if (convInfo.slow_mode_seconds > 0 && !isAdminOrOwner) {
+    const isAdm = currentRole === "owner" || currentRole === "admin";
+    if (convInfo.admin_only_messages && !isAdm) { toast.error("Solo los administradores pueden enviar mensajes"); return false; }
+    if (convInfo.slow_mode_seconds > 0 && !isAdm) {
       const elapsed = (Date.now() - lastSentTime) / 1000;
-      if (elapsed < convInfo.slow_mode_seconds) {
-        const remaining = Math.ceil(convInfo.slow_mode_seconds - elapsed);
-        toast.error(`Modo lento: espera ${remaining}s`);
-        return false;
-      }
+      if (elapsed < convInfo.slow_mode_seconds) { toast.error(`Modo lento: espera ${Math.ceil(convInfo.slow_mode_seconds - elapsed)}s`); return false; }
     }
     return true;
   };
@@ -224,17 +209,12 @@ const ChatConversationPage = () => {
     }
 
     const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId!,
-      sender_id: currentUserId,
-      content: content || "",
-      media_url: mediaUrl,
-      media_type: mediaType,
+      conversation_id: conversationId!, sender_id: currentUserId,
+      content: content || "", media_url: mediaUrl, media_type: mediaType,
     });
 
-    if (error) {
-      toast.error("Error al enviar mensaje");
-      setNewMessage(content);
-    } else {
+    if (error) { toast.error("Error al enviar mensaje"); setNewMessage(content); }
+    else {
       setLastSentTime(Date.now());
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     }
@@ -243,11 +223,7 @@ const ChatConversationPage = () => {
   };
 
   const handlePinMessage = async (messageId: string) => {
-    const { error } = await supabase
-      .from("conversations")
-      .update({ pinned_message_id: messageId })
-      .eq("id", conversationId);
-
+    const { error } = await supabase.from("conversations").update({ pinned_message_id: messageId }).eq("id", conversationId);
     if (error) toast.error("Error al fijar mensaje");
     else {
       const msg = messages.find(m => m.id === messageId);
@@ -275,9 +251,7 @@ const ChatConversationPage = () => {
     setShowReportModal(true);
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  };
+  const formatTime = (dateStr: string) => new Date(dateStr).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 
   const shouldShowDateSeparator = (index: number) => {
     if (index === 0) return true;
@@ -306,17 +280,17 @@ const ChatConversationPage = () => {
   const scrollToPinnedMessage = () => {
     if (!pinnedMessage) return;
     const el = document.getElementById(`msg-${pinnedMessage.id}`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="ios-header">
-        <div className="flex items-center gap-1 px-2 py-2 min-h-[44px]">
+        <div className="flex items-center gap-1 px-2 py-2 min-h-[48px]">
           <Button variant="ghost" size="sm" onClick={() => navigate("/chats")} className="rounded-full h-9 px-2 gap-0.5 text-primary font-medium">
             <ChevronLeft className="w-5 h-5" />
-            <span className="text-[15px]">Chats</span>
+            <span className="text-[15px]" style={{ fontFamily: "'DM Sans', sans-serif" }}>Chats</span>
           </Button>
 
           <div
@@ -326,19 +300,19 @@ const ChatConversationPage = () => {
               else if (otherUser) navigate(`/user/${otherUser.id}`);
             }}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground text-sm font-semibold overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/70 to-primary flex items-center justify-center text-primary-foreground text-sm font-semibold overflow-hidden shadow-sm">
               {!convInfo?.is_group && otherUser?.avatar_url ? (
                 <img src={otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : convInfo?.is_group ? (
                 <Users className="w-4 h-4" />
-              ) : avatarInitial}
+              ) : <span>{avatarInitial}</span>}
             </div>
             <div className="text-center">
-              <h1 className="text-[15px] font-semibold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              <h1 className="text-[16px] font-semibold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 {displayName}
               </h1>
               {convInfo?.is_group && (
-                <p className="text-[11px] text-muted-foreground leading-tight">
+                <p className="text-[11px] text-muted-foreground/70 leading-tight">
                   {Object.keys(participantsMap).length} miembros
                   {convInfo.slow_mode_seconds > 0 && " · 🐢"}
                   {convInfo.admin_only_messages && " · 🔒"}
@@ -348,7 +322,7 @@ const ChatConversationPage = () => {
           </div>
 
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => convInfo?.is_group && setShowGroupInfo(true)}>
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
           </Button>
         </div>
       </div>
@@ -357,40 +331,40 @@ const ChatConversationPage = () => {
       {pinnedMessage && (
         <button
           onClick={scrollToPinnedMessage}
-          className="flex items-center gap-2 px-4 py-2 bg-muted/60 border-b border-border/50 hover:bg-muted/80 transition-colors"
+          className="flex items-center gap-2.5 px-4 py-2.5 bg-primary/5 border-b border-primary/10 hover:bg-primary/10 transition-colors"
         >
-          <Pin className="w-3.5 h-3.5 text-primary shrink-0" />
-          <p className="text-xs text-foreground truncate flex-1 text-left">
-            <span className="font-medium text-primary">Fijado: </span>
+          <Pin className="w-3.5 h-3.5 text-primary shrink-0 rotate-45" />
+          <p className="text-[13px] text-foreground truncate flex-1 text-left" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <span className="font-semibold text-primary">Fijado </span>
             {pinnedMessage.content || "📷 Imagen"}
           </p>
         </button>
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            <Loader2 className="w-7 h-7 animate-spin text-primary/50" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center mb-4 opacity-80">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/15 to-primary/30 flex items-center justify-center mb-5">
               {!convInfo?.is_group && otherUser?.avatar_url ? (
-                <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                <img src={otherUser.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
               ) : convInfo?.is_group ? (
-                <Users className="w-8 h-8 text-primary-foreground" />
+                <Users className="w-10 h-10 text-primary/60" />
               ) : (
-                <span className="text-2xl font-bold text-primary-foreground">{avatarInitial}</span>
+                <span className="text-3xl font-bold text-primary/60">{avatarInitial}</span>
               )}
             </div>
-            <p className="text-base font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>{displayName}</p>
-            <p className="text-[13px] text-muted-foreground mt-1">
+            <p className="text-lg font-bold" style={{ fontFamily: "'DM Sans', sans-serif" }}>{displayName}</p>
+            <p className="text-[14px] text-muted-foreground/60 mt-1.5">
               {convInfo?.is_group ? "Envía un mensaje al grupo" : "Envía un mensaje para iniciar la conversación"}
             </p>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-[3px]">
             {messages.map((message, index) => (
               <div key={message.id} id={`msg-${message.id}`}>
                 {shouldShowDateSeparator(index) && <ChatDateSeparator dateStr={message.created_at} />}
@@ -402,10 +376,7 @@ const ChatConversationPage = () => {
                   mediaType={message.media_type}
                   senderName={participantsMap[message.sender_id]?.display_name || participantsMap[message.sender_id]?.username}
                   showSender={convInfo?.is_group || false}
-                  onLongPress={() => {
-                    setSelectedMessage(message);
-                    setShowMessageActions(true);
-                  }}
+                  onLongPress={() => { setSelectedMessage(message); setShowMessageActions(true); }}
                 />
               </div>
             ))}
@@ -417,13 +388,13 @@ const ChatConversationPage = () => {
       {/* Media preview */}
       {mediaPreview && (
         <div className="px-3 pb-1">
-          <div className="relative inline-block rounded-xl overflow-hidden border border-border bg-muted/50">
+          <div className="relative inline-block rounded-2xl overflow-hidden border border-border/50 bg-muted/30 shadow-sm">
             {mediaPreview.type === "image" ? (
-              <img src={mediaPreview.url} alt="" className="h-24 max-w-[200px] object-cover" />
+              <img src={mediaPreview.url} alt="" className="h-28 max-w-[220px] object-cover" />
             ) : (
-              <video src={mediaPreview.url} className="h-24 max-w-[200px] object-cover" />
+              <video src={mediaPreview.url} className="h-28 max-w-[220px] object-cover" />
             )}
-            <button onClick={clearMediaPreview} className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
+            <button onClick={clearMediaPreview} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
               <X className="w-3.5 h-3.5 text-white" />
             </button>
           </div>
@@ -431,37 +402,37 @@ const ChatConversationPage = () => {
       )}
 
       {/* Input bar */}
-      <div className="border-t border-border/50 bg-background/70 backdrop-blur-2xl px-3 py-2 pb-safe">
+      <div className="border-t border-border/30 bg-background/80 backdrop-blur-2xl px-3 py-2 pb-safe">
         {inputDisabled && convInfo?.admin_only_messages ? (
-          <div className="text-center py-2">
-            <p className="text-xs text-muted-foreground">Solo los administradores pueden enviar mensajes</p>
+          <div className="text-center py-3">
+            <p className="text-[13px] text-muted-foreground/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>Solo los administradores pueden enviar mensajes</p>
           </div>
         ) : (
           <div className="flex items-end gap-2">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all mb-[1px]"
+              className="flex-shrink-0 w-9 h-9 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-90 transition-all mb-[2px]"
             >
-              <Image className="w-5 h-5" />
+              <Camera className="w-[18px] h-[18px]" />
             </button>
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
-                placeholder={convInfo?.slow_mode_seconds ? `Mensaje (modo lento: ${convInfo.slow_mode_seconds}s)` : "Mensaje"}
+                placeholder={convInfo?.slow_mode_seconds ? `Mensaje (🐢 ${convInfo.slow_mode_seconds}s)` : "Mensaje"}
                 value={newMessage}
                 onChange={handleTextareaInput}
                 onKeyDown={handleKeyDown}
                 rows={1}
                 disabled={!!inputDisabled}
-                className="w-full resize-none rounded-[20px] bg-muted/50 border border-border/60 px-4 py-2 text-[15px] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-shadow max-h-[120px] leading-relaxed"
-                style={{ minHeight: "36px" }}
+                className="w-full resize-none rounded-[22px] bg-muted/30 border border-border/40 px-4 py-2.5 text-[15px] placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 transition-all max-h-[120px] leading-relaxed"
+                style={{ minHeight: "40px", fontFamily: "'DM Sans', sans-serif" }}
               />
             </div>
             <button
               onClick={handleSend}
               disabled={(!newMessage.trim() && !mediaPreview) || sending}
-              className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 active:scale-90 transition-all mb-[1px]"
+              className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all mb-[2px] shadow-sm shadow-primary/20"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground ml-0.5" />}
             </button>

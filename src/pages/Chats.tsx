@@ -172,40 +172,40 @@ const ChatsPage = () => {
             <motion.h1
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-[28px] font-bold tracking-tight"
+              className="text-[32px] font-bold tracking-tight text-foreground"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               {t("messages")}
             </motion.h1>
-            <div className="flex gap-0.5">
+            <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-10 w-10 bg-muted/50"
                 onClick={() => setShowCreateGroup(true)}
               >
-                <Users className="w-[20px] h-[20px]" />
+                <Users className="w-[18px] h-[18px]" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-10 w-10 bg-muted/50"
                 onClick={() => setShowNewConversation(true)}
               >
-                <Plus className="w-[22px] h-[22px]" strokeWidth={2.5} />
+                <Plus className="w-[20px] h-[20px]" strokeWidth={2.5} />
               </Button>
             </div>
           </div>
 
           {/* Search bar */}
-          <div className="relative mt-2 mb-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="relative mt-3 mb-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
             <Input
               type="text"
               placeholder={t("searchConversations")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9 rounded-lg bg-muted/60 border-0 text-[15px] placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-primary/30"
+              className="pl-10 h-[38px] rounded-xl bg-muted/40 border-0 text-[15px] placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/20"
             />
           </div>
         </div>
@@ -215,27 +215,32 @@ const ChatsPage = () => {
       <div>
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            <Loader2 className="w-7 h-7 animate-spin text-primary/60" />
           </div>
         ) : conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MessageCircle className="w-7 h-7 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="w-20 h-20 rounded-full bg-muted/60 flex items-center justify-center mb-5"
+            >
+              <MessageCircle className="w-9 h-9 text-muted-foreground/50" />
+            </motion.div>
+            <h3 className="text-xl font-bold mb-1.5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               {t("noConversations")}
             </h3>
-            <p className="text-[13px] text-muted-foreground mb-5">{t("startConversation")}</p>
+            <p className="text-[14px] text-muted-foreground/70 mb-6 max-w-[260px]">{t("startConversation")}</p>
             <Button
               onClick={() => setShowNewConversation(true)}
-              className="rounded-full h-10 px-6 bg-primary text-primary-foreground font-semibold"
+              className="rounded-full h-11 px-7 bg-primary text-primary-foreground font-semibold text-[15px] shadow-md shadow-primary/20"
             >
-              <Plus className="w-4 h-4 mr-1.5" />
+              <Plus className="w-4 h-4 mr-2" />
               {t("newConversation")}
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-border/40">
+          <div>
             {filteredConversations.map((conv, index) => (
               <ChatListItem
                 key={conv.id}
@@ -259,7 +264,7 @@ const ChatsPage = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.3, type: "spring", stiffness: 400, damping: 25 }}
         onClick={() => setShowNewConversation(true)}
-        className="fixed bottom-24 right-5 w-14 h-14 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center z-40 active:scale-90 transition-transform"
+        className="fixed bottom-24 right-5 w-[56px] h-[56px] bg-primary rounded-full shadow-lg shadow-primary/25 flex items-center justify-center z-40 active:scale-90 transition-transform"
       >
         <MessageCircle className="w-6 h-6 text-primary-foreground" />
       </motion.button>
