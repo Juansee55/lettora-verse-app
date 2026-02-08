@@ -429,6 +429,7 @@ export type Database = {
           id: string
           joined_at: string
           last_read_at: string | null
+          muted_until: string | null
           role: string
           user_id: string
         }
@@ -437,6 +438,7 @@ export type Database = {
           id?: string
           joined_at?: string
           last_read_at?: string | null
+          muted_until?: string | null
           role?: string
           user_id: string
         }
@@ -445,6 +447,7 @@ export type Database = {
           id?: string
           joined_at?: string
           last_read_at?: string | null
+          muted_until?: string | null
           role?: string
           user_id?: string
         }
@@ -462,6 +465,7 @@ export type Database = {
         Row: {
           avatar: string | null
           created_at: string
+          description: string | null
           id: string
           is_group: boolean | null
           name: string | null
@@ -470,6 +474,7 @@ export type Database = {
         Insert: {
           avatar?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           is_group?: boolean | null
           name?: string | null
@@ -478,6 +483,7 @@ export type Database = {
         Update: {
           avatar?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           is_group?: boolean | null
           name?: string | null
@@ -627,6 +633,8 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           read_at: string | null
           sender_id: string
         }
@@ -635,6 +643,8 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           sender_id: string
         }
@@ -643,6 +653,8 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           sender_id?: string
         }

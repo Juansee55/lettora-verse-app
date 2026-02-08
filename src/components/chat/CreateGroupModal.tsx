@@ -24,6 +24,7 @@ const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<"info" | "members">("info");
   const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<UserResult[]>([]);
@@ -70,7 +71,7 @@ const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => {
 
     const { error } = await supabase
       .from("conversations")
-      .insert({ id: convId, is_group: true, name: groupName.trim() });
+      .insert({ id: convId, is_group: true, name: groupName.trim(), description: groupDescription.trim() || null });
 
     if (error) {
       toast({ title: "Error al crear grupo", variant: "destructive" });
@@ -105,6 +106,7 @@ const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => {
   const reset = () => {
     setStep("info");
     setGroupName("");
+    setGroupDescription("");
     setSearchQuery("");
     setSearchResults([]);
     setSelectedMembers([]);
@@ -149,6 +151,15 @@ const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => {
                   onChange={e => setGroupName(e.target.value)}
                   className="h-12 rounded-xl bg-muted/50"
                   autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-medium text-muted-foreground mb-1.5 block">Descripción (opcional)</label>
+                <textarea
+                  placeholder="¿De qué trata este grupo?"
+                  value={groupDescription}
+                  onChange={e => setGroupDescription(e.target.value)}
+                  className="w-full resize-none rounded-xl bg-muted/50 border border-border/60 px-4 py-3 text-[15px] placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 min-h-[80px]"
                 />
               </div>
               <Button
