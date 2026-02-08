@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Send, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, Send, Loader2, MoreHorizontal, Image, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatDateSeparator from "@/components/chat/ChatDateSeparator";
+import GroupInfoSheet from "@/components/chat/GroupInfoSheet";
 
 interface Message {
   id: string;
   content: string;
   sender_id: string;
   created_at: string;
+  media_url?: string | null;
+  media_type?: string;
 }
 
 interface Participant {
@@ -19,6 +22,12 @@ interface Participant {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
+}
+
+interface ConvInfo {
+  is_group: boolean;
+  name: string | null;
+  description: string | null;
 }
 
 const ChatConversationPage = () => {
@@ -30,8 +39,14 @@ const ChatConversationPage = () => {
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [otherUser, setOtherUser] = useState<Participant | null>(null);
+  const [convInfo, setConvInfo] = useState<ConvInfo | null>(null);
+  const [participantsMap, setParticipantsMap] = useState<Record<string, Participant>>({});
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState<{ file: File; url: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     checkUserAndFetch();
@@ -68,24 +83,48 @@ const ChatConversationPage = () => {
 
   const fetchConversationData = async (userId: string) => {
     setLoading(true);
+
+    // Fetch conversation info
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("is_group, name, description")
+      .eq("id", conversationId)
+      .single();
+
+    if (conv) setConvInfo(conv);
+
+    // Fetch participants
     const { data: participants } = await supabase
       .from("conversation_participants")
       .select("user_id")
-      .eq("conversation_id", conversationId)
-      .neq("user_id", userId);
+      .eq("conversation_id", conversationId);
 
     if (participants && participants.length > 0) {
-      const { data: profile } = await supabase
+      const userIds = participants.map(p => p.user_id).filter(id => id !== userId);
+      const allUserIds = participants.map(p => p.user_id);
+
+      const { data: profiles } = await supabase
         .from("profiles")
         .select("id, display_name, username, avatar_url")
-        .eq("id", participants[0].user_id)
-        .maybeSingle();
-      if (profile) setOtherUser(profile);
+        .in("id", allUserIds);
+
+      if (profiles) {
+        const map: Record<string, Participant> = {};
+        profiles.forEach(p => { map[p.id] = p; });
+        setParticipantsMap(map);
+
+        // For 1:1 chats, set the other user
+        if (!conv?.is_group && userIds.length > 0) {
+          const other = profiles.find(p => p.id === userIds[0]);
+          if (other) setOtherUser(other);
+        }
+      }
     }
 
+    // Fetch messages
     const { data: messagesData, error } = await supabase
       .from("messages")
-      .select("*")
+      .select("id, content, sender_id, created_at, media_url, media_type")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 
@@ -105,19 +144,79 @@ const ChatConversationPage = () => {
       .eq("user_id", userId);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      toast.error("Solo se permiten imágenes y videos");
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("El archivo no puede superar 20MB");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setMediaPreview({ file, url, type: isImage ? "image" : "video" });
+  };
+
+  const clearMediaPreview = () => {
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview.url);
+    setMediaPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadMedia = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `${currentUserId}/${Date.now()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("chat-media")
+      .upload(path, file);
+
+    if (error) {
+      toast.error("Error al subir archivo");
+      return null;
+    }
+
+    const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !currentUserId || sending) return;
+    if ((!newMessage.trim() && !mediaPreview) || !currentUserId || sending) return;
     setSending(true);
+    setUploading(!!mediaPreview);
+
     const content = newMessage.trim();
     setNewMessage("");
-
-    // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = "auto";
+
+    let mediaUrl: string | null = null;
+    let mediaType = "text";
+
+    if (mediaPreview) {
+      mediaUrl = await uploadMedia(mediaPreview.file);
+      mediaType = mediaPreview.type;
+      clearMediaPreview();
+      if (!mediaUrl && !content) {
+        setSending(false);
+        setUploading(false);
+        return;
+      }
+    }
 
     const { error } = await supabase.from("messages").insert({
       conversation_id: conversationId!,
       sender_id: currentUserId,
-      content,
+      content: content || "",
+      media_url: mediaUrl,
+      media_type: mediaType,
     });
 
     if (error) {
@@ -130,6 +229,7 @@ const ChatConversationPage = () => {
         .eq("id", conversationId);
     }
     setSending(false);
+    setUploading(false);
   };
 
   const formatTime = (dateStr: string) => {
@@ -148,7 +248,6 @@ const ChatConversationPage = () => {
 
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
-    // Auto-resize
     const el = e.target;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
@@ -161,7 +260,11 @@ const ChatConversationPage = () => {
     }
   };
 
-  const avatarInitial = (otherUser?.display_name || otherUser?.username || "?")[0].toUpperCase();
+  const displayName = convInfo?.is_group
+    ? convInfo.name || "Grupo"
+    : otherUser?.display_name || otherUser?.username || "Usuario";
+
+  const avatarInitial = displayName[0]?.toUpperCase() || "?";
 
   return (
     <div className="h-screen bg-background flex flex-col">
@@ -180,23 +283,41 @@ const ChatConversationPage = () => {
 
           <div
             className="flex items-center gap-2.5 flex-1 justify-center cursor-pointer -ml-12"
-            onClick={() => otherUser && navigate(`/user/${otherUser.id}`)}
+            onClick={() => {
+              if (convInfo?.is_group) {
+                setShowGroupInfo(true);
+              } else if (otherUser) {
+                navigate(`/user/${otherUser.id}`);
+              }
+            }}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground text-sm font-semibold overflow-hidden">
-              {otherUser?.avatar_url ? (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground text-sm font-semibold overflow-hidden">
+              {!convInfo?.is_group && otherUser?.avatar_url ? (
                 <img src={otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : convInfo?.is_group ? (
+                <Users className="w-4 h-4" />
               ) : (
                 avatarInitial
               )}
             </div>
             <div className="text-center">
               <h1 className="text-[15px] font-semibold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                {otherUser?.display_name || otherUser?.username || "Usuario"}
+                {displayName}
               </h1>
+              {convInfo?.is_group && (
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  {Object.keys(participantsMap).length} miembros
+                </p>
+              )}
             </div>
           </div>
 
-          <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-9 w-9"
+            onClick={() => convInfo?.is_group && setShowGroupInfo(true)}
+          >
             <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
@@ -210,18 +331,20 @@ const ChatConversationPage = () => {
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-hero flex items-center justify-center mb-4 opacity-80">
-              {otherUser?.avatar_url ? (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center mb-4 opacity-80">
+              {!convInfo?.is_group && otherUser?.avatar_url ? (
                 <img src={otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : convInfo?.is_group ? (
+                <Users className="w-8 h-8 text-primary-foreground" />
               ) : (
                 <span className="text-2xl font-bold text-primary-foreground">{avatarInitial}</span>
               )}
             </div>
             <p className="text-base font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              {otherUser?.display_name || otherUser?.username}
+              {displayName}
             </p>
             <p className="text-[13px] text-muted-foreground mt-1">
-              Envía un mensaje para iniciar la conversación
+              {convInfo?.is_group ? "Envía un mensaje al grupo" : "Envía un mensaje para iniciar la conversación"}
             </p>
           </div>
         ) : (
@@ -235,6 +358,10 @@ const ChatConversationPage = () => {
                   content={message.content}
                   time={formatTime(message.created_at)}
                   isOwn={message.sender_id === currentUserId}
+                  mediaUrl={message.media_url}
+                  mediaType={message.media_type}
+                  senderName={participantsMap[message.sender_id]?.display_name || participantsMap[message.sender_id]?.username}
+                  showSender={convInfo?.is_group || false}
                 />
               </div>
             ))}
@@ -243,9 +370,41 @@ const ChatConversationPage = () => {
         )}
       </div>
 
+      {/* Media preview */}
+      {mediaPreview && (
+        <div className="px-3 pb-1">
+          <div className="relative inline-block rounded-xl overflow-hidden border border-border bg-muted/50">
+            {mediaPreview.type === "image" ? (
+              <img src={mediaPreview.url} alt="" className="h-24 max-w-[200px] object-cover" />
+            ) : (
+              <video src={mediaPreview.url} className="h-24 max-w-[200px] object-cover" />
+            )}
+            <button
+              onClick={clearMediaPreview}
+              className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center"
+            >
+              <X className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* iOS-style input bar */}
       <div className="border-t border-border/50 bg-background/70 backdrop-blur-2xl px-3 py-2 pb-safe">
         <div className="flex items-end gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all mb-[1px]"
+          >
+            <Image className="w-5 h-5" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -261,7 +420,7 @@ const ChatConversationPage = () => {
           </div>
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && !mediaPreview) || sending}
             className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 active:scale-90 transition-all mb-[1px]"
           >
             {sending ? (
@@ -272,6 +431,16 @@ const ChatConversationPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Group Info Sheet */}
+      {convInfo?.is_group && currentUserId && (
+        <GroupInfoSheet
+          isOpen={showGroupInfo}
+          onClose={() => setShowGroupInfo(false)}
+          conversationId={conversationId!}
+          currentUserId={currentUserId}
+        />
+      )}
     </div>
   );
 };
