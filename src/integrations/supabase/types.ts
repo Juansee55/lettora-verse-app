@@ -306,6 +306,33 @@ export type Database = {
           },
         ]
       }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           commentable_id: string
@@ -567,6 +594,33 @@ export type Database = {
           },
         ]
       }
+      mentions: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          mentioner_id: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          mentioner_id: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          mentioner_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -798,6 +852,42 @@ export type Database = {
           },
         ]
       }
+      profile_items: {
+        Row: {
+          created_at: string
+          css_value: string | null
+          description: string | null
+          id: string
+          image_url: string
+          item_type: string
+          name: string
+          price: number
+          rarity: string
+        }
+        Insert: {
+          created_at?: string
+          css_value?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          item_type: string
+          name: string
+          price?: number
+          rarity?: string
+        }
+        Update: {
+          created_at?: string
+          css_value?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          item_type?: string
+          name?: string
+          price?: number
+          rarity?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1001,6 +1091,62 @@ export type Database = {
           },
         ]
       }
+      user_coins: {
+        Row: {
+          balance: number
+          id: string
+          total_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          total_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          total_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_items: {
+        Row: {
+          id: string
+          is_equipped: boolean
+          item_id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_equipped?: boolean
+          item_id: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_equipped?: boolean
+          item_id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "profile_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1032,6 +1178,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      purchase_item: {
+        Args: { p_item_id: string; p_user_id: string }
         Returns: boolean
       }
     }
