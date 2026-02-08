@@ -180,15 +180,10 @@ const MicrostoriesPage = () => {
     }
 
     if (isLiked) {
-      const { data: existingLike } = await supabase.from("likes").select("id")
-        .eq("user_id", user.id).eq("likeable_type", "microstory").eq("likeable_id", microstoryId).maybeSingle();
-      if (existingLike) {
-        await supabase.from("likes").delete().eq("id", existingLike.id);
-        await supabase.from("microstories").update({ likes_count: Math.max(0, currentCount - 1) }).eq("id", microstoryId);
-      }
+      await supabase.from("likes").delete()
+        .eq("user_id", user.id).eq("likeable_type", "microstory").eq("likeable_id", microstoryId);
     } else {
       await supabase.from("likes").insert({ user_id: user.id, likeable_type: "microstory", likeable_id: microstoryId });
-      await supabase.from("microstories").update({ likes_count: currentCount + 1 }).eq("id", microstoryId);
     }
   };
 
@@ -215,10 +210,8 @@ const MicrostoriesPage = () => {
         .delete()
         .eq("user_id", user.id)
         .eq("microstory_id", microstoryId);
-      await supabase.from("microstories").update({ reposts_count: Math.max(0, currentCount - 1) }).eq("id", microstoryId);
     } else {
       await supabase.from("microstory_reposts").insert({ user_id: user.id, microstory_id: microstoryId });
-      await supabase.from("microstories").update({ reposts_count: currentCount + 1 }).eq("id", microstoryId);
       toast({ title: "¡Reposteado!", description: "Microrrelato compartido en tu perfil." });
     }
   };

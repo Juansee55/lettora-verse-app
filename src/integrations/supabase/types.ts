@@ -402,6 +402,7 @@ export type Database = {
           id: string
           joined_at: string
           last_read_at: string | null
+          role: string
           user_id: string
         }
         Insert: {
@@ -409,6 +410,7 @@ export type Database = {
           id?: string
           joined_at?: string
           last_read_at?: string | null
+          role?: string
           user_id: string
         }
         Update: {
@@ -416,6 +418,7 @@ export type Database = {
           id?: string
           joined_at?: string
           last_read_at?: string | null
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -487,6 +490,47 @@ export type Database = {
             columns: ["following_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_invitations: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invited_by: string
+          max_uses: number | null
+          uses_count: number | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invited_by: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invited_by?: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invitations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -710,6 +754,42 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          comments_count: number | null
+          content: string | null
+          created_at: string
+          id: string
+          likes_count: number | null
+          media_type: string
+          media_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          media_type?: string
+          media_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          media_type?: string
+          media_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -841,6 +921,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      stories: {
+        Row: {
+          background_color: string | null
+          created_at: string
+          expires_at: string
+          font_style: string | null
+          id: string
+          media_type: string
+          media_url: string | null
+          text_content: string | null
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          background_color?: string | null
+          created_at?: string
+          expires_at: string
+          font_style?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string | null
+          text_content?: string | null
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          background_color?: string | null
+          created_at?: string
+          expires_at?: string
+          font_style?: string | null
+          id?: string
+          media_type?: string
+          media_url?: string | null
+          text_content?: string | null
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

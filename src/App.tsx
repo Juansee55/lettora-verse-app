@@ -24,6 +24,7 @@ import EditProfilePage from "./pages/EditProfile";
 import AdminPage from "./pages/Admin";
 import ChapterReaderPage from "./pages/ChapterReader";
 import SettingsPage from "./pages/Settings";
+import FeedPage from "./pages/Feed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -138,6 +139,10 @@ const AppContent = () => {
       <Route 
         path="/microstories" 
         element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} 
+      />
+      <Route 
+        path="/feed" 
+        element={user ? <FeedPage /> : <Navigate to="/auth" replace />} 
       />
       <Route 
         path="/user/:userId" 
