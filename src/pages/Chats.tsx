@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Plus, MessageCircle, Loader2 } from "lucide-react";
+import { Search, Plus, MessageCircle, Loader2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/navigation/BottomNav";
 import NewConversationModal from "@/components/chat/NewConversationModal";
+import CreateGroupModal from "@/components/chat/CreateGroupModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ const ChatsPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showNewConversation, setShowNewConversation] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -191,9 +193,14 @@ const ChatsPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-display font-bold">Mensajes</h1>
-            <Button variant="ghost" size="icon" onClick={() => setShowNewConversation(true)}>
-              <Plus className="w-5 h-5" />
-            </Button>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateGroup(true)}>
+                <Users className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setShowNewConversation(true)}>
+                <Plus className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Search */}
@@ -290,6 +297,12 @@ const ChatsPage = () => {
       <NewConversationModal
         isOpen={showNewConversation}
         onClose={() => setShowNewConversation(false)}
+      />
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
       />
 
       <BottomNav />
