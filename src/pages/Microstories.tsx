@@ -16,6 +16,7 @@ import {
   Send,
   Trophy,
   Repeat2,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +29,7 @@ import MicrostoryComments from "@/components/microstories/MicrostoryComments";
 import ShareMicrostoryInChat from "@/components/microstories/ShareMicrostoryInChat";
 import CollaboratorsModal from "@/components/microstories/CollaboratorsModal";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
+import ReportContentModal from "@/components/reports/ReportContentModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +72,7 @@ const MicrostoriesPage = () => {
   const [collaboratorsStory, setCollaboratorsStory] = useState<Microstory | null>(null);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [userReposts, setUserReposts] = useState<Set<string>>(new Set());
+  const [reportStory, setReportStory] = useState<Microstory | null>(null);
 
   useEffect(() => {
     fetchMicrostories();
@@ -413,6 +416,15 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
                           Colaboradores
                         </DropdownMenuItem>
                       )}
+                      {currentUser?.id !== story.author_id && (
+                        <DropdownMenuItem
+                          onClick={() => setReportStory(story)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Flag className="w-4 h-4 mr-2" />
+                          Reportar
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -491,6 +503,16 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
           onClose={() => setCollaboratorsStory(null)}
           microstoryId={collaboratorsStory.id}
           authorId={collaboratorsStory.author_id}
+        />
+      )}
+
+      {reportStory && (
+        <ReportContentModal
+          isOpen={!!reportStory}
+          onClose={() => setReportStory(null)}
+          contentType="microstory"
+          contentId={reportStory.id}
+          contentTitle={reportStory.title || reportStory.content.slice(0, 50)}
         />
       )}
 

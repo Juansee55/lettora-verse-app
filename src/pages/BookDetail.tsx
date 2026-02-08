@@ -18,12 +18,14 @@ import {
   BookOpen,
   Send,
   Edit3,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
+import ReportContentModal from "@/components/reports/ReportContentModal";
 
 interface BookData {
   id: string;
@@ -85,6 +87,7 @@ const BookDetailPage = () => {
   const [sendingComment, setSendingComment] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -376,6 +379,15 @@ const BookDetailPage = () => {
               <span className="text-[11px] font-medium text-primary">Colaborar</span>
             </button>
           )}
+          {!isAuthor && (
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
+            >
+              <Flag className="w-[22px] h-[22px] text-muted-foreground" />
+              <span className="text-[11px] font-medium text-muted-foreground">Reportar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -614,6 +626,14 @@ const BookDetailPage = () => {
           bookTitle={book.title}
         />
       )}
+      {/* Report Modal */}
+      <ReportContentModal
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+        contentType="book"
+        contentId={book.id}
+        contentTitle={book.title}
+      />
     </div>
   );
 };
