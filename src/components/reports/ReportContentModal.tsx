@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ReportContentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  contentType: "microstory" | "book";
+  contentType: "microstory" | "book" | "message";
   contentId: string;
   contentTitle?: string;
 }

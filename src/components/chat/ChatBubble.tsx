@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Check, Play } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface ChatBubbleProps {
   content: string;
@@ -10,11 +10,31 @@ interface ChatBubbleProps {
   mediaType?: string;
   senderName?: string | null;
   showSender?: boolean;
+  onLongPress?: () => void;
 }
 
-const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, showSender }: ChatBubbleProps) => {
+const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, showSender, onLongPress }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMedia = mediaType === "image" || mediaType === "video";
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
+  const handleTouchStart = useCallback(() => {
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      onLongPress?.();
+    }, 500);
+  }, [onLongPress]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onLongPress?.();
+  }, [onLongPress]);
 
   return (
     <motion.div
@@ -22,13 +42,17 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onContextMenu={handleContextMenu}
     >
       <div
         className={`relative max-w-[78%] ${isMedia && !content ? "p-1" : "px-3.5 py-2"} ${
           isOwn
             ? "bg-primary text-primary-foreground rounded-[18px] rounded-br-[4px]"
             : "bg-muted text-foreground rounded-[18px] rounded-bl-[4px]"
-        }`}
+        } select-none`}
       >
         {showSender && senderName && !isOwn && (
           <p className="text-[11px] font-semibold text-primary mb-0.5">{senderName}</p>
