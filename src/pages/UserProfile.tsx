@@ -90,6 +90,16 @@ const UserProfilePage = () => {
     setLoading(false);
   };
 
+  const fetchTargetUserRole = async () => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "moderator"])
+      .maybeSingle();
+    if (data) setTargetUserRole(data.role as "admin" | "moderator");
+  };
+
   const checkBlockStatus = async (myId: string) => {
     const [{ data: blocked }, { data: blockedBy }] = await Promise.all([
       supabase.from("user_blocks" as any).select("id").eq("blocker_id", myId).eq("blocked_id", userId).maybeSingle(),
