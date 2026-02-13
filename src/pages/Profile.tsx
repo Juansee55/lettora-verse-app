@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
-  Grid3X3, List, Coins, ShoppingBag,
+  Grid3X3, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +53,6 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
-  const [coinBalance, setCoinBalance] = useState(0);
   const [userRole, setUserRole] = useState<UserRole>(null);
 
   useEffect(() => {
@@ -64,13 +63,12 @@ const ProfilePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
 
-    const [profileRes, booksRes, followersRes, followingRes, equippedRes, coinsRes, roleRes] = await Promise.all([
+    const [profileRes, booksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").eq("author_id", user.id).order("created_at", { ascending: false }),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
       supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
-      supabase.from("user_coins").select("balance").eq("user_id", user.id).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
     ]);
 
@@ -101,7 +99,6 @@ const ProfilePage = () => {
       });
     }
 
-    if (coinsRes.data) setCoinBalance(coinsRes.data.balance);
     if (roleRes.data) setUserRole(roleRes.data.role as UserRole);
     setLoading(false);
   };
@@ -129,9 +126,6 @@ const ProfilePage = () => {
             @{profile?.username || "usuario"}
           </h1>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => navigate("/store")}>
-              <ShoppingBag className="w-5 h-5" />
-            </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowShare(true)}>
               <Share2 className="w-5 h-5" />
             </Button>
@@ -199,18 +193,11 @@ const ProfilePage = () => {
           )}
         </div>
 
-        {/* Coins badge */}
+        {/* Inventory badge */}
         <div className="flex items-center gap-2 mt-2">
           <button
-            onClick={() => navigate("/store")}
-            className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 rounded-full"
-          >
-            <Coins className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[13px] font-semibold text-amber-500">{coinBalance}</span>
-          </button>
-          <button
             onClick={() => navigate("/inventory")}
-            className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 rounded-full"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 rounded-full"
           >
             <Heart className="w-3.5 h-3.5 text-rose-500" />
             <span className="text-[13px] font-semibold text-rose-500">Inventario</span>
