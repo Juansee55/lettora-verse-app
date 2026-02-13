@@ -41,6 +41,8 @@ interface EquippedItems {
   background: string | null;
 }
 
+type UserRole = "admin" | "moderator" | null;
+
 const ProfilePage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"grid" | "list">("grid");
@@ -51,6 +53,7 @@ const ProfilePage = () => {
   const [showShare, setShowShare] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null });
   const [coinBalance, setCoinBalance] = useState(0);
+  const [userRole, setUserRole] = useState<UserRole>(null);
 
   useEffect(() => {
     fetchProfileData();
@@ -60,13 +63,14 @@ const ProfilePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
 
-    const [profileRes, booksRes, followersRes, followingRes, equippedRes, coinsRes] = await Promise.all([
+    const [profileRes, booksRes, followersRes, followingRes, equippedRes, coinsRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").eq("author_id", user.id).order("created_at", { ascending: false }),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
       supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
       supabase.from("user_coins").select("balance").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
     ]);
 
     if (profileRes.data) setProfile(profileRes.data);
@@ -95,6 +99,7 @@ const ProfilePage = () => {
     }
 
     if (coinsRes.data) setCoinBalance(coinsRes.data.balance);
+    if (roleRes.data) setUserRole(roleRes.data.role as UserRole);
     setLoading(false);
   };
 
@@ -146,7 +151,9 @@ const ProfilePage = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative"
+            className={`relative ${
+              userRole === "admin" ? "admin-frame-premium" : userRole === "moderator" ? "mod-frame" : ""
+            }`}
           >
             <div className={`w-20 h-20 rounded-full overflow-hidden ring-2 ring-background ${equippedItems.frame || "bg-gradient-hero"}`}>
               {profile?.avatar_url ? (
@@ -157,7 +164,7 @@ const ProfilePage = () => {
                 </div>
               )}
             </div>
-            {equippedItems.frame && (
+            {equippedItems.frame && !userRole && (
               <div className={`absolute -inset-1 rounded-full ${equippedItems.frame} pointer-events-none`} />
             )}
           </motion.div>

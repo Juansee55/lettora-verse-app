@@ -291,3 +291,120 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* ═══════ Admin Frames ═══════ */
+
+@keyframes admin-frame-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes admin-frame-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes admin-frame-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Base admin frame - elegant gold ring */
+.admin-frame {
+  position: relative;
+}
+
+.admin-frame::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  padding: 3px;
+  background: linear-gradient(135deg, hsl(45 95% 55%), hsl(35 90% 45%), hsl(50 100% 65%), hsl(40 95% 50%));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: admin-frame-pulse 3s ease-in-out infinite;
+}
+
+/* Admin frame with spinning conic gradient */
+.admin-frame-premium {
+  position: relative;
+}
+
+.admin-frame-premium::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    hsl(45 100% 60%),
+    hsl(35 95% 45%),
+    hsl(50 100% 70%),
+    hsl(40 90% 50%),
+    hsl(45 100% 60%)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: admin-frame-rotate 4s linear infinite;
+}
+
+.admin-frame-premium::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  box-shadow: 0 0 15px hsl(45 100% 55% / 0.3), 0 0 30px hsl(45 100% 55% / 0.15);
+  pointer-events: none;
+  animation: admin-frame-pulse 2s ease-in-out infinite;
+}
+
+/* Moderator frame - subtle silver/blue */
+.mod-frame {
+  position: relative;
+}
+
+.mod-frame::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  padding: 2.5px;
+  background: linear-gradient(135deg, hsl(220 80% 65%), hsl(240 70% 60%), hsl(200 85% 70%), hsl(230 75% 55%));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: admin-frame-pulse 3s ease-in-out infinite;
+}
+
+/* Squared admin frame for UserProfile cards */
+.admin-frame-square {
+  position: relative;
+}
+
+.admin-frame-square::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 1.25rem;
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    hsl(45 100% 60%),
+    hsl(35 95% 45%),
+    hsl(50 100% 70%),
+    hsl(40 90% 50%),
+    hsl(45 100% 60%)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: admin-frame-rotate 4s linear infinite;
+}
