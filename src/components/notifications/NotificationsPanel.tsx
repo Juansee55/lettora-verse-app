@@ -210,6 +210,14 @@ const NotificationsPanel = ({ isOpen, onClose }: NotificationsPanelProps) => {
                       Leer todo
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { navigate("/notifications"); onClose(); }}
+                    className="text-primary text-[13px]"
+                  >
+                    Ver todo
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={onClose}>
                     <X className="w-5 h-5" />
                   </Button>

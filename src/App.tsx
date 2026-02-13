@@ -28,6 +28,8 @@ import ChapterReaderPage from "./pages/ChapterReader";
 import SettingsPage from "./pages/Settings";
 import FeedPage from "./pages/Feed";
 import ProfileStorePage from "./pages/ProfileStore";
+import NotificationsPage from "./pages/Notifications";
+import AdminsPage from "./pages/Admins";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +94,8 @@ const AppContent = () => {
       <Route path="/edit-profile" element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/admins" element={user ? <AdminsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
