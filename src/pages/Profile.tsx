@@ -39,6 +39,7 @@ interface Stats {
 interface EquippedItems {
   frame: string | null;
   background: string | null;
+  nameColor: string | null;
 }
 
 type UserRole = "admin" | "moderator" | null;
@@ -51,7 +52,7 @@ const ProfilePage = () => {
   const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
-  const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null });
+  const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
   const [coinBalance, setCoinBalance] = useState(0);
   const [userRole, setUserRole] = useState<UserRole>(null);
 
@@ -94,6 +95,8 @@ const ProfilePage = () => {
           setEquippedItems(prev => ({ ...prev, frame: item.profile_items.css_value }));
         } else if (item.profile_items?.item_type === "background") {
           setEquippedItems(prev => ({ ...prev, background: item.profile_items.css_value }));
+        } else if (item.profile_items?.item_type === "name_color") {
+          setEquippedItems(prev => ({ ...prev, nameColor: item.profile_items.css_value }));
         }
       });
     }
@@ -188,7 +191,9 @@ const ProfilePage = () => {
 
         {/* Name & Bio */}
         <div className="mt-4">
-          <h2 className="text-[15px] font-semibold">{profile?.display_name || "Usuario"}</h2>
+          <h2 className={`text-[15px] font-semibold ${equippedItems.nameColor || ""}`}>
+            {profile?.display_name || "Usuario"}
+          </h2>
           {profile?.bio && (
             <p className="text-[15px] text-muted-foreground mt-1 leading-snug">{profile.bio}</p>
           )}
@@ -202,6 +207,13 @@ const ProfilePage = () => {
           >
             <Coins className="w-3.5 h-3.5 text-amber-500" />
             <span className="text-[13px] font-semibold text-amber-500">{coinBalance}</span>
+          </button>
+          <button
+            onClick={() => navigate("/inventory")}
+            className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 rounded-full"
+          >
+            <Heart className="w-3.5 h-3.5 text-rose-500" />
+            <span className="text-[13px] font-semibold text-rose-500">Inventario</span>
           </button>
         </div>
 
