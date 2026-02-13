@@ -12,6 +12,10 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
+  Ban,
+  Trash2,
+  Send,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,10 +34,10 @@ interface Report {
   resolved_by: string | null;
   resolved_at: string | null;
   created_at: string;
-  // Enriched
   reporter_name?: string;
   content_title?: string;
   content_author?: string;
+  content_author_id?: string;
 }
 
 interface ModerationPanelProps {
@@ -88,10 +92,8 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
       return;
     }
 
-    // Enrich reports with content info
     const enrichedReports = await Promise.all(
       (data || []).map(async (report: any) => {
-        // Get reporter name
         const { data: reporter } = await supabase
           .from("profiles")
           .select("display_name, username")
@@ -100,23 +102,28 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
 
         let content_title = "";
         let content_author = "";
+        let content_author_id = "";
 
         if (report.content_type === "book") {
           const { data: book } = await supabase
             .from("books")
-            .select("title, profiles:author_id (display_name, username)")
+            .select("title, author_id, profiles:author_id (display_name, username)")
             .eq("id", report.content_id)
             .maybeSingle();
           content_title = book?.title || "Libro eliminado";
           content_author = (book?.profiles as any)?.display_name || (book?.profiles as any)?.username || "";
+          content_author_id = book?.author_id || "";
         } else if (report.content_type === "microstory") {
           const { data: story } = await supabase
             .from("microstories")
-            .select("title, content, profiles:author_id (display_name, username)")
+            .select("title, content, author_id, profiles:author_id (display_name, username)")
             .eq("id", report.content_id)
             .maybeSingle();
           content_title = story?.title || story?.content?.slice(0, 50) + "..." || "Microrrelato eliminado";
           content_author = (story?.profiles as any)?.display_name || (story?.profiles as any)?.username || "";
+          content_author_id = story?.author_id || "";
+        } else if (report.content_type === "message") {
+          content_title = "Mensaje de chat";
         }
 
         return {
@@ -124,12 +131,28 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
           reporter_name: reporter?.display_name || reporter?.username || "Usuario",
           content_title,
           content_author,
+          content_author_id,
         } as Report;
       })
     );
 
     setReports(enrichedReports);
     setLoading(false);
+  };
+
+  const notifyReporter = async (report: Report, decision: string) => {
+    const notes = adminNotes[report.id] || "";
+    const message = `Tu reporte sobre "${report.content_title}" ha sido ${decision}. ${notes ? `Notas: ${notes}` : ""}`;
+
+    await supabase.from("notifications").insert({
+      user_id: report.reporter_id,
+      type: "report_update",
+      title: `Reporte ${decision}`,
+      message,
+      link: null,
+    });
+
+    toast({ title: "Notificación enviada al reportador" });
   };
 
   const updateReportStatus = async (reportId: string, newStatus: string) => {
@@ -154,16 +177,15 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
       .eq("id", reportId) as any);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el reporte.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo actualizar el reporte.", variant: "destructive" });
     } else {
-      toast({
-        title: "Reporte actualizado",
-        description: `Estado cambiado a "${STATUS_CONFIG[newStatus]?.label || newStatus}".`,
-      });
+      const report = reports.find(r => r.id === reportId);
+      if (report) {
+        const decision = newStatus === "resolved" ? "resuelto" : "desestimado";
+        await notifyReporter(report, decision);
+      }
+
+      toast({ title: "Reporte actualizado", description: `Estado cambiado a "${STATUS_CONFIG[newStatus]?.label || newStatus}".` });
       setReports((prev) =>
         prev.map((r) =>
           r.id === reportId
@@ -182,10 +204,33 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
       await supabase.from("microstories").delete().eq("id", report.content_id);
     }
     await updateReportStatus(report.id, "resolved");
-    toast({
-      title: "Contenido eliminado",
-      description: "El contenido reportado ha sido eliminado.",
+    toast({ title: "Contenido eliminado", description: "El contenido reportado ha sido eliminado." });
+  };
+
+  const banUser = async (userId: string, userName: string) => {
+    await supabase.from("profiles").update({ is_banned: true } as any).eq("id", userId);
+    
+    await supabase.from("notifications").insert({
+      user_id: userId,
+      type: "account",
+      title: "Cuenta suspendida",
+      message: "Tu cuenta ha sido suspendida por violar las normas de la comunidad.",
+      link: null,
     });
+
+    toast({ title: "Usuario bloqueado", description: `${userName} ha sido bloqueado.` });
+  };
+
+  const deleteUser = async (userId: string, userName: string) => {
+    // Delete user content
+    await supabase.from("books").delete().eq("author_id", userId);
+    await supabase.from("microstories").delete().eq("author_id", userId);
+    await supabase.from("posts").delete().eq("user_id", userId);
+    
+    // Ban the profile
+    await supabase.from("profiles").update({ is_banned: true, display_name: "Usuario eliminado", bio: null, avatar_url: null } as any).eq("id", userId);
+
+    toast({ title: "Usuario eliminado", description: `El contenido de ${userName} ha sido eliminado y la cuenta suspendida.` });
   };
 
   const timeAgo = (date: string) => {
@@ -202,7 +247,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flag className="w-5 h-5 text-destructive" />
@@ -233,7 +277,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
         </div>
       </div>
 
-      {/* Reports List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -259,7 +302,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                 transition={{ delay: index * 0.03 }}
                 className="ios-section overflow-hidden"
               >
-                {/* Report Header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : report.id)}
                   className="w-full p-4 flex items-center gap-3 text-left active:bg-muted/50 transition-colors"
@@ -269,6 +311,8 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                   }`}>
                     {report.content_type === "book" ? (
                       <BookOpen className="w-5 h-5 text-amber-500" />
+                    ) : report.content_type === "message" ? (
+                      <MessageCircle className="w-5 h-5 text-blue-500" />
                     ) : (
                       <Sparkles className="w-5 h-5 text-violet-500" />
                     )}
@@ -292,7 +336,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                   )}
                 </button>
 
-                {/* Expanded Details */}
                 {isExpanded && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -300,7 +343,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                     className="border-t border-border"
                   >
                     <div className="p-4 space-y-3">
-                      {/* Content Info */}
                       <div className="bg-muted/50 rounded-xl p-3">
                         <p className="text-[13px] text-muted-foreground mb-1">Contenido reportado</p>
                         <p className="text-[14px] font-medium">{report.content_title}</p>
@@ -309,7 +351,6 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                         )}
                       </div>
 
-                      {/* Description */}
                       {report.description && (
                         <div className="bg-muted/50 rounded-xl p-3">
                           <p className="text-[13px] text-muted-foreground mb-1">Descripción del reporte</p>
@@ -317,12 +358,11 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                         </div>
                       )}
 
-                      {/* Admin Notes */}
                       {report.status === "pending" || report.status === "reviewed" ? (
                         <div>
-                          <p className="text-[13px] text-muted-foreground mb-1.5">Notas del admin</p>
+                          <p className="text-[13px] text-muted-foreground mb-1.5">Notas del admin (se enviarán al reportador)</p>
                           <Textarea
-                            placeholder="Añadir notas..."
+                            placeholder="Describe tu decisión..."
                             value={adminNotes[report.id] || ""}
                             onChange={(e) =>
                               setAdminNotes((prev) => ({ ...prev, [report.id]: e.target.value }))
@@ -337,35 +377,68 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
                         </div>
                       ) : null}
 
-                      {/* Actions */}
                       {(report.status === "pending" || report.status === "reviewed") && (
-                        <div className="flex gap-2 pt-1">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="flex-1 rounded-xl"
-                            onClick={() => deleteContent(report)}
-                            disabled={updatingId === report.id}
-                          >
-                            {updatingId === report.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                                Eliminar contenido
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 rounded-xl"
-                            onClick={() => updateReportStatus(report.id, "dismissed")}
-                            disabled={updatingId === report.id}
-                          >
-                            <XCircle className="w-3.5 h-3.5 mr-1" />
-                            Desestimar
-                          </Button>
+                        <div className="space-y-2 pt-1">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1 rounded-xl"
+                              onClick={() => deleteContent(report)}
+                              disabled={updatingId === report.id}
+                            >
+                              {updatingId === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                                  Eliminar contenido
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 rounded-xl"
+                              onClick={() => updateReportStatus(report.id, "dismissed")}
+                              disabled={updatingId === report.id}
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1" />
+                              Desestimar
+                            </Button>
+                          </div>
+
+                          {/* Admin actions on content author */}
+                          {report.content_author_id && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 rounded-xl text-amber-600 border-amber-200 hover:bg-amber-50"
+                                onClick={() => {
+                                  banUser(report.content_author_id!, report.content_author || "Usuario");
+                                }}
+                                disabled={updatingId === report.id}
+                              >
+                                <Ban className="w-3.5 h-3.5 mr-1" />
+                                Bloquear autor
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 rounded-xl text-destructive border-destructive/20 hover:bg-destructive/5"
+                                onClick={() => {
+                                  if (confirm("¿Eliminar todo el contenido de este usuario? Esta acción no se puede deshacer.")) {
+                                    deleteUser(report.content_author_id!, report.content_author || "Usuario");
+                                  }
+                                }}
+                                disabled={updatingId === report.id}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                                Eliminar usuario
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

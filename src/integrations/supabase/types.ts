@@ -928,6 +928,7 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          is_banned: boolean | null
           is_private: boolean | null
           is_verified: boolean | null
           location: string | null
@@ -942,6 +943,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id: string
+          is_banned?: boolean | null
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -956,6 +958,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id?: string
+          is_banned?: boolean | null
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -1122,6 +1125,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
       }
       user_coins: {
         Row: {
