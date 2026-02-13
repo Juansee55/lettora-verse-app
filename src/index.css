@@ -436,6 +436,16 @@
   filter: drop-shadow(0 0 6px hsl(340 80% 60% / 0.3));
 }
 
+/* Admin name gold shimmer */
+.admin-name-gold {
+  background: linear-gradient(90deg, hsl(45 95% 50%), hsl(35 90% 55%), hsl(50 100% 60%), hsl(45 95% 50%));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: admin-frame-shimmer 3s linear infinite;
+}
+
 /* ═══════ Admin Frames ═══════ */
 
 @keyframes admin-frame-rotate {

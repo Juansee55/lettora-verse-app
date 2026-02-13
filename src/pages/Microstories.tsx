@@ -32,6 +32,7 @@ import TopMicrostories from "@/components/microstories/TopMicrostories";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import MentionInput from "@/components/mentions/MentionInput";
 import ValentineQuestBanner from "@/components/valentines/ValentineQuestBanner";
+import { useNameColors } from "@/hooks/useNameColors";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
 import {
   DropdownMenu,
@@ -77,6 +78,7 @@ const MicrostoriesPage = () => {
   const [userReposts, setUserReposts] = useState<Set<string>>(new Set());
   const [reportStory, setReportStory] = useState<Microstory | null>(null);
   const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
+  const nameColors = useNameColors(microstories.map(m => m.author_id));
 
   useEffect(() => {
     fetchMicrostories();
@@ -430,7 +432,7 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
                     )}
                   </div>
                   <div className="flex-1 cursor-pointer" onClick={() => navigate(`/user/${story.author.id}`)}>
-                    <p className="font-medium text-[15px]">{story.author.display_name || "Usuario"}</p>
+                    <p className={`font-medium text-[15px] ${nameColors[story.author_id] || ""}`}>{story.author.display_name || "Usuario"}</p>
                     <p className="text-[12px] text-muted-foreground">
                       @{story.author.username || "user"} • {formatDate(story.created_at)}
                     </p>
