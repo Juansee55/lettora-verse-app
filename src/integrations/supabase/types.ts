@@ -1227,6 +1227,35 @@ export type Database = {
         }
         Relationships: []
       }
+      valentine_quest_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          microstory_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          microstory_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          microstory_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valentine_quest_completions_microstory_id_fkey"
+            columns: ["microstory_id"]
+            isOneToOne: false
+            referencedRelation: "microstories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

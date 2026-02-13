@@ -30,6 +30,7 @@ import FeedPage from "./pages/Feed";
 import ProfileStorePage from "./pages/ProfileStore";
 import NotificationsPage from "./pages/Notifications";
 import AdminsPage from "./pages/Admins";
+import InventoryPage from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,7 @@ const AppContent = () => {
       <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/auth" replace />} />
       <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admins" element={user ? <AdminsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/inventory" element={user ? <InventoryPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -31,6 +31,8 @@ import CollaboratorsModal from "@/components/microstories/CollaboratorsModal";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import MentionInput from "@/components/mentions/MentionInput";
+import ValentineQuestBanner from "@/components/valentines/ValentineQuestBanner";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -146,21 +148,57 @@ const MicrostoriesPage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
 
-    const { error } = await supabase.from("microstories").insert({
+    const { data: insertedStory, error } = await supabase.from("microstories").insert({
       author_id: user.id,
       title: newTitle.trim() || null,
       content: newContent.trim(),
-    });
+    }).select("id").single();
 
     if (error) {
       toast({ title: "Error", description: "No se pudo publicar.", variant: "destructive" });
     } else {
-      toast({ title: "¡Publicado!", description: "Tu microrrelato ya es visible." });
+      toast({ title: "¡Publicado! 💕", description: "Tu microrrelato ya es visible." });
       setNewTitle("");
       setNewContent("");
       setShowCompose(false);
       fetchMicrostories();
+
+      // Check and complete valentine quest
+      if (insertedStory) {
+        completeValentineQuest(user.id, insertedStory.id);
+      }
     }
+  };
+
+  const completeValentineQuest = async (userId: string, microstoryId: string) => {
+    // Check if already completed
+    const { data: existing } = await supabase
+      .from("valentine_quest_completions")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existing) return;
+
+    // Complete the quest
+    await supabase.from("valentine_quest_completions").insert({
+      user_id: userId,
+      microstory_id: microstoryId,
+    });
+
+    // Award valentine items
+    const VALENTINE_FRAME_ID = "83c65d8d-0fa2-4d19-a519-64ad380857a7";
+    const VALENTINE_NAME_ID = "5c6512e8-b10e-46af-beeb-77aa010e8046";
+
+    await supabase.from("user_items").upsert([
+      { user_id: userId, item_id: VALENTINE_FRAME_ID, is_equipped: true },
+      { user_id: userId, item_id: VALENTINE_NAME_ID, is_equipped: true },
+    ], { onConflict: "user_id,item_id", ignoreDuplicates: true });
+
+    toast({
+      title: "🎉 ¡Quest completado!",
+      description: "Has desbloqueado el marco y nombre rosa exclusivos de San Valentín",
+    });
   };
 
   const handleLike = async (microstoryId: string) => {
@@ -234,7 +272,8 @@ const MicrostoriesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 relative overflow-hidden">
+      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="px-4 py-3">
@@ -244,13 +283,14 @@ const MicrostoriesPage = () => {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
+                <Sparkles className="w-5 h-5 text-rose-400" />
                 <h1 className="font-display font-semibold text-[17px]">Microrrelatos</h1>
+                <Heart className="w-4 h-4 text-rose-400 fill-rose-400 opacity-60" />
               </div>
             </div>
-            <Button variant="ios" size="ios-sm" onClick={() => setShowCompose(true)}>
+            <Button className="valentine-btn rounded-xl text-[13px] h-8 px-3 border-0" onClick={() => setShowCompose(true)}>
               <Plus className="w-4 h-4 mr-1" />
-              Crear
+              Crear 💌
             </Button>
           </div>
 
@@ -330,8 +370,13 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
         )}
       </AnimatePresence>
 
+      {/* Valentine Quest Banner */}
+      <div className="pt-4">
+        <ValentineQuestBanner onComposeClick={() => setShowCompose(true)} />
+      </div>
+
       {/* Content */}
-      <main className="px-4 py-4">
+      <main className="px-4 py-2">
         {activeTab === "top" ? (
           <TopMicrostories limit={10} showHeader={false} />
         ) : loading ? (
