@@ -11,6 +11,7 @@ import {
   Loader2,
   Sparkles,
   BarChart3,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,8 @@ import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import PromotionStats from "@/components/promotions/PromotionStats";
 import AnnouncementBanner from "@/components/announcements/AnnouncementBanner";
+import ValentineBanner from "@/components/valentines/ValentineBanner";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
 
 interface Book {
   id: string;
@@ -142,16 +145,18 @@ const HomePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 relative">
+      <FloatingHearts />
       {/* iOS Header */}
-      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
+      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30 relative">
+        <ValentineBanner />
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-hero rounded-xl flex items-center justify-center">
-                <BookOpen className="w-[18px] h-[18px] text-primary-foreground" />
+              <div className="w-9 h-9 valentine-gradient rounded-xl flex items-center justify-center valentine-shadow">
+                <Heart className="w-[18px] h-[18px] text-white fill-white" />
               </div>
-              <h1 className="text-[22px] font-bold">Lettora</h1>
+              <h1 className="text-[22px] font-bold">Lettora <span className="text-[14px] font-normal" style={{ color: "hsl(340, 75%, 55%)" }}>💕</span></h1>
             </div>
             <div className="flex items-center gap-1">
               <Button 
@@ -201,22 +206,22 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => navigate("/microstories")}
-            className="bg-gradient-hero rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
+            className="valentine-gradient rounded-2xl p-4 active:scale-[0.98] transition-transform valentine-shadow"
           >
-            <Sparkles className="w-6 h-6 text-primary-foreground mb-2" />
-            <h3 className="text-primary-foreground font-semibold text-[15px]">Microrrelatos</h3>
-            <p className="text-primary-foreground/70 text-[12px]">500 caracteres</p>
+            <Heart className="w-6 h-6 text-white fill-white/50 mb-2" />
+            <h3 className="text-white font-semibold text-[15px]">Microrrelatos</h3>
+            <p className="text-white/70 text-[12px]">500 caracteres 💌</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
             onClick={() => navigate("/feed")}
-            className="bg-gradient-hero rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
+            className="valentine-gradient rounded-2xl p-4 active:scale-[0.98] transition-transform valentine-shadow"
           >
-            <TrendingUp className="w-6 h-6 text-primary-foreground mb-2" />
-            <h3 className="text-primary-foreground font-semibold text-[15px]">Feed & Stories</h3>
-            <p className="text-primary-foreground/70 text-[12px]">Publica y comparte</p>
+            <Sparkles className="w-6 h-6 text-white mb-2" />
+            <h3 className="text-white font-semibold text-[15px]">Feed & Stories</h3>
+            <p className="text-white/70 text-[12px]">Comparte amor 💕</p>
           </motion.div>
         </div>
 
@@ -235,16 +240,16 @@ const HomePage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           onClick={() => setShowPromoModal(true)}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
+          className="valentine-gradient rounded-2xl p-4 active:scale-[0.98] transition-transform cursor-pointer valentine-glow"
         >
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-white font-semibold text-[17px] flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
+                <Heart className="w-5 h-5 fill-white/80" />
                 Crear Promoción
               </h3>
               <p className="text-white/80 text-[15px]">
-                Destaca tu libro y llega a más lectores
+                Destaca tu libro en San Valentín 💝
               </p>
             </div>
             <div className="bg-white/20 rounded-full p-2.5">
@@ -380,9 +385,9 @@ const HomePage = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.5, type: "spring" }}
         onClick={() => navigate("/write")}
-        className="fixed bottom-[80px] right-4 w-14 h-14 bg-gradient-hero rounded-full shadow-glow flex items-center justify-center z-40 active:scale-95 transition-transform"
+        className="fixed bottom-[80px] right-4 w-14 h-14 valentine-gradient rounded-full valentine-shadow valentine-glow flex items-center justify-center z-40 active:scale-95 transition-transform"
       >
-        <Plus className="w-6 h-6 text-primary-foreground" />
+        <Heart className="w-6 h-6 text-white fill-white" />
       </motion.button>
 
       <IOSBottomNav />

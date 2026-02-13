@@ -292,6 +292,68 @@
   animation: fade-in 0.3s ease-out;
 }
 
+/* ═══════ Valentine's Day Event ═══════ */
+
+@keyframes valentine-float {
+  0% { transform: translateY(100vh) rotate(0deg) scale(0.8); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) rotate(45deg) scale(1.2); opacity: 0; }
+}
+
+@keyframes valentine-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes valentine-glow {
+  0%, 100% { box-shadow: 0 0 20px hsl(340 80% 55% / 0.3); }
+  50% { box-shadow: 0 0 35px hsl(340 80% 55% / 0.5); }
+}
+
+.valentine-heart {
+  position: fixed;
+  color: hsl(340 80% 65% / 0.15);
+  pointer-events: none;
+  z-index: 0;
+  animation: valentine-float linear infinite;
+}
+
+.valentine-gradient {
+  background: linear-gradient(135deg, hsl(340 75% 55%), hsl(350 80% 60%), hsl(320 70% 55%));
+}
+
+.valentine-gradient-soft {
+  background: linear-gradient(135deg, hsl(340 60% 95%), hsl(350 70% 92%), hsl(320 50% 95%));
+}
+
+.dark .valentine-gradient-soft {
+  background: linear-gradient(135deg, hsl(340 40% 15%), hsl(350 50% 12%), hsl(320 30% 15%));
+}
+
+.valentine-btn {
+  background: linear-gradient(135deg, hsl(340 75% 55%), hsl(350 80% 60%));
+  color: white;
+  box-shadow: 0 4px 15px hsl(340 80% 55% / 0.3);
+  transition: all 0.2s;
+}
+
+.valentine-btn:hover {
+  box-shadow: 0 6px 20px hsl(340 80% 55% / 0.4);
+}
+
+.valentine-btn:active {
+  transform: scale(0.97);
+}
+
+.valentine-glow {
+  animation: valentine-glow 2s ease-in-out infinite;
+}
+
+.valentine-shadow {
+  box-shadow: 0 0 30px hsl(340 80% 55% / 0.25);
+}
+
 /* ═══════ Admin Frames ═══════ */
 
 @keyframes admin-frame-rotate {
