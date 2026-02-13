@@ -27,7 +27,7 @@ import AdminPage from "./pages/Admin";
 import ChapterReaderPage from "./pages/ChapterReader";
 import SettingsPage from "./pages/Settings";
 import FeedPage from "./pages/Feed";
-import ProfileStorePage from "./pages/ProfileStore";
+
 import NotificationsPage from "./pages/Notifications";
 import AdminsPage from "./pages/Admins";
 import InventoryPage from "./pages/Inventory";
@@ -90,7 +90,7 @@ const AppContent = () => {
       <Route path="/write/advanced/:bookId" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/microstories" element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} />
       <Route path="/feed" element={user ? <FeedPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/store" element={user ? <ProfileStorePage /> : <Navigate to="/auth" replace />} />
+      
       <Route path="/user/:userId" element={user ? <UserProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/edit-profile" element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" replace />} />

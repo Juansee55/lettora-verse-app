@@ -35,6 +35,7 @@ const InventoryPage = () => {
   const [items, setItems] = useState<OwnedItemWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"frames" | "backgrounds" | "name_colors">("frames");
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInventory();
@@ -42,9 +43,13 @@ const InventoryPage = () => {
 
   const fetchInventory = async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
     const { data, error } = await supabase
       .from("user_items")
       .select("item_id, is_equipped, profile_items(id, name, description, item_type, rarity, css_value, image_url)")
+      .eq("user_id", user.id)
       .order("purchased_at", { ascending: false });
 
     if (!error && data) {
@@ -57,23 +62,36 @@ const InventoryPage = () => {
     const item = items.find(i => i.item_id === itemId);
     if (!item) return;
 
-    if (item.is_equipped) {
-      // Unequip
-      await supabase.from("user_items").update({ is_equipped: false }).eq("item_id", itemId);
-      toast.success("Desequipado");
-    } else {
-      // Unequip others of same type, then equip this one
-      const sameTypeIds = items
-        .filter(i => i.profile_items.item_type === itemType && i.is_equipped)
-        .map(i => i.item_id);
+    setToggling(itemId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setToggling(null); return; }
 
-      if (sameTypeIds.length > 0) {
-        await supabase.from("user_items").update({ is_equipped: false }).in("item_id", sameTypeIds);
+    try {
+      if (item.is_equipped) {
+        await supabase.from("user_items").update({ is_equipped: false })
+          .eq("user_id", user.id).eq("item_id", itemId);
+        toast.success("Desequipado");
+      } else {
+        // Unequip others of same type first
+        const sameTypeIds = items
+          .filter(i => i.profile_items.item_type === itemType && i.is_equipped)
+          .map(i => i.item_id);
+
+        if (sameTypeIds.length > 0) {
+          for (const id of sameTypeIds) {
+            await supabase.from("user_items").update({ is_equipped: false })
+              .eq("user_id", user.id).eq("item_id", id);
+          }
+        }
+        await supabase.from("user_items").update({ is_equipped: true })
+          .eq("user_id", user.id).eq("item_id", itemId);
+        toast.success(`${item.profile_items.name} equipado`);
       }
-      await supabase.from("user_items").update({ is_equipped: true }).eq("item_id", itemId);
-      toast.success(`${item.profile_items.name} equipado`);
+      await fetchInventory();
+    } catch {
+      toast.error("Error al actualizar");
     }
-    await fetchInventory();
+    setToggling(null);
   };
 
   const tabTypeMap = { frames: "frame", backgrounds: "background", name_colors: "name_color" };
@@ -137,16 +155,9 @@ const InventoryPage = () => {
               )}
             </div>
             <h3 className="text-[17px] font-semibold mb-1">Sin items</h3>
-            <p className="text-[14px] text-muted-foreground mb-4">
-              Consigue items en la tienda o completando quests
+            <p className="text-[14px] text-muted-foreground">
+              Consigue items completando quests y eventos
             </p>
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => navigate("/store")}
-            >
-              Ir a la tienda
-            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -214,8 +225,11 @@ const InventoryPage = () => {
                         !item.is_equipped && valentine ? "valentine-btn border-0" : ""
                       }`}
                       onClick={() => handleEquip(item.item_id, item.profile_items.item_type)}
+                      disabled={toggling === item.item_id}
                     >
-                      {item.is_equipped ? "Desequipar" : "Equipar"}
+                      {toggling === item.item_id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : item.is_equipped ? "Desequipar" : "Equipar"}
                     </Button>
                   </div>
                 </motion.div>
