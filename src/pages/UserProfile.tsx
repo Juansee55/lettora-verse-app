@@ -65,6 +65,7 @@ const UserProfilePage = () => {
   const [copied, setCopied] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
+  const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -82,6 +83,7 @@ const UserProfilePage = () => {
       fetchBooks(),
       fetchMicrostories(),
       fetchFollowCounts(),
+      fetchTargetUserRole(),
       user ? checkFollowStatus(user.id) : Promise.resolve(),
       user ? checkBlockStatus(user.id) : Promise.resolve(),
     ]);
