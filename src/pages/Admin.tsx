@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
-  Loader2, CheckCircle, XCircle, UserPlus,
+  Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,13 +31,15 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
   const [verifyUsername, setVerifyUsername] = useState("");
   const [searchingUser, setSearchingUser] = useState(false);
   const [foundUser, setFoundUser] = useState<UserWithVerification | null>(null);
+  const [adminRoles, setAdminRoles] = useState<any[]>([]);
+  const [editingTitles, setEditingTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     checkAdminStatus();
@@ -54,6 +56,7 @@ const AdminPage = () => {
     }
     setIsAdmin(true);
     fetchUsers();
+    fetchAdminRoles();
   };
 
   const fetchUsers = async () => {
@@ -64,6 +67,34 @@ const AdminPage = () => {
       .order("created_at", { ascending: false });
     setUsers(data || []);
     setLoading(false);
+  };
+
+  const fetchAdminRoles = async () => {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("id, user_id, role, admin_title")
+      .in("role", ["admin", "moderator"]);
+    if (!roles) return;
+    const userIds = roles.map((r) => r.user_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, display_name, username, avatar_url")
+      .in("id", userIds);
+    const merged = roles.map((r) => ({
+      ...r,
+      profile: profiles?.find((p) => p.id === r.user_id),
+    }));
+    setAdminRoles(merged);
+    const titles: Record<string, string> = {};
+    roles.forEach((r) => { titles[r.id] = r.admin_title || ""; });
+    setEditingTitles(titles);
+  };
+
+  const saveAdminTitle = async (roleId: string) => {
+    const title = editingTitles[roleId]?.trim() || null;
+    await supabase.from("user_roles").update({ admin_title: title }).eq("id", roleId);
+    setAdminRoles((prev) => prev.map((r: any) => r.id === roleId ? { ...r, admin_title: title } : r));
+    toast({ title: "✅ Cargo actualizado" });
   };
 
   const toggleVerification = async (userId: string, currentStatus: boolean) => {
@@ -129,6 +160,7 @@ const AdminPage = () => {
           {[
             { key: "users" as const, icon: Users, label: "Usuarios" },
             { key: "moderation" as const, icon: Shield, label: "Moderación" },
+            { key: "roles" as const, icon: Tag, label: "Cargos" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -246,9 +278,55 @@ const AdminPage = () => {
             )}
           </div>
         </>
-      ) : (
+      ) : activeTab === "moderation" ? (
         <div className="px-4 py-4">
           <ModerationPanel isAdmin={isAdmin} />
+        </div>
+      ) : (
+        <div className="px-4 py-4 space-y-3">
+          <p className="text-[14px] text-muted-foreground mb-4">
+            Asigna un cargo/título personalizado a cada administrador o moderador. Se mostrará en la página de Equipo.
+          </p>
+          {adminRoles.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Tag className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay administradores registrados.</p>
+            </div>
+          ) : (
+            adminRoles.map((role: any) => (
+              <div key={role.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold overflow-hidden">
+                    {role.profile?.avatar_url ? (
+                      <img src={role.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      role.profile?.display_name?.[0]?.toUpperCase() || "?"
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-[15px]" style={{ color: "hsl(45, 90%, 50%)" }}>
+                      {role.profile?.display_name || "Admin"}
+                    </h3>
+                    <p className="text-[12px] text-muted-foreground">
+                      @{role.profile?.username || "user"} · {role.role}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ej: Developer, Community Manager..."
+                    value={editingTitles[role.id] || ""}
+                    onChange={(e) => setEditingTitles((prev) => ({ ...prev, [role.id]: e.target.value }))}
+                    className="flex-1 h-10 px-4 rounded-xl bg-muted/60 text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  <Button size="sm" onClick={() => saveAdminTitle(role.id)} className="rounded-xl h-10">
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 

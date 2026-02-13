@@ -1205,18 +1205,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          admin_title: string | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          admin_title?: string | null
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          admin_title?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]

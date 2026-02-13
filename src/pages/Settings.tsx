@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Bell, Moon, Sun, Globe, Lock, Download, HardDrive, Trash2,
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
-  ChevronRight, Wifi, Heart, Check, X,
+  ChevronRight, Wifi, Heart, Check, X, Users,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -294,6 +294,13 @@ const SettingsPage = () => {
         {/* About */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <IOSSettingSection>
+            <IOSSettingItem
+              icon={<Users className="w-4 h-4" />}
+              iconBg="bg-amber-500"
+              title="Equipo / Admins"
+              subtitle="Conoce al equipo detrás de la app"
+              onClick={() => navigate("/admins")}
+            />
             <IOSSettingItem
               icon={<Info className="w-4 h-4" />}
               iconBg="bg-gray-400"
