@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, Users, Heart, Eye, MapPin,
   Link as LinkIcon, Calendar, MoreHorizontal, UserPlus,
   UserCheck, MessageCircle, Share2, Flag, QrCode,
-  Shield, X, Copy, Check, Sparkles,
+  Shield, X, Copy, Check, Sparkles, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,8 @@ const UserProfilePage = () => {
   const [showReport, setShowReport] = useState(false);
   const [totalLikes, setTotalLikes] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockedByThem, setIsBlockedByThem] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -81,8 +83,18 @@ const UserProfilePage = () => {
       fetchMicrostories(),
       fetchFollowCounts(),
       user ? checkFollowStatus(user.id) : Promise.resolve(),
+      user ? checkBlockStatus(user.id) : Promise.resolve(),
     ]);
     setLoading(false);
+  };
+
+  const checkBlockStatus = async (myId: string) => {
+    const [{ data: blocked }, { data: blockedBy }] = await Promise.all([
+      supabase.from("user_blocks" as any).select("id").eq("blocker_id", myId).eq("blocked_id", userId).maybeSingle(),
+      supabase.from("user_blocks" as any).select("id").eq("blocker_id", userId).eq("blocked_id", myId).maybeSingle(),
+    ]);
+    setIsBlocked(!!blocked);
+    setIsBlockedByThem(!!blockedBy);
   };
 
   const checkFollowStatus = async (myId: string) => {
@@ -184,6 +196,27 @@ const UserProfilePage = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({ title: "¡Enlace copiado!" });
+  };
+
+  const handleBlockUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate("/auth"); return; }
+
+    if (isBlocked) {
+      await (supabase.from("user_blocks" as any).delete().eq("blocker_id", user.id).eq("blocked_id", userId) as any);
+      setIsBlocked(false);
+      toast({ title: "Usuario desbloqueado" });
+    } else {
+      await (supabase.from("user_blocks" as any).insert({ blocker_id: user.id, blocked_id: userId }) as any);
+      setIsBlocked(true);
+      // Also unfollow if following
+      if (isFollowing) {
+        await supabase.from("followers").delete().eq("follower_id", user.id).eq("following_id", userId);
+        setIsFollowing(false);
+        setFollowersCount(p => p - 1);
+      }
+      toast({ title: "Usuario bloqueado", description: "Ya no verás su contenido." });
+    }
   };
 
   const formatDate = (dateString: string) =>
@@ -480,10 +513,16 @@ const UserProfilePage = () => {
                   <span className="flex-1 text-left text-[17px]">Código QR</span>
                 </button>
                 {!isOwnProfile && (
-                  <button onClick={() => { setShowMore(false); setShowReport(true); }} className="ios-item w-full rounded-xl text-destructive">
-                    <Flag className="w-5 h-5" />
-                    <span className="flex-1 text-left text-[17px]">Reportar usuario</span>
-                  </button>
+                  <>
+                    <button onClick={() => { setShowMore(false); handleBlockUser(); }} className="ios-item w-full rounded-xl text-amber-600">
+                      <Ban className="w-5 h-5" />
+                      <span className="flex-1 text-left text-[17px]">{isBlocked ? "Desbloquear usuario" : "Bloquear usuario"}</span>
+                    </button>
+                    <button onClick={() => { setShowMore(false); setShowReport(true); }} className="ios-item w-full rounded-xl text-destructive">
+                      <Flag className="w-5 h-5" />
+                      <span className="flex-1 text-left text-[17px]">Reportar usuario</span>
+                    </button>
+                  </>
                 )}
               </div>
               <Button variant="ios-secondary" size="ios-lg" className="w-full mt-4" onClick={() => setShowMore(false)}>
