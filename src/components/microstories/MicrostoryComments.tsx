@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNameColors } from "@/hooks/useNameColors";
 
 interface Comment {
   id: string;
@@ -36,6 +37,8 @@ const MicrostoryComments = ({
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [sending, setSending] = useState(false);
+
+  const nameColors = useNameColors(comments.map(c => c.user.id));
 
   useEffect(() => {
     if (isOpen) {
@@ -103,7 +106,6 @@ const MicrostoryComments = ({
       });
       setNewComment(content);
     } else {
-      // Update comments count
       const { data: story } = await supabase
         .from("microstories")
         .select("comments_count")
@@ -181,7 +183,7 @@ const MicrostoryComments = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">
+                        <span className={`font-medium text-sm truncate ${nameColors[comment.user.id] || ""}`}>
                           {comment.user.display_name || comment.user.username || "Usuario"}
                         </span>
                         <span className="text-xs text-muted-foreground">

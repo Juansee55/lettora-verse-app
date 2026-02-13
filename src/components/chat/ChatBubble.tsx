@@ -9,11 +9,12 @@ interface ChatBubbleProps {
   mediaUrl?: string | null;
   mediaType?: string;
   senderName?: string | null;
+  senderNameColorClass?: string;
   showSender?: boolean;
   onLongPress?: () => void;
 }
 
-const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, showSender, onLongPress }: ChatBubbleProps) => {
+const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, senderNameColorClass, showSender, onLongPress }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMedia = mediaType === "image" || mediaType === "video";
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,7 +56,7 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
         }}
       >
         {showSender && senderName && !isOwn && (
-          <p className="text-[12px] font-semibold text-primary mb-1 leading-none">{senderName}</p>
+          <p className={`text-[12px] font-semibold mb-1 leading-none ${senderNameColorClass || "text-primary"}`}>{senderName}</p>
         )}
 
         {mediaUrl && mediaType === "image" && (

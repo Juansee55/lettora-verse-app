@@ -9,6 +9,7 @@ import ChatDateSeparator from "@/components/chat/ChatDateSeparator";
 import GroupInfoSheet from "@/components/chat/GroupInfoSheet";
 import MessageActionsSheet from "@/components/chat/MessageActionsSheet";
 import ReportContentModal from "@/components/reports/ReportContentModal";
+import { useNameColors } from "@/hooks/useNameColors";
 
 interface Message {
   id: string;
@@ -57,6 +58,8 @@ const ChatConversationPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportMessageId, setReportMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const senderIds = [...new Set(messages.map(m => m.sender_id))];
+  const nameColors = useNameColors(senderIds);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -375,6 +378,7 @@ const ChatConversationPage = () => {
                   mediaUrl={message.media_url}
                   mediaType={message.media_type}
                   senderName={participantsMap[message.sender_id]?.display_name || participantsMap[message.sender_id]?.username}
+                  senderNameColorClass={nameColors[message.sender_id]}
                   showSender={convInfo?.is_group || false}
                   onLongPress={() => { setSelectedMessage(message); setShowMessageActions(true); }}
                 />
