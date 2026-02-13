@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 import BookCard from "@/components/books/BookCard";
 import { useLanguage } from "@/contexts/LanguageContext";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
+import { useNameColors } from "@/hooks/useNameColors";
 
 const categories = [
   { name: "Todos", icon: Sparkles, color: "from-violet-500 to-purple-600" },
@@ -124,9 +126,12 @@ const ExplorePage = () => {
   });
 
   const isSearching = searchQuery.trim().length > 0;
+  const writerIds = writers.map(w => w.id);
+  const nameColors = useNameColors(writerIds);
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="px-4 pt-3 pb-2">
@@ -238,7 +243,7 @@ const ExplorePage = () => {
                         writer.display_name?.[0]?.toUpperCase() || "?"
                       )}
                     </div>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap max-w-[60px] truncate">
+                    <span className={`text-[11px] whitespace-nowrap max-w-[60px] truncate ${nameColors[writer.id] || "text-muted-foreground"}`}>
                       {writer.display_name || writer.username || "Usuario"}
                     </span>
                   </motion.div>

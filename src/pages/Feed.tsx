@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
 import StoriesBar from "@/components/stories/StoriesBar";
 import { useLanguage } from "@/contexts/LanguageContext";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
+import { useNameColors } from "@/hooks/useNameColors";
 
 interface Post {
   id: string;
@@ -152,9 +154,12 @@ const FeedPage = () => {
   };
 
   const getAuthor = (post: Post) => post.profiles || { id: post.user_id, display_name: "Usuario", username: "user", avatar_url: null };
+  const postUserIds = posts.map(p => p.user_id);
+  const nameColors = useNameColors(postUserIds);
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
@@ -291,7 +296,7 @@ const FeedPage = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0" onClick={() => navigate(`/user/${author.id}`)}>
-                      <p className="font-semibold text-[14px] leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                      <p className={`font-semibold text-[14px] leading-tight ${nameColors[post.user_id] || ""}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
                         {author.display_name || "Usuario"}
                       </p>
                       <p className="text-[12px] text-muted-foreground/60 leading-tight mt-0.5">

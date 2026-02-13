@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import ReportContentModal from "@/components/reports/ReportContentModal";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
 
 interface UserProfileData {
   id: string;
@@ -66,6 +67,7 @@ const UserProfilePage = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
+  const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
 
   useEffect(() => {
     if (userId) {
@@ -84,10 +86,28 @@ const UserProfilePage = () => {
       fetchMicrostories(),
       fetchFollowCounts(),
       fetchTargetUserRole(),
+      fetchEquippedItems(),
       user ? checkFollowStatus(user.id) : Promise.resolve(),
       user ? checkBlockStatus(user.id) : Promise.resolve(),
     ]);
     setLoading(false);
+  };
+
+  const fetchEquippedItems = async () => {
+    const { data } = await supabase
+      .from("user_items")
+      .select("profile_items(css_value, item_type)")
+      .eq("user_id", userId!)
+      .eq("is_equipped", true);
+    if (data) {
+      const items: { frame: string | null; background: string | null; nameColor: string | null } = { frame: null, background: null, nameColor: null };
+      (data as any[]).forEach(item => {
+        if (item.profile_items?.item_type === "frame") items.frame = item.profile_items.css_value;
+        else if (item.profile_items?.item_type === "background") items.background = item.profile_items.css_value;
+        else if (item.profile_items?.item_type === "name_color") items.nameColor = item.profile_items.css_value;
+      });
+      setEquippedItems(items);
+    }
   };
 
   const fetchTargetUserRole = async () => {
@@ -268,6 +288,7 @@ const UserProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <FloatingHearts />
       {/* Cover + Navigation */}
       <div className="relative">
         <div
@@ -297,7 +318,9 @@ const UserProfilePage = () => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 200 }}
-                className="w-24 h-24 rounded-2xl bg-gradient-hero border-4 border-card shadow-lg overflow-hidden flex-shrink-0 -mt-16"
+                className={`relative w-24 h-24 rounded-2xl bg-gradient-hero border-4 border-card shadow-lg overflow-hidden flex-shrink-0 -mt-16 ${
+                  targetUserRole === "admin" ? "admin-frame-square" : targetUserRole === "moderator" ? "mod-frame" : equippedItems.frame || ""
+                }`}
               >
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -309,7 +332,9 @@ const UserProfilePage = () => {
               </motion.div>
               <div className="flex-1 min-w-0 pb-1">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xl font-display font-bold truncate">{profile.display_name || "Usuario"}</h1>
+                  <h1 className={`text-xl font-display font-bold truncate ${
+                    targetUserRole === "admin" ? "admin-name-gold" : equippedItems.nameColor || ""
+                  }`}>{profile.display_name || "Usuario"}</h1>
                   {profile.is_verified && (
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                       <Check className="w-3 h-3 text-primary-foreground" />

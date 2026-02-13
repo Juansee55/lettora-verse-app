@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
+import FloatingHearts from "@/components/valentines/FloatingHearts";
 
 interface Profile {
   id: string;
@@ -119,6 +120,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <FloatingHearts />
       {/* iOS Header */}
       <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
         <div className="flex items-center justify-between px-4 h-[52px]">
