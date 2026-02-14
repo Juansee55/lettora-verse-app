@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, TrendingUp, Star, BookOpen, Users, Sparkles, Heart,
-  Loader2, Flame, Clock, Award, ChevronRight,
+  Loader2, Flame, Clock, Award, ChevronRight, Hash,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,12 @@ interface Writer {
   avatar_url: string | null;
 }
 
+interface TrendingTag {
+  id: string;
+  name: string;
+  usage_count: number;
+}
+
 const ExplorePage = () => {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,6 +60,7 @@ const ExplorePage = () => {
   const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
   const [recentBooks, setRecentBooks] = useState<Book[]>([]);
   const [writers, setWriters] = useState<Writer[]>([]);
+  const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -80,6 +87,7 @@ const ExplorePage = () => {
         { data: trending },
         { data: recent },
         { data: writersData },
+        { data: tagsData },
       ] = await Promise.all([
         query.limit(20),
         supabase
@@ -98,12 +106,18 @@ const ExplorePage = () => {
           .from("profiles")
           .select("id, display_name, username, avatar_url")
           .limit(8),
+        supabase
+          .from("hashtags")
+          .select("id, name, usage_count")
+          .order("usage_count", { ascending: false })
+          .limit(8),
       ]);
 
       if (booksData) setBooks(booksData);
       if (trending) setTrendingBooks(trending);
       if (recent) setRecentBooks(recent);
       if (writersData) setWriters(writersData);
+      if (tagsData) setTrendingTags(tagsData);
       setLoading(false);
     };
 
@@ -217,6 +231,35 @@ const ExplorePage = () => {
       ) : (
         /* Main Content */
         <div className="space-y-6">
+          {/* Trending Hashtags */}
+          {trendingTags.length > 0 && (
+            <section className="px-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[17px] font-semibold flex items-center gap-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  <Hash className="w-4.5 h-4.5 text-primary" />
+                  Tendencias
+                </h2>
+                <button onClick={() => navigate("/trending")} className="text-[13px] text-primary font-medium flex items-center gap-0.5">
+                  Ver más <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {trendingTags.map((tag, index) => (
+                  <motion.button
+                    key={tag.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.04 }}
+                    onClick={() => navigate(`/hashtag/${tag.name}`)}
+                    className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[13px] font-medium active:scale-95 transition-transform"
+                  >
+                    #{tag.name}
+                  </motion.button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Featured Writers */}
           {writers.length > 0 && (
             <section className="px-4">

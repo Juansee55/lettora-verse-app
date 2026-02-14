@@ -32,6 +32,8 @@ import ReelsPage from "./pages/Reels";
 import NotificationsPage from "./pages/Notifications";
 import AdminsPage from "./pages/Admins";
 import InventoryPage from "./pages/Inventory";
+import HashtagPage from "./pages/Hashtag";
+import TrendingHashtagsPage from "./pages/TrendingHashtags";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -100,6 +102,8 @@ const AppContent = () => {
       <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admins" element={user ? <AdminsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/inventory" element={user ? <InventoryPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/hashtag/:tag" element={user ? <HashtagPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/trending" element={user ? <TrendingHashtagsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
