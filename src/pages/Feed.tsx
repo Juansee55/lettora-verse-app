@@ -13,6 +13,7 @@ import BottomNav from "@/components/navigation/BottomNav";
 import StoriesBar from "@/components/stories/StoriesBar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
+import RichContentRenderer from "@/components/hashtags/RichContentRenderer";
 import { useNameColors } from "@/hooks/useNameColors";
 
 interface Post {
@@ -112,13 +113,25 @@ const FeedPage = () => {
       }
     }
 
-    const { error } = await supabase.from("posts").insert({
+    const { data: insertedPost, error } = await supabase.from("posts").insert({
       user_id: user.id, content: newContent.trim() || null,
       media_url: mediaUrl, media_type: mediaUrl ? mediaType : "text",
-    });
+    }).select("id").single();
 
     if (error) toast({ title: t("publishError"), variant: "destructive" });
     else {
+      // Extract and save hashtags
+      if (insertedPost && newContent) {
+        const hashtags = (newContent.match(/#(\w+)/g) || []).map(h => h.slice(1));
+        if (hashtags.length > 0) {
+          await supabase.rpc("upsert_hashtags", {
+            p_tags: hashtags,
+            p_content_id: insertedPost.id,
+            p_content_type: "post",
+            p_user_id: user.id,
+          });
+        }
+      }
       toast({ title: t("published") });
       setNewContent(""); setMediaFile(null); setMediaPreview(null); setShowCompose(false);
       fetchPosts();
@@ -353,7 +366,7 @@ const FeedPage = () => {
                   {post.content && (
                     <p className="px-4 pb-1 text-[14px] leading-[1.5]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                       <span className="font-semibold mr-1.5">{author.display_name || author.username}</span>
-                      <span className="text-foreground/90 whitespace-pre-wrap">{post.content}</span>
+                      <RichContentRenderer content={post.content} className="text-foreground/90 whitespace-pre-wrap" />
                     </p>
                   )}
 

@@ -31,6 +31,7 @@ import CollaboratorsModal from "@/components/microstories/CollaboratorsModal";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import MentionInput from "@/components/mentions/MentionInput";
+import RichContentRenderer from "@/components/hashtags/RichContentRenderer";
 import ValentineQuestBanner from "@/components/valentines/ValentineQuestBanner";
 import { useNameColors } from "@/hooks/useNameColors";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
@@ -160,15 +161,25 @@ const MicrostoriesPage = () => {
       toast({ title: "Error", description: "No se pudo publicar.", variant: "destructive" });
     } else {
       toast({ title: "¡Publicado! 💕", description: "Tu microrrelato ya es visible." });
+
+      // Extract and save hashtags
+      if (insertedStory) {
+        const hashtags = (newContent.match(/#(\w+)/g) || []).map(h => h.slice(1));
+        if (hashtags.length > 0) {
+          await supabase.rpc("upsert_hashtags", {
+            p_tags: hashtags,
+            p_content_id: insertedStory.id,
+            p_content_type: "microstory",
+            p_user_id: user.id,
+          });
+        }
+        completeValentineQuest(user.id, insertedStory.id);
+      }
+
       setNewTitle("");
       setNewContent("");
       setShowCompose(false);
       fetchMicrostories();
-
-      // Check and complete valentine quest
-      if (insertedStory) {
-        completeValentineQuest(user.id, insertedStory.id);
-      }
     }
   };
 
@@ -475,7 +486,7 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
                 {story.title && (
                   <h3 className="font-display font-semibold text-[15px] mb-1.5">{story.title}</h3>
                 )}
-                <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap">{story.content}</p>
+                <RichContentRenderer content={story.content} className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap" />
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border">

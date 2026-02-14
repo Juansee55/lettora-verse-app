@@ -381,6 +381,41 @@ export type Database = {
           },
         ]
       }
+      content_hashtags: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          hashtag_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          hashtag_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          hashtag_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_reports: {
         Row: {
           admin_notes: string | null
@@ -587,6 +622,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          usage_count?: number
+        }
+        Relationships: []
       }
       likes: {
         Row: {
@@ -1275,6 +1331,15 @@ export type Database = {
       purchase_item: {
         Args: { p_item_id: string; p_user_id: string }
         Returns: boolean
+      }
+      upsert_hashtags: {
+        Args: {
+          p_content_id: string
+          p_content_type: string
+          p_tags: string[]
+          p_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
