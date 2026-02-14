@@ -15,6 +15,7 @@ import {
   Check,
   Wifi,
   WifiOff,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -60,6 +61,7 @@ const ChapterReaderPage = () => {
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const [downloading, setDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const [savedChapter, setSavedChapter] = useState(false);
   
   // Swipe gesture
   const x = useMotionValue(0);
@@ -196,6 +198,15 @@ const ChapterReaderPage = () => {
           .maybeSingle();
 
         setLiked(!!likeData);
+
+        // Check if chapter is saved
+        const { data: savedData } = await supabase
+          .from("saved_chapters")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("chapter_id", chapterData.id)
+          .maybeSingle();
+        setSavedChapter(!!savedData);
 
         // Update reading progress
         const { data: existingProgress } = await supabase
@@ -430,6 +441,22 @@ const ChapterReaderPage = () => {
               </div>
 
               <div className="flex items-center gap-1">
+                <button
+                  onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user || !chapter) return;
+                    if (savedChapter) {
+                      await supabase.from("saved_chapters").delete().eq("user_id", user.id).eq("chapter_id", chapter.id);
+                      setSavedChapter(false);
+                    } else {
+                      await supabase.from("saved_chapters").insert({ user_id: user.id, chapter_id: chapter.id, book_id: bookId! });
+                      setSavedChapter(true);
+                    }
+                  }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors"
+                >
+                  <Bookmark className={`w-5 h-5 ${savedChapter ? "fill-primary text-primary" : "text-primary"}`} />
+                </button>
                 <button
                   onClick={downloadBook}
                   disabled={downloading || isDownloaded}
