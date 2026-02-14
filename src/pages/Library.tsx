@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Heart, Bookmark, Loader2, ChevronRight, Eye } from "lucide-react";
+import { BookOpen, Clock, Heart, Bookmark, Loader2, ChevronRight, Eye, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
@@ -12,6 +12,7 @@ const tabs = [
   { key: "completed", label: "Completados", icon: Clock },
   { key: "saved", label: "Guardados", icon: Bookmark },
   { key: "favorites", label: "Favoritos", icon: Heart },
+  { key: "chapters", label: "Capítulos", icon: BookmarkCheck },
 ];
 
 interface BookItem {
@@ -23,12 +24,23 @@ interface BookItem {
   genre?: string;
 }
 
+interface SavedChapterItem {
+  id: string;
+  chapterId: string;
+  chapterTitle: string;
+  chapterNumber: number;
+  bookId: string;
+  bookTitle: string;
+  bookCover: string;
+}
+
 const LibraryPage = () => {
   const [activeTab, setActiveTab] = useState("reading");
   const [readingBooks, setReadingBooks] = useState<BookItem[]>([]);
   const [completedBooks, setCompletedBooks] = useState<BookItem[]>([]);
   const [savedBooks, setSavedBooks] = useState<BookItem[]>([]);
   const [favoriteBooks, setFavoriteBooks] = useState<BookItem[]>([]);
+  const [savedChapters, setSavedChapters] = useState<SavedChapterItem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -121,6 +133,25 @@ const LibraryPage = () => {
       }
     }
 
+    // Process saved chapters
+    const { data: savedChaptersData } = await supabase
+      .from("saved_chapters")
+      .select("id, chapter_id, book_id, chapters:chapter_id (title, chapter_number), books:book_id (title, cover_url)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (savedChaptersData) {
+      setSavedChapters((savedChaptersData as any[]).map(sc => ({
+        id: sc.id,
+        chapterId: sc.chapter_id,
+        chapterTitle: sc.chapters?.title || "Sin título",
+        chapterNumber: sc.chapters?.chapter_number || 1,
+        bookId: sc.book_id,
+        bookTitle: sc.books?.title || "Sin título",
+        bookCover: sc.books?.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
+      })));
+    }
+
     setLoading(false);
   };
 
@@ -142,6 +173,7 @@ const LibraryPage = () => {
       case "completed": return { title: "Sin completados", subtitle: "Los libros terminados aparecerán aquí" };
       case "saved": return { title: "Sin guardados", subtitle: "Guarda libros para leerlos después" };
       case "favorites": return { title: "Sin favoritos", subtitle: "Dale ❤️ a libros que te gusten" };
+      case "chapters": return { title: "Sin capítulos guardados", subtitle: "Guarda capítulos desde el lector" };
       default: return { title: "", subtitle: "" };
     }
   };
@@ -181,6 +213,7 @@ const LibraryPage = () => {
               const count = tab.key === "reading" ? readingBooks.length
                 : tab.key === "completed" ? completedBooks.length
                 : tab.key === "saved" ? savedBooks.length
+                : tab.key === "chapters" ? savedChapters.length
                 : favoriteBooks.length;
               return (
                 <button

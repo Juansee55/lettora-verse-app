@@ -12,6 +12,9 @@ import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
 import LevelBadge from "@/components/levels/LevelBadge";
 import { useUserLevel } from "@/hooks/useUserLevel";
+import PremiumBadge from "@/components/premium/PremiumBadge";
+import PremiumStatsCard from "@/components/premium/PremiumStatsCard";
+import { usePremium } from "@/hooks/usePremium";
 
 interface Profile {
   id: string;
@@ -59,6 +62,7 @@ const ProfilePage = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { levelData } = useUserLevel(currentUserId);
+  const { premiumData } = usePremium(currentUserId);
 
   useEffect(() => {
     fetchProfileData();
@@ -192,9 +196,12 @@ const ProfilePage = () => {
 
         {/* Name & Bio */}
         <div className="mt-4">
-          <h2 className={`text-[15px] font-semibold ${equippedItems.nameColor || ""}`}>
-            {profile?.display_name || "Usuario"}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className={`text-[15px] font-semibold ${equippedItems.nameColor || ""}`}>
+              {profile?.display_name || "Usuario"}
+            </h2>
+            {premiumData.isPremium && <PremiumBadge compact />}
+          </div>
           {profile?.bio && (
             <p className="text-[15px] text-muted-foreground mt-1 leading-snug">{profile.bio}</p>
           )}
@@ -217,6 +224,11 @@ const ProfilePage = () => {
           <div className="mt-3">
             <LevelBadge levelData={levelData} showProgress />
           </div>
+        )}
+
+        {/* Premium Advanced Stats */}
+        {premiumData.isPremium && currentUserId && (
+          <PremiumStatsCard userId={currentUserId} />
         )}
 
         {/* Action Buttons */}

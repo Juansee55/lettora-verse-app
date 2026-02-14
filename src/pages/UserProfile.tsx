@@ -16,6 +16,8 @@ import ReportContentModal from "@/components/reports/ReportContentModal";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
 import LevelBadge from "@/components/levels/LevelBadge";
 import { useUserLevel } from "@/hooks/useUserLevel";
+import PremiumBadge from "@/components/premium/PremiumBadge";
+import { usePremium } from "@/hooks/usePremium";
 
 interface UserProfileData {
   id: string;
@@ -71,6 +73,7 @@ const UserProfilePage = () => {
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
   const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
   const { levelData } = useUserLevel(userId);
+  const { premiumData } = usePremium(userId);
 
   useEffect(() => {
     if (userId) {
@@ -338,6 +341,7 @@ const UserProfilePage = () => {
                   <h1 className={`text-xl font-display font-bold truncate ${
                     targetUserRole === "admin" ? "admin-name-gold" : equippedItems.nameColor || ""
                   }`}>{profile.display_name || "Usuario"}</h1>
+                  {premiumData.isPremium && <PremiumBadge compact />}
                   {profile.is_verified && (
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                       <Check className="w-3 h-3 text-primary-foreground" />

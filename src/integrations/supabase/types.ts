@@ -940,6 +940,36 @@ export type Database = {
           },
         ]
       }
+      premium_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: string
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profile_items: {
         Row: {
           created_at: string
@@ -988,6 +1018,7 @@ export type Database = {
           is_private: boolean | null
           is_verified: boolean | null
           location: string | null
+          premium_theme: string | null
           updated_at: string | null
           username: string | null
           website: string | null
@@ -1003,6 +1034,7 @@ export type Database = {
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
+          premium_theme?: string | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -1018,6 +1050,7 @@ export type Database = {
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
+          premium_theme?: string | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -1113,6 +1146,45 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      saved_chapters: {
+        Row: {
+          book_id: string
+          chapter_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_chapters_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {
