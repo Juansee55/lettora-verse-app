@@ -14,6 +14,8 @@ import BottomNav from "@/components/navigation/BottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
+import LevelBadge from "@/components/levels/LevelBadge";
+import { useUserLevel } from "@/hooks/useUserLevel";
 
 interface UserProfileData {
   id: string;
@@ -68,6 +70,7 @@ const UserProfilePage = () => {
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
   const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
+  const { levelData } = useUserLevel(userId);
 
   useEffect(() => {
     if (userId) {
@@ -342,11 +345,14 @@ const UserProfilePage = () => {
                   )}
                 </div>
                 <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
-                {isMutual && !isOwnProfile && (
-                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full">
-                    <Users className="w-3 h-3" /> Se siguen mutuamente
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5 mt-1">
+                  {levelData && <LevelBadge levelData={levelData} compact />}
+                  {isMutual && !isOwnProfile && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full">
+                      <Users className="w-3 h-3" /> Mutuos
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
