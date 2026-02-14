@@ -15,6 +15,7 @@ import { useUserLevel } from "@/hooks/useUserLevel";
 import PremiumBadge from "@/components/premium/PremiumBadge";
 import PremiumStatsCard from "@/components/premium/PremiumStatsCard";
 import { usePremium } from "@/hooks/usePremium";
+import LevelRewards from "@/components/levels/LevelRewards";
 
 interface Profile {
   id: string;
@@ -224,6 +225,11 @@ const ProfilePage = () => {
           <div className="mt-3">
             <LevelBadge levelData={levelData} showProgress />
           </div>
+        )}
+
+        {/* Level Rewards */}
+        {levelData && currentUserId && (
+          <LevelRewards currentLevel={levelData.level} userId={currentUserId} />
         )}
 
         {/* Premium Advanced Stats */}

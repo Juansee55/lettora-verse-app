@@ -978,6 +978,7 @@ export type Database = {
           id: string
           image_url: string
           item_type: string
+          level_required: number | null
           name: string
           price: number
           rarity: string
@@ -989,6 +990,7 @@ export type Database = {
           id?: string
           image_url: string
           item_type: string
+          level_required?: number | null
           name: string
           price?: number
           rarity?: string
@@ -1000,6 +1002,7 @@ export type Database = {
           id?: string
           image_url?: string
           item_type?: string
+          level_required?: number | null
           name?: string
           price?: number
           rarity?: string
