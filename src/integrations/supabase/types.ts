@@ -1259,6 +1259,30 @@ export type Database = {
           },
         ]
       }
+      user_levels: {
+        Row: {
+          id: string
+          level: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           admin_title: string | null
@@ -1317,6 +1341,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_xp: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
+      }
+      calculate_level: { Args: { p_xp: number }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

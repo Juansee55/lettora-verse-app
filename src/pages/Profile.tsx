@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
+import LevelBadge from "@/components/levels/LevelBadge";
+import { useUserLevel } from "@/hooks/useUserLevel";
 
 interface Profile {
   id: string;
@@ -55,6 +57,8 @@ const ProfilePage = () => {
   const [showShare, setShowShare] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { levelData } = useUserLevel(currentUserId);
 
   useEffect(() => {
     fetchProfileData();
@@ -63,6 +67,7 @@ const ProfilePage = () => {
   const fetchProfileData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
+    setCurrentUserId(user.id);
 
     const [profileRes, booksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -195,8 +200,9 @@ const ProfilePage = () => {
           )}
         </div>
 
-        {/* Inventory badge */}
-        <div className="flex items-center gap-2 mt-2">
+        {/* Level + Inventory badges */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {levelData && <LevelBadge levelData={levelData} compact />}
           <button
             onClick={() => navigate("/inventory")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 rounded-full"
@@ -205,6 +211,13 @@ const ProfilePage = () => {
             <span className="text-[13px] font-semibold text-rose-500">Inventario</span>
           </button>
         </div>
+
+        {/* Level Progress Card */}
+        {levelData && (
+          <div className="mt-3">
+            <LevelBadge levelData={levelData} showProgress />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-4">
