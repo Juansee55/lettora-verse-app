@@ -34,6 +34,8 @@ import AdminsPage from "./pages/Admins";
 import InventoryPage from "./pages/Inventory";
 import HashtagPage from "./pages/Hashtag";
 import TrendingHashtagsPage from "./pages/TrendingHashtags";
+import PremiumThemesPage from "./pages/PremiumThemes";
+import LevelsPage from "./pages/Levels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +106,8 @@ const AppContent = () => {
       <Route path="/inventory" element={user ? <InventoryPage /> : <Navigate to="/auth" replace />} />
       <Route path="/hashtag/:tag" element={user ? <HashtagPage /> : <Navigate to="/auth" replace />} />
       <Route path="/trending" element={user ? <TrendingHashtagsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/premium-themes" element={user ? <PremiumThemesPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/levels" element={user ? <LevelsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
