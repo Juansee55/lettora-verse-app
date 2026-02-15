@@ -19,10 +19,14 @@ import {
   Send,
   Edit3,
   Flag,
+  Download,
+  Loader2 as DownloadLoader,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
@@ -88,6 +92,9 @@ const BookDetailPage = () => {
   const [showAllChapters, setShowAllChapters] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
+  const bookIsDownloaded = id ? isBookDownloaded(id) : false;
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -330,6 +337,39 @@ const BookDetailPage = () => {
         >
           <Play className="w-5 h-5 fill-current" />
           Empezar a leer
+        </button>
+        <button
+          onClick={async () => {
+            if (bookIsDownloaded || downloading || !id || !book) return;
+            setDownloading(true);
+            try {
+              const { data: allChapters } = await supabase
+                .from("chapters")
+                .select("id, title, content, chapter_number, word_count")
+                .eq("book_id", id)
+                .eq("is_published", true)
+                .order("chapter_number");
+              if (!allChapters) throw new Error("No chapters");
+              await saveBookOffline({
+                id,
+                title: book.title,
+                author: book.profiles?.display_name || "Desconocido",
+                coverUrl: book.cover_url,
+                downloadedAt: new Date().toISOString(),
+                chapters: allChapters.map(c => ({
+                  id: c.id, bookId: id, title: c.title,
+                  content: c.content || "", chapterNumber: c.chapter_number,
+                  wordCount: c.word_count || 0,
+                })),
+              });
+              toast({ title: "📥 Libro descargado para leer offline" });
+            } catch { toast({ title: "Error al descargar", variant: "destructive" }); }
+            setDownloading(false);
+          }}
+          disabled={downloading || bookIsDownloaded || chapters.length === 0}
+          className="h-[50px] px-4 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : bookIsDownloaded ? <Check className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5" />}
         </button>
         {isAuthor && (
           <button
