@@ -1189,6 +1189,42 @@ export type Database = {
           },
         ]
       }
+      staff_contracts: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string | null
+          form_link: string | null
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          ends_at?: string | null
+          form_link?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string | null
+          form_link?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           background_color: string | null

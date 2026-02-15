@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Bell, Moon, Sun, Globe, Lock, Download, HardDrive, Trash2,
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
-  ChevronRight, Wifi, Heart, Check, X, Users,
+  ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -291,8 +291,28 @@ const SettingsPage = () => {
           </IOSSettingSection>
         </motion.div>
 
-        {/* About */}
+        {/* Staff */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <IOSSettingSection title="Staff">
+            <IOSSettingItem
+              icon={<Cake className="w-4 h-4" />}
+              iconBg="bg-pink-400"
+              title={t("staffBday")}
+              subtitle={t("staffBdayClosed")}
+              onClick={() => navigate("/staff-bday")}
+            />
+            <IOSSettingItem
+              icon={<FileText className="w-4 h-4" />}
+              iconBg="bg-blue-500"
+              title={t("staffContract")}
+              subtitle={t("staffContractDesc")}
+              onClick={() => navigate("/staff-contracts")}
+            />
+          </IOSSettingSection>
+        </motion.div>
+
+        {/* About */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
           <IOSSettingSection>
             <IOSSettingItem
               icon={<Users className="w-4 h-4" />}
@@ -312,7 +332,7 @@ const SettingsPage = () => {
         </motion.div>
 
         {/* Logout */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <IOSSettingSection>
             <IOSSettingItem
               icon={<LogOut className="w-4 h-4" />}

@@ -4,12 +4,13 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
-  Trash2, ShieldPlus, ShieldMinus,
+  Trash2, ShieldPlus, ShieldMinus, FileText, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ModerationPanel from "@/components/reports/ModerationPanel";
+import CreateContractModal from "@/components/admin/CreateContractModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -35,7 +36,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -53,6 +54,8 @@ const AdminPage = () => {
   const [selectedRole, setSelectedRole] = useState<"admin" | "moderator">("moderator");
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserWithVerification | null>(null);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [contracts, setContracts] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
@@ -70,6 +73,15 @@ const AdminPage = () => {
     setIsAdmin(true);
     fetchUsers();
     fetchAdminRoles();
+    fetchContracts();
+  };
+
+  const fetchContracts = async () => {
+    const { data } = await supabase
+      .from("staff_contracts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setContracts(data || []);
   };
 
   const fetchUsers = async () => {
@@ -237,6 +249,7 @@ const AdminPage = () => {
             { key: "users" as const, icon: Users, label: "Usuarios" },
             { key: "moderation" as const, icon: Shield, label: "Moderación" },
             { key: "roles" as const, icon: Tag, label: "Cargos" },
+            { key: "contracts" as const, icon: FileText, label: "Contratos" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -364,7 +377,7 @@ const AdminPage = () => {
         <div className="px-4 py-4">
           <ModerationPanel isAdmin={isAdmin} />
         </div>
-      ) : (
+      ) : activeTab === "roles" ? (
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[14px] text-muted-foreground">
@@ -423,7 +436,49 @@ const AdminPage = () => {
             ))
           )}
         </div>
-      )}
+      ) : activeTab === "contracts" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona contratos del staff.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowContractModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nuevo
+            </Button>
+          </div>
+          {contracts.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay contratos creados.</p>
+            </div>
+          ) : (
+            contracts.map((c: any) => (
+              <div key={c.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-[15px]">{c.title}</h3>
+                  <Button
+                    variant="outline" size="sm"
+                    className="rounded-full text-destructive border-destructive/30 h-8 px-2"
+                    onClick={async () => {
+                      await supabase.from("staff_contracts").delete().eq("id", c.id);
+                      fetchContracts();
+                      toast({ title: "Contrato eliminado" });
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                {c.description && <p className="text-[13px] text-muted-foreground mb-1">{c.description}</p>}
+                <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                  <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                  {c.ends_at && <span>· Hasta {new Date(c.ends_at).toLocaleDateString()}</span>}
+                  <span className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-medium ${c.is_active ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+                    {c.is_active ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : null}
 
       {/* Quick Verify Dialog */}
       <AlertDialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
@@ -573,6 +628,12 @@ const AdminPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Create Contract Modal */}
+      <CreateContractModal
+        isOpen={showContractModal}
+        onClose={() => setShowContractModal(false)}
+        onCreated={fetchContracts}
+      />
     </div>
   );
 };

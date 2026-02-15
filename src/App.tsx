@@ -9,6 +9,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import Onboarding from "./pages/Onboarding";
 import Auth from "./pages/Auth";
 import HomePage from "./pages/Home";
@@ -36,6 +37,8 @@ import HashtagPage from "./pages/Hashtag";
 import TrendingHashtagsPage from "./pages/TrendingHashtags";
 import PremiumThemesPage from "./pages/PremiumThemes";
 import LevelsPage from "./pages/Levels";
+import StaffBdayPage from "./pages/StaffBday";
+import StaffContractsPage from "./pages/StaffContracts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +48,8 @@ const AppContent = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+
+  useAutoCleanup();
 
   useEffect(() => {
     const seen = localStorage.getItem("lettora_onboarding_seen");
@@ -108,6 +113,8 @@ const AppContent = () => {
       <Route path="/trending" element={user ? <TrendingHashtagsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/premium-themes" element={user ? <PremiumThemesPage /> : <Navigate to="/auth" replace />} />
       <Route path="/levels" element={user ? <LevelsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/staff-bday" element={user ? <StaffBdayPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/staff-contracts" element={user ? <StaffContractsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
