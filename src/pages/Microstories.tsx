@@ -17,6 +17,7 @@ import {
   Trophy,
   Repeat2,
   Flag,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -269,6 +270,16 @@ const MicrostoriesPage = () => {
     }
   };
 
+  const handleDeleteMicrostory = async (microstoryId: string) => {
+    const { error } = await supabase.from("microstories").delete().eq("id", microstoryId);
+    if (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    } else {
+      setMicrostories(prev => prev.filter(m => m.id !== microstoryId));
+      toast({ title: "Microrrelato eliminado" });
+    }
+  };
+
   const handleCommentsCountChange = (storyId: string, count: number) => {
     setMicrostories(prev => prev.map(m => m.id === storyId ? { ...m, comments_count: count } : m));
   };
@@ -467,6 +478,15 @@ Un microrrelato captura un momento o una emoción en pocas palabras."
                         <DropdownMenuItem onClick={() => setCollaboratorsStory(story)}>
                           <Users className="w-4 h-4 mr-2" />
                           Colaboradores
+                        </DropdownMenuItem>
+                      )}
+                      {currentUser?.id === story.author_id && (
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteMicrostory(story.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Eliminar
                         </DropdownMenuItem>
                       )}
                       {currentUser?.id !== story.author_id && (

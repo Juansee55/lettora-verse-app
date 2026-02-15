@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Plus, Heart, MessageCircle, Share2,
-  MoreHorizontal, Image, Film, Loader2, X, Bookmark,
+  MoreHorizontal, Image, Film, Loader2, X, Bookmark, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -155,6 +155,16 @@ const FeedPage = () => {
     } else {
       setUserLikes(prev => new Set(prev).add(postId));
       await supabase.from("likes").insert({ user_id: currentUser.id, likeable_type: "post", likeable_id: postId });
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    const { error } = await supabase.from("posts").delete().eq("id", postId);
+    if (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    } else {
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      toast({ title: "Publicación eliminada" });
     }
   };
 
@@ -318,9 +328,14 @@ const FeedPage = () => {
                         @{author.username || "user"} · {formatDate(post.created_at)}
                       </p>
                     </div>
-                    <button className="p-2 -mr-1 rounded-full hover:bg-muted/40 transition-colors">
-                      <MoreHorizontal className="w-4 h-4 text-muted-foreground/60" />
-                    </button>
+                    {currentUser?.id === post.user_id && (
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-2 -mr-1 rounded-full hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-muted-foreground/60" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Media */}

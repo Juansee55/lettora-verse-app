@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
+  Trash2, ShieldPlus, ShieldMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,9 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 interface UserWithVerification {
   id: string;
@@ -40,6 +44,15 @@ const AdminPage = () => {
   const [foundUser, setFoundUser] = useState<UserWithVerification | null>(null);
   const [adminRoles, setAdminRoles] = useState<any[]>([]);
   const [editingTitles, setEditingTitles] = useState<Record<string, string>>({});
+  
+  // New states for role management and account deletion
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [roleUsername, setRoleUsername] = useState("");
+  const [roleFoundUser, setRoleFoundUser] = useState<UserWithVerification | null>(null);
+  const [searchingRoleUser, setSearchingRoleUser] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"admin" | "moderator">("moderator");
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserWithVerification | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
@@ -120,6 +133,64 @@ const AdminPage = () => {
     setSearchingUser(false);
   };
 
+  const searchUserForRole = async () => {
+    if (!roleUsername.trim()) return;
+    setSearchingRoleUser(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, display_name, username, avatar_url, is_verified, created_at")
+      .or(`username.ilike.%${roleUsername}%,display_name.ilike.%${roleUsername}%`)
+      .limit(1)
+      .maybeSingle();
+    setRoleFoundUser(data as UserWithVerification | null);
+    setSearchingRoleUser(false);
+  };
+
+  const assignRole = async () => {
+    if (!roleFoundUser) return;
+    const { error } = await supabase.from("user_roles").insert({
+      user_id: roleFoundUser.id,
+      role: selectedRole,
+    });
+    if (error) {
+      if (error.code === "23505") {
+        toast({ title: "Ya tiene este rol", variant: "destructive" });
+      } else {
+        toast({ title: "Error al asignar rol", variant: "destructive" });
+      }
+    } else {
+      toast({ title: `✅ Rol ${selectedRole} asignado` });
+      fetchAdminRoles();
+      setRoleFoundUser(null);
+      setRoleUsername("");
+      setShowRoleDialog(false);
+    }
+  };
+
+  const removeRole = async (roleId: string) => {
+    const { error } = await supabase.from("user_roles").delete().eq("id", roleId);
+    if (error) {
+      toast({ title: "Error al eliminar rol", variant: "destructive" });
+    } else {
+      toast({ title: "Rol eliminado" });
+      fetchAdminRoles();
+    }
+  };
+
+  const deleteUserAccount = async () => {
+    if (!userToDelete) return;
+    // Delete profile (cascades or RLS handles related data)
+    const { error } = await supabase.from("profiles").delete().eq("id", userToDelete.id);
+    if (error) {
+      toast({ title: "Error al eliminar cuenta", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Cuenta eliminada" });
+      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+    }
+    setShowDeleteAccountDialog(false);
+    setUserToDelete(null);
+  };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -151,9 +222,14 @@ const AdminPage = () => {
             <Shield className="w-5 h-5 text-primary" />
             <h1 className="font-display font-semibold text-[17px]">Admin</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setShowVerifyDialog(true)}>
-            <UserPlus className="w-5 h-5 text-primary" />
-          </Button>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setShowRoleDialog(true)}>
+              <ShieldPlus className="w-5 h-5 text-primary" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setShowVerifyDialog(true)}>
+              <UserPlus className="w-5 h-5 text-primary" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex border-t border-border/50">
@@ -242,7 +318,7 @@ const AdminPage = () => {
                   transition={{ delay: index * 0.03 }}
                   className="bg-card rounded-2xl border border-border/50"
                 >
-                  <div className="flex items-center gap-4 px-4 py-3.5">
+                  <div className="flex items-center gap-3 px-4 py-3.5">
                     <div
                       className="w-11 h-11 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold overflow-hidden cursor-pointer"
                       onClick={() => navigate(`/user/${user.id}`)}
@@ -260,18 +336,24 @@ const AdminPage = () => {
                       </div>
                       <p className="text-[13px] text-muted-foreground truncate">@{user.username || "user"}</p>
                     </div>
-                    <Button
-                      variant={user.is_verified ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => toggleVerification(user.id, user.is_verified)}
-                      className="flex-shrink-0 rounded-full"
-                    >
-                      {user.is_verified ? (
-                        <><XCircle className="w-3.5 h-3.5 mr-1" />Quitar</>
-                      ) : (
-                        <><CheckCircle className="w-3.5 h-3.5 mr-1" />Verificar</>
-                      )}
-                    </Button>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant={user.is_verified ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => toggleVerification(user.id, user.is_verified)}
+                        className="rounded-full text-[11px] h-8 px-2"
+                      >
+                        {user.is_verified ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setUserToDelete(user); setShowDeleteAccountDialog(true); }}
+                        className="rounded-full text-destructive border-destructive/30 h-8 px-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))
@@ -284,9 +366,14 @@ const AdminPage = () => {
         </div>
       ) : (
         <div className="px-4 py-4 space-y-3">
-          <p className="text-[14px] text-muted-foreground mb-4">
-            Asigna un cargo/título personalizado a cada administrador o moderador. Se mostrará en la página de Equipo.
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">
+              Gestiona roles y cargos del equipo.
+            </p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowRoleDialog(true)}>
+              <ShieldPlus className="w-4 h-4 mr-1" /> Asignar rol
+            </Button>
+          </div>
           {adminRoles.length === 0 ? (
             <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
               <Tag className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
@@ -311,6 +398,14 @@ const AdminPage = () => {
                       @{role.profile?.username || "user"} · {role.role}
                     </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeRole(role.id)}
+                    className="rounded-full text-destructive border-destructive/30 h-8 px-2"
+                  >
+                    <ShieldMinus className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -390,6 +485,91 @@ const AdminPage = () => {
             <AlertDialogCancel className="rounded-xl" onClick={() => { setVerifyUsername(""); setFoundUser(null); }}>
               Cerrar
             </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Assign Role Dialog */}
+      <AlertDialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldPlus className="w-5 h-5 text-primary" />
+              Asignar rol
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Busca un usuario y asígnale un rol de administrador o moderador.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Username o nombre..."
+                value={roleUsername}
+                onChange={(e) => setRoleUsername(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchUserForRole()}
+                className="flex-1 h-10 px-4 rounded-xl bg-muted/60 text-[15px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <Button onClick={searchUserForRole} disabled={searchingRoleUser} className="rounded-xl">
+                {searchingRoleUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
+            {roleFoundUser && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold overflow-hidden">
+                    {roleFoundUser.avatar_url ? (
+                      <img src={roleFoundUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      roleFoundUser.display_name?.[0]?.toUpperCase() || "?"
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[15px] truncate">{roleFoundUser.display_name || "Usuario"}</p>
+                    <p className="text-[13px] text-muted-foreground">@{roleFoundUser.username || "user"}</p>
+                  </div>
+                </div>
+                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as "admin" | "moderator")}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="moderator">Moderador</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={assignRole} className="w-full rounded-xl">
+                  Asignar {selectedRole}
+                </Button>
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl" onClick={() => { setRoleUsername(""); setRoleFoundUser(null); }}>
+              Cerrar
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Eliminar cuenta
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de eliminar la cuenta de <strong>{userToDelete?.display_name || userToDelete?.username}</strong>? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteUserAccount} className="bg-destructive hover:bg-destructive/90 rounded-xl">
+              Eliminar cuenta
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
