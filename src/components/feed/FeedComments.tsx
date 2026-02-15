@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNameColors } from "@/hooks/useNameColors";
 import { useNavigate } from "react-router-dom";
+import RichContentRenderer from "@/components/hashtags/RichContentRenderer";
 
 interface Comment {
   id: string;
   content: string;
   created_at: string;
+  user_id: string;
+  likes_count: number;
   user: {
     id: string;
     display_name: string | null;
@@ -20,19 +23,14 @@ interface Comment {
   };
 }
 
-interface MicrostoryCommentsProps {
+interface FeedCommentsProps {
   isOpen: boolean;
   onClose: () => void;
-  microstoryId: string;
+  postId: string;
   onCommentsCountChange?: (count: number) => void;
 }
 
-const MicrostoryComments = ({ 
-  isOpen, 
-  onClose, 
-  microstoryId,
-  onCommentsCountChange 
-}: MicrostoryCommentsProps) => {
+const FeedComments = ({ isOpen, onClose, postId, onCommentsCountChange }: FeedCommentsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,18 +46,18 @@ const MicrostoryComments = ({
       fetchComments();
       setTimeout(() => inputRef.current?.focus(), 300);
     }
-  }, [isOpen, microstoryId]);
+  }, [isOpen, postId]);
 
   const fetchComments = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("comments")
       .select(`
-        id, content, created_at,
+        id, content, created_at, user_id, likes_count,
         user:profiles!user_id (id, display_name, username, avatar_url)
       `)
-      .eq("commentable_type", "microstory")
-      .eq("commentable_id", microstoryId)
+      .eq("commentable_type", "post")
+      .eq("commentable_id", postId)
       .order("created_at", { ascending: true });
 
     if (data) {
@@ -85,8 +83,8 @@ const MicrostoryComments = ({
 
     const { error } = await supabase.from("comments").insert({
       user_id: user.id,
-      commentable_type: "microstory",
-      commentable_id: microstoryId,
+      commentable_type: "post",
+      commentable_id: postId,
       content,
     });
 
@@ -183,7 +181,9 @@ const MicrostoryComments = ({
                         </span>
                         <span className="text-[11px] text-muted-foreground/50">{formatTime(comment.created_at)}</span>
                       </div>
-                      <p className="text-[14px] leading-[1.45] mt-0.5 text-foreground">{comment.content}</p>
+                      <p className="text-[14px] leading-[1.45] mt-0.5">
+                        <RichContentRenderer content={comment.content} className="text-foreground" />
+                      </p>
                     </div>
                   </motion.div>
                 ))
@@ -194,7 +194,7 @@ const MicrostoryComments = ({
             <form onSubmit={handleSubmit} className="border-t border-border/30 px-4 py-3 flex items-center gap-2 bg-background">
               <Input
                 ref={inputRef}
-                placeholder="Escribe un comentario..."
+                placeholder="Añade un comentario..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 className="flex-1 rounded-full h-10 bg-muted/40 border-0 text-[14px] focus-visible:ring-1"
@@ -216,4 +216,4 @@ const MicrostoryComments = ({
   );
 };
 
-export default MicrostoryComments;
+export default FeedComments;

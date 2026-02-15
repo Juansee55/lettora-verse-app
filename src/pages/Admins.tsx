@@ -4,6 +4,7 @@ import { Shield, BadgeCheck, Loader2, ArrowLeft, Crown, Star } from "lucide-reac
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
+import { useNameColors } from "@/hooks/useNameColors";
 
 interface AdminUser {
   id: string;
@@ -19,6 +20,8 @@ const AdminsPage = () => {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const nameColors = useNameColors(admins.map(a => a.id));
 
   useEffect(() => {
     fetchAdmins();
@@ -62,6 +65,7 @@ const AdminsPage = () => {
 
   const renderMember = (admin: AdminUser, index: number) => {
     const isAdmin = admin.role === "admin";
+    const hasCustomColor = nameColors[admin.id];
 
     return (
       <motion.div
@@ -70,60 +74,59 @@ const AdminsPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
         onClick={() => navigate(`/user/${admin.id}`)}
-        className="flex items-center gap-3.5 px-4 py-3 active:bg-muted/40 transition-colors cursor-pointer"
+        className="flex items-center gap-4 p-4 active:bg-muted/40 transition-colors cursor-pointer"
       >
         {/* Avatar with role ring */}
         <div className="relative flex-shrink-0">
-          <div className={`w-[52px] h-[52px] rounded-full overflow-hidden ring-2 ${
-            isAdmin ? "ring-amber-400/60" : "ring-slate-400/40"
+          <div className={`w-14 h-14 rounded-full overflow-hidden ring-[2.5px] ${
+            isAdmin ? "ring-amber-400" : "ring-slate-400/60"
           } bg-gradient-to-br from-primary/70 to-primary flex items-center justify-center text-primary-foreground font-bold text-lg`}>
             {admin.avatar_url ? (
               <img src={admin.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
-              admin.display_name?.[0]?.toUpperCase() || "?"
+              <span className="text-xl">{admin.display_name?.[0]?.toUpperCase() || "?"}</span>
             )}
           </div>
-          <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
+          <div className={`absolute -bottom-0.5 -right-0.5 w-5.5 h-5.5 rounded-full flex items-center justify-center border-2 border-background ${
             isAdmin ? "bg-amber-400" : "bg-slate-400"
           }`}>
             {isAdmin ? (
-              <Crown className="w-2.5 h-2.5 text-white" />
+              <Crown className="w-3 h-3 text-white" />
             ) : (
-              <Star className="w-2.5 h-2.5 text-white" />
+              <Star className="w-3 h-3 text-white" />
             )}
           </div>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className={`font-semibold text-[16px] truncate ${
-              isAdmin ? "admin-name-gold" : ""
+          <div className="flex items-center gap-2">
+            <h3 className={`font-bold text-[16px] truncate ${
+              hasCustomColor ? hasCustomColor : isAdmin ? "admin-name-gold" : ""
             }`}>
               {admin.display_name || "Admin"}
             </h3>
             {admin.is_verified && (
-              <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
+              <BadgeCheck className="w-4.5 h-4.5 text-primary flex-shrink-0" />
             )}
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[13px] text-muted-foreground">@{admin.username || "user"}</span>
-            {admin.admin_title && (
-              <>
-                <span className="text-muted-foreground/30">·</span>
-                <span className="text-[12px] text-muted-foreground font-medium">
-                  {admin.admin_title}
-                </span>
-              </>
-            )}
-          </div>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            @{admin.username || "user"}
+          </p>
+          {admin.admin_title && (
+            <p className={`text-[12px] font-medium mt-0.5 ${
+              isAdmin ? "text-amber-500" : "text-slate-400"
+            }`}>
+              {admin.admin_title}
+            </p>
+          )}
         </div>
 
         {/* Role pill */}
-        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+        <span className={`text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide ${
           isAdmin
-            ? "bg-amber-500/12 text-amber-500"
-            : "bg-slate-500/12 text-slate-500"
+            ? "bg-amber-500/15 text-amber-500"
+            : "bg-slate-500/15 text-slate-400"
         }`}>
           {isAdmin ? "Admin" : "Mod"}
         </span>
@@ -147,18 +150,19 @@ const AdminsPage = () => {
       </div>
 
       {/* Hero Card */}
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-5 pb-3">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-amber-500/10 via-primary/5 to-background rounded-2xl p-5 border border-border/40"
+          className="relative overflow-hidden rounded-2xl border border-border/40"
         >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-amber-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-primary/5 to-transparent" />
+          <div className="relative p-5 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+              <Shield className="w-7 h-7 text-amber-500" />
             </div>
             <div>
-              <h2 className="text-[17px] font-bold">Equipo de Lettora</h2>
+              <h2 className="text-[18px] font-bold">Equipo de Lettora</h2>
               <p className="text-[13px] text-muted-foreground mt-0.5">
                 {admins.length} miembro{admins.length !== 1 ? "s" : ""} del equipo
               </p>
@@ -179,16 +183,17 @@ const AdminsPage = () => {
           <p className="text-muted-foreground">No hay miembros del equipo</p>
         </div>
       ) : (
-        <div className="mt-2">
+        <div className="mt-1">
           {/* Admins Section */}
           {adminsList.length > 0 && (
             <div>
-              <div className="px-4 py-2">
-                <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-4 py-2.5">
+                <p className="text-[12px] font-bold text-amber-500/80 uppercase tracking-widest flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5" />
                   Administradores
                 </p>
               </div>
-              <div className="bg-card border-y border-border/30 divide-y divide-border/20">
+              <div className="mx-4 bg-card rounded-2xl border border-border/30 overflow-hidden divide-y divide-border/20">
                 {adminsList.map((admin, i) => renderMember(admin, i))}
               </div>
             </div>
@@ -197,12 +202,13 @@ const AdminsPage = () => {
           {/* Moderators Section */}
           {modsList.length > 0 && (
             <div className="mt-6">
-              <div className="px-4 py-2">
-                <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-4 py-2.5">
+                <p className="text-[12px] font-bold text-slate-400/80 uppercase tracking-widest flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5" />
                   Moderadores
                 </p>
               </div>
-              <div className="bg-card border-y border-border/30 divide-y divide-border/20">
+              <div className="mx-4 bg-card rounded-2xl border border-border/30 overflow-hidden divide-y divide-border/20">
                 {modsList.map((mod, i) => renderMember(mod, i + adminsList.length))}
               </div>
             </div>
