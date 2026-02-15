@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
 import RichContentRenderer from "@/components/hashtags/RichContentRenderer";
 import { useNameColors } from "@/hooks/useNameColors";
+import FeedComments from "@/components/feed/FeedComments";
 
 interface Post {
   id: string;
@@ -46,6 +47,7 @@ const FeedPage = () => {
   const [publishing, setPublishing] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
 
   useEffect(() => { fetchPosts(); checkUser(); }, []);
 
@@ -342,7 +344,7 @@ const FeedPage = () => {
                       >
                         <Heart className={`w-[22px] h-[22px] transition-colors ${isLiked ? "fill-destructive text-destructive" : "text-foreground"}`} />
                       </motion.button>
-                      <button className="p-2 rounded-full">
+                      <button className="p-2 rounded-full" onClick={() => setOpenCommentsPostId(post.id)}>
                         <MessageCircle className="w-[22px] h-[22px] text-foreground" />
                       </button>
                       <button className="p-2 rounded-full">
@@ -372,7 +374,10 @@ const FeedPage = () => {
 
                   {/* Comments */}
                   {post.comments_count > 0 && (
-                    <button className="px-4 py-1.5 text-[13px] text-muted-foreground/60">
+                    <button
+                      className="px-4 py-1.5 text-[13px] text-muted-foreground/60"
+                      onClick={() => setOpenCommentsPostId(post.id)}
+                    >
                       Ver {post.comments_count === 1 ? "el comentario" : `los ${post.comments_count} comentarios`}
                     </button>
                   )}
@@ -395,6 +400,20 @@ const FeedPage = () => {
       >
         <Plus className="w-6 h-6 text-primary-foreground" />
       </motion.button>
+
+      {/* Comments Bottom Sheet */}
+      {openCommentsPostId && (
+        <FeedComments
+          isOpen={!!openCommentsPostId}
+          onClose={() => setOpenCommentsPostId(null)}
+          postId={openCommentsPostId}
+          onCommentsCountChange={(count) => {
+            setPosts(prev => prev.map(p =>
+              p.id === openCommentsPostId ? { ...p, comments_count: count } : p
+            ));
+          }}
+        />
+      )}
 
       <BottomNav />
     </div>
