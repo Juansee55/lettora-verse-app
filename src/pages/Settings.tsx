@@ -297,8 +297,8 @@ const SettingsPage = () => {
             <IOSSettingItem
               icon={<Users className="w-4 h-4" />}
               iconBg="bg-amber-500"
-              title="Equipo / Admins"
-              subtitle="Conoce al equipo detrás de la app"
+              title={t("team")}
+              subtitle={t("teamDesc")}
               onClick={() => navigate("/admins")}
             />
             <IOSSettingItem

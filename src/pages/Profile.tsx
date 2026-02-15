@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
-  Grid3X3, List, Crown, ChevronRight,
+  Grid3X3, List, Crown, ChevronRight, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,12 @@ import { useUserLevel } from "@/hooks/useUserLevel";
 import PremiumBadge from "@/components/premium/PremiumBadge";
 import PremiumStatsCard from "@/components/premium/PremiumStatsCard";
 import { usePremium } from "@/hooks/usePremium";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface Profile {
@@ -54,9 +60,11 @@ type AdminTitle = string | null;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"grid" | "list">("grid");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
@@ -117,6 +125,19 @@ const ProfilePage = () => {
       setAdminTitle(roleRes.data.admin_title);
     }
     setLoading(false);
+  };
+
+  const handleDeleteBook = async () => {
+    if (!bookToDelete) return;
+    const { error } = await supabase.from("books").delete().eq("id", bookToDelete.id);
+    if (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    } else {
+      setBooks(prev => prev.filter(b => b.id !== bookToDelete.id));
+      setStats(prev => ({ ...prev, books: prev.books - 1 }));
+      toast({ title: "Libro eliminado" });
+    }
+    setBookToDelete(null);
   };
 
   const formatNumber = (num: number): string => {
@@ -402,11 +423,19 @@ const ProfilePage = () => {
                       </span>
                     </div>
                   </div>
-                  {book.status === "draft" && (
-                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 text-[11px] rounded-full">
-                      Borrador
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {book.status === "draft" && (
+                      <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 text-[11px] rounded-full">
+                        Borrador
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setBookToDelete(book); }}
+                      className="p-1.5 rounded-full hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -441,6 +470,24 @@ const ProfilePage = () => {
           }}
         />
       )}
+
+      {/* Delete Book Dialog */}
+      <AlertDialog open={!!bookToDelete} onOpenChange={(o) => !o && setBookToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar libro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará "{bookToDelete?.title}" permanentemente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90 rounded-xl">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <IOSBottomNav />
     </div>
