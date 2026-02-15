@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
-  Grid3X3, List,
+  Grid3X3, List, Crown, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ import { useUserLevel } from "@/hooks/useUserLevel";
 import PremiumBadge from "@/components/premium/PremiumBadge";
 import PremiumStatsCard from "@/components/premium/PremiumStatsCard";
 import { usePremium } from "@/hooks/usePremium";
-import LevelRewards from "@/components/levels/LevelRewards";
+
 
 interface Profile {
   id: string;
@@ -220,16 +220,28 @@ const ProfilePage = () => {
           </button>
         </div>
 
-        {/* Level Progress Card */}
+        {/* Level + Premium quick links */}
         {levelData && (
-          <div className="mt-3">
-            <LevelBadge levelData={levelData} showProgress />
+          <div className="mt-3 space-y-2">
+            <button onClick={() => navigate("/levels")} className="w-full text-left">
+              <LevelBadge levelData={levelData} showProgress />
+            </button>
+            {premiumData.isPremium && (
+              <button
+                onClick={() => navigate("/premium-themes")}
+                className="w-full flex items-center gap-3 p-3 bg-card rounded-xl active:bg-muted/50 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-amber-500/10 flex items-center justify-center">
+                  <Crown className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="text-[13px] font-semibold">Temas de perfil</p>
+                  <p className="text-[11px] text-muted-foreground">Personaliza tu perfil con temas exclusivos</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
           </div>
-        )}
-
-        {/* Level Rewards */}
-        {levelData && currentUserId && (
-          <LevelRewards currentLevel={levelData.level} userId={currentUserId} />
         )}
 
         {/* Premium Advanced Stats */}
