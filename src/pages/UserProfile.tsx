@@ -71,6 +71,7 @@ const UserProfilePage = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
+  const [adminTitle, setAdminTitle] = useState<string | null>(null);
   const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
   const { levelData } = useUserLevel(userId);
   const { premiumData } = usePremium(userId);
@@ -119,11 +120,14 @@ const UserProfilePage = () => {
   const fetchTargetUserRole = async () => {
     const { data } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, admin_title")
       .eq("user_id", userId)
       .in("role", ["admin", "moderator"])
       .maybeSingle();
-    if (data) setTargetUserRole(data.role as "admin" | "moderator");
+    if (data) {
+      setTargetUserRole(data.role as "admin" | "moderator");
+      setAdminTitle(data.admin_title);
+    }
   };
 
   const checkBlockStatus = async (myId: string) => {
@@ -337,10 +341,28 @@ const UserProfilePage = () => {
                 )}
               </motion.div>
               <div className="flex-1 min-w-0 pb-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <h1 className={`text-xl font-display font-bold truncate ${
                     targetUserRole === "admin" ? "admin-name-gold" : equippedItems.nameColor || ""
                   }`}>{profile.display_name || "Usuario"}</h1>
+                  {adminTitle && (
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                      targetUserRole === "admin"
+                        ? "bg-amber-500/15 text-amber-500"
+                        : "bg-slate-400/15 text-slate-400"
+                    }`}>
+                      {adminTitle}
+                    </span>
+                  )}
+                  {targetUserRole && (
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      targetUserRole === "admin"
+                        ? "bg-amber-500/20 text-amber-500"
+                        : "bg-slate-400/20 text-slate-400"
+                    }`}>
+                      {targetUserRole}
+                    </span>
+                  )}
                   {premiumData.isPremium && <PremiumBadge compact />}
                   {profile.is_verified && (
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">

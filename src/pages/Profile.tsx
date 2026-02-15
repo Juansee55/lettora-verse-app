@@ -50,6 +50,7 @@ interface EquippedItems {
 }
 
 type UserRole = "admin" | "moderator" | null;
+type AdminTitle = string | null;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ const ProfilePage = () => {
   const [showShare, setShowShare] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
   const [userRole, setUserRole] = useState<UserRole>(null);
+  const [adminTitle, setAdminTitle] = useState<AdminTitle>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
@@ -80,7 +82,7 @@ const ProfilePage = () => {
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
       supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
-      supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
+      supabase.from("user_roles").select("role, admin_title").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
     ]);
 
     if (profileRes.data) setProfile(profileRes.data);
@@ -110,7 +112,10 @@ const ProfilePage = () => {
       });
     }
 
-    if (roleRes.data) setUserRole(roleRes.data.role as UserRole);
+    if (roleRes.data) {
+      setUserRole(roleRes.data.role as UserRole);
+      setAdminTitle(roleRes.data.admin_title);
+    }
     setLoading(false);
   };
 
@@ -197,10 +202,28 @@ const ProfilePage = () => {
 
         {/* Name & Bio */}
         <div className="mt-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className={`text-[15px] font-semibold ${equippedItems.nameColor || ""}`}>
               {profile?.display_name || "Usuario"}
             </h2>
+            {adminTitle && (
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                userRole === "admin"
+                  ? "bg-amber-500/15 text-amber-500"
+                  : "bg-slate-400/15 text-slate-400"
+              }`}>
+                {adminTitle}
+              </span>
+            )}
+            {userRole && (
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                userRole === "admin"
+                  ? "bg-amber-500/20 text-amber-500"
+                  : "bg-slate-400/20 text-slate-400"
+              }`}>
+                {userRole}
+              </span>
+            )}
             {premiumData.isPremium && <PremiumBadge compact />}
           </div>
           {profile?.bio && (
