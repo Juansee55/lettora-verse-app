@@ -22,6 +22,7 @@ import {
   Download,
   Loader2 as DownloadLoader,
   Check,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,12 +43,23 @@ interface BookData {
   comments_count: number | null;
   status: string | null;
   tags: string[] | null;
+  is_saga: boolean | null;
+  parent_saga_id: string | null;
+  saga_order: number | null;
   profiles: {
     id: string;
     display_name: string | null;
     username: string | null;
     avatar_url: string | null;
   } | null;
+}
+
+interface SagaEntry {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  saga_order: number | null;
+  status: string | null;
 }
 
 interface Chapter {
@@ -93,6 +105,8 @@ const BookDetailPage = () => {
   const [expandedDescription, setExpandedDescription] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [sagaEntries, setSagaEntries] = useState<SagaEntry[]>([]);
+  const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
 
@@ -104,7 +118,7 @@ const BookDetailPage = () => {
         .from("books")
         .select(`
           id, title, description, cover_url, genre, reads_count, likes_count,
-          comments_count, status, tags, author_id,
+          comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order,
           profiles:author_id (id, display_name, username, avatar_url)
         `)
         .eq("id", id)
@@ -116,6 +130,31 @@ const BookDetailPage = () => {
       }
 
       setBook(bookData as unknown as BookData);
+
+      // Load saga entries if this is a saga or part of one
+      if (bookData.is_saga) {
+        const { data: entries } = await supabase
+          .from("books")
+          .select("id, title, cover_url, saga_order, status")
+          .eq("parent_saga_id", id)
+          .order("saga_order", { ascending: true });
+        if (entries) setSagaEntries(entries);
+      } else if (bookData.parent_saga_id) {
+        const { data: parentSaga } = await supabase
+          .from("books")
+          .select("id, title")
+          .eq("id", bookData.parent_saga_id)
+          .single();
+        if (parentSaga) {
+          setParentSagaTitle(parentSaga.title);
+          const { data: siblings } = await supabase
+            .from("books")
+            .select("id, title, cover_url, saga_order, status")
+            .eq("parent_saga_id", bookData.parent_saga_id)
+            .order("saga_order", { ascending: true });
+          if (siblings) setSagaEntries(siblings);
+        }
+      }
 
       const { data: chaptersData } = await supabase
         .from("chapters")
@@ -289,6 +328,12 @@ const BookDetailPage = () => {
             {book.status === "completed" && (
               <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Completo
+              </div>
+            )}
+            {book.is_saga && (
+              <div className="absolute -bottom-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                <Library className="w-3 h-3" />
+                Saga
               </div>
             )}
           </div>
@@ -499,7 +544,41 @@ const BookDetailPage = () => {
         </div>
       )}
 
-      {/* Book Info Summary */}
+      {/* Saga Section */}
+      {(book.is_saga || book.parent_saga_id) && sagaEntries.length > 0 && (
+        <div className="px-5 mb-4">
+          <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 flex items-center gap-2">
+            <Library className="w-4 h-4" />
+            {book.is_saga ? "Libros de la saga" : `Saga: ${parentSagaTitle}`}
+          </h3>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+            {sagaEntries.map((entry, index) => (
+              <motion.div
+                key={entry.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => entry.id !== id && navigate(`/book/${entry.id}`)}
+                className={`flex-shrink-0 w-[100px] cursor-pointer ${entry.id === id ? "ring-2 ring-primary rounded-xl" : ""}`}
+              >
+                <div className="aspect-[3/4] rounded-xl overflow-hidden mb-1.5 shadow-card">
+                  <img
+                    src={entry.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop"}
+                    alt={entry.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-[12px] font-medium line-clamp-1">{entry.title}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Parte {(entry.saga_order ?? index) + 1}
+                  {entry.status === "completed" && " • Completo"}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="px-5 mb-4">
         <div className="ios-section">
           <div className="ios-item">

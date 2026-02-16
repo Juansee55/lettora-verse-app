@@ -61,6 +61,8 @@ const AdvancedWritePage = () => {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [isSaga, setIsSaga] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
   
   const [chapters, setChapters] = useState<Chapter[]>([
     { id: "1", title: "Capítulo 1", content: "", chapter_number: 1, word_count: 0, notes: "" }
@@ -105,6 +107,8 @@ const AdvancedWritePage = () => {
     setGenre(bookData.genre || "Romance");
     setCoverPreview(bookData.cover_url);
     setStatus((bookData.status as "draft" | "published") || "draft");
+    setIsSaga(bookData.is_saga || false);
+    setTags(bookData.tags || []);
 
     // Load chapters
     const { data: chaptersData } = await supabase
@@ -211,6 +215,8 @@ const AdvancedWritePage = () => {
           title, description, genre,
           cover_url: coverPreview,
           status: saveStatus,
+          is_saga: isSaga,
+          tags: tags.length > 0 ? tags : null,
         }).eq("id", bookId);
 
         // Update/create chapters
@@ -264,6 +270,8 @@ const AdvancedWritePage = () => {
           description, genre,
           cover_url: coverPreview,
           status: saveStatus,
+          is_saga: isSaga,
+          tags: tags.length > 0 ? tags : null,
         }).select().single();
 
         if (error || !newBook) throw error;
@@ -518,6 +526,48 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                     className="bg-muted/30 resize-none text-[14px] min-h-[80px]"
                   />
                   <label className="text-[11px] text-muted-foreground mt-1 block">Sinopsis del libro</label>
+                </div>
+                {/* Saga toggle */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => setIsSaga(!isSaga)}
+                    className="flex items-center gap-2 w-full py-2"
+                  >
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    <span className="text-[13px] flex-1 text-left">Saga</span>
+                    <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${isSaga ? "bg-primary" : "bg-muted"}`}>
+                      <div className={`w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${isSaga ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </button>
+                </div>
+                {/* Tags */}
+                <div className="mt-4">
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Etiquetas ({tags.length}/5)</label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {tags.map((tag) => (
+                      <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-[11px] rounded-full">
+                        #{tag}
+                        <button onClick={() => setTags(prev => prev.filter(t => t !== tag))} className="hover:text-destructive">×</button>
+                      </span>
+                    ))}
+                  </div>
+                  {tags.length < 5 && (
+                    <Input
+                      type="text"
+                      placeholder="Añadir etiqueta..."
+                      className="h-8 text-[13px]"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = (e.target as HTMLInputElement).value.trim().toLowerCase().replace(/[^a-záéíóúñü0-9]/gi, "");
+                          if (val && !tags.includes(val)) {
+                            setTags(prev => [...prev, val]);
+                            (e.target as HTMLInputElement).value = "";
+                          }
+                        }
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </motion.aside>

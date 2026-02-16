@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, Eye } from "lucide-react";
+import { Heart, Eye, Library } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Book {
@@ -10,6 +10,7 @@ interface Book {
   reads: number;
   likes: number;
   category: string;
+  isSaga?: boolean;
 }
 
 interface BookCardProps {
@@ -80,8 +81,14 @@ const BookCard = ({ book, variant = "default" }: BookCardProps) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+          {book.isSaga && (
+            <span className="px-1.5 py-0.5 bg-primary/90 text-primary-foreground text-[10px] font-bold rounded-full flex items-center gap-0.5 backdrop-blur-sm">
+              <Library className="w-2.5 h-2.5" />
+              Saga
+            </span>
+          )}
+          <button className="w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors opacity-0 group-hover:opacity-100">
             <Heart className="w-4 h-4" />
           </button>
         </div>

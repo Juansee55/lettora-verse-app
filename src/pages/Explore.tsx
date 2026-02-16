@@ -31,6 +31,7 @@ interface Book {
   reads_count: number | null;
   likes_count: number | null;
   created_at: string | null;
+  is_saga: boolean | null;
   profiles: {
     display_name: string | null;
     username: string | null;
@@ -71,7 +72,7 @@ const ExplorePage = () => {
       let query = supabase
         .from("books")
         .select(`
-          id, title, cover_url, genre, reads_count, likes_count, created_at,
+          id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga,
           profiles:author_id (display_name, username, avatar_url)
         `)
         .in("status", ["published", "completed"])
@@ -91,13 +92,13 @@ const ExplorePage = () => {
         query.limit(20),
         supabase
           .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, profiles:author_id (display_name, username, avatar_url)`)
+          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:author_id (display_name, username, avatar_url)`)
           .in("status", ["published", "completed"])
           .order("likes_count", { ascending: false })
           .limit(6),
         supabase
           .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, profiles:author_id (display_name, username, avatar_url)`)
+          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:author_id (display_name, username, avatar_url)`)
           .in("status", ["published", "completed"])
           .order("created_at", { ascending: false })
           .limit(6),
@@ -136,6 +137,7 @@ const ExplorePage = () => {
     reads: book.reads_count || 0,
     likes: book.likes_count || 0,
     category: book.genre || "General",
+    isSaga: book.is_saga || false,
   });
 
   const isSearching = searchQuery.trim().length > 0;
