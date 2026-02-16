@@ -4,13 +4,14 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
-  Trash2, ShieldPlus, ShieldMinus, FileText, Plus,
+  Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ModerationPanel from "@/components/reports/ModerationPanel";
 import CreateContractModal from "@/components/admin/CreateContractModal";
+import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -36,7 +37,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -56,6 +57,8 @@ const AdminPage = () => {
   const [userToDelete, setUserToDelete] = useState<UserWithVerification | null>(null);
   const [showContractModal, setShowContractModal] = useState(false);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [showNewsModal, setShowNewsModal] = useState(false);
+  const [newsItems, setNewsItems] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
@@ -74,6 +77,7 @@ const AdminPage = () => {
     fetchUsers();
     fetchAdminRoles();
     fetchContracts();
+    fetchNews();
   };
 
   const fetchContracts = async () => {
@@ -82,6 +86,14 @@ const AdminPage = () => {
       .select("*")
       .order("created_at", { ascending: false });
     setContracts(data || []);
+  };
+
+  const fetchNews = async () => {
+    const { data } = await supabase
+      .from("news" as any)
+      .select("*")
+      .order("created_at", { ascending: false }) as any;
+    setNewsItems(data || []);
   };
 
   const fetchUsers = async () => {
@@ -250,6 +262,7 @@ const AdminPage = () => {
             { key: "moderation" as const, icon: Shield, label: "Moderación" },
             { key: "roles" as const, icon: Tag, label: "Cargos" },
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
+            { key: "news" as const, icon: Newspaper, label: "Noticias" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -478,6 +491,51 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "news" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Publica noticias y actualizaciones.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowNewsModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nueva
+            </Button>
+          </div>
+          {newsItems.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Newspaper className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay noticias publicadas.</p>
+            </div>
+          ) : (
+            newsItems.map((n: any) => (
+              <div key={n.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold mb-1 ${
+                      n.news_type === 'bug' ? 'bg-red-500/15 text-red-500' :
+                      n.news_type === 'patch' ? 'bg-amber-500/15 text-amber-500' :
+                      'bg-blue-500/15 text-blue-500'
+                    }`}>
+                      {n.news_type === 'bug' ? 'Bug Fix' : n.news_type === 'patch' ? 'Parche' : 'Actualización'}
+                    </span>
+                    <h3 className="font-semibold text-[15px]">{n.title}</h3>
+                  </div>
+                  <Button
+                    variant="outline" size="sm"
+                    className="rounded-full text-destructive border-destructive/30 h-8 px-2"
+                    onClick={async () => {
+                      await (supabase.from("news" as any).delete().eq("id", n.id) as any);
+                      fetchNews();
+                      toast({ title: "Noticia eliminada" });
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                {n.description && <p className="text-[13px] text-muted-foreground mb-1">{n.description}</p>}
+                <span className="text-[12px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString()}</span>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
@@ -633,6 +691,11 @@ const AdminPage = () => {
         isOpen={showContractModal}
         onClose={() => setShowContractModal(false)}
         onCreated={fetchContracts}
+      />
+      <CreateNewsModal
+        isOpen={showNewsModal}
+        onClose={() => setShowNewsModal(false)}
+        onCreated={fetchNews}
       />
     </div>
   );

@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
 import StoriesBar from "@/components/stories/StoriesBar";
 import { useLanguage } from "@/contexts/LanguageContext";
-import FloatingHearts from "@/components/valentines/FloatingHearts";
 import RichContentRenderer from "@/components/hashtags/RichContentRenderer";
 import { useNameColors } from "@/hooks/useNameColors";
 import FeedComments from "@/components/feed/FeedComments";
@@ -184,7 +183,6 @@ const FeedPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">

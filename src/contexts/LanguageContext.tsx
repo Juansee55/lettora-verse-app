@@ -125,6 +125,10 @@ const translations: Record<Language, Record<string, string>> = {
     openForm: "Abrir formulario",
     expired: "Expirado",
     active: "Activo",
+    news: "Noticias",
+    newsDesc: "Actualizaciones, parches y novedades",
+    noNews: "Sin noticias",
+    noNewsDesc: "No hay noticias disponibles por el momento.",
   },
   en: {
     home: "Home",
@@ -237,6 +241,10 @@ const translations: Record<Language, Record<string, string>> = {
     openForm: "Open form",
     expired: "Expired",
     active: "Active",
+    news: "News",
+    newsDesc: "Updates, patches and announcements",
+    noNews: "No news",
+    noNewsDesc: "No news available at this time.",
   },
   pt: {
     home: "Início",
@@ -349,6 +357,10 @@ const translations: Record<Language, Record<string, string>> = {
     openForm: "Abrir formulário",
     expired: "Expirado",
     active: "Ativo",
+    news: "Notícias",
+    newsDesc: "Atualizações, patches e novidades",
+    noNews: "Sem notícias",
+    noNewsDesc: "Nenhuma notícia disponível no momento.",
   },
   fr: {
     home: "Accueil",
@@ -461,6 +473,10 @@ const translations: Record<Language, Record<string, string>> = {
     openForm: "Ouvrir le formulaire",
     expired: "Expiré",
     active: "Actif",
+    news: "Actualités",
+    newsDesc: "Mises à jour, correctifs et nouveautés",
+    noNews: "Aucune actualité",
+    noNewsDesc: "Aucune actualité disponible pour le moment.",
   },
   it: {
     home: "Home",
@@ -573,6 +589,10 @@ const translations: Record<Language, Record<string, string>> = {
     openForm: "Apri modulo",
     expired: "Scaduto",
     active: "Attivo",
+    news: "Notizie",
+    newsDesc: "Aggiornamenti, patch e novità",
+    noNews: "Nessuna notizia",
+    noNewsDesc: "Nessuna notizia disponibile al momento.",
   },
 };
 
