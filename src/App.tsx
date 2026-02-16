@@ -9,6 +9,8 @@ import { Session, User } from "@supabase/supabase-js";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
+import PageLoader from "@/components/PageLoader";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -61,7 +63,7 @@ const AppContent = () => {
         setSession(session);
         setUser(session?.user ?? null);
         if (loading) {
-          setTimeout(() => setLoading(false), 1500);
+          setLoading(false);
         }
       }
     );
@@ -69,7 +71,7 @@ const AppContent = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setTimeout(() => setLoading(false), 1500);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -85,7 +87,7 @@ const AppContent = () => {
   }
 
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : user ? <Navigate to="/home" replace /> : <Navigate to="/auth" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
@@ -132,6 +134,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <AppContent />
           </BrowserRouter>
         </TooltipProvider>
