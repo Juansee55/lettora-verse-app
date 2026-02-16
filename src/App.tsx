@@ -39,6 +39,7 @@ import PremiumThemesPage from "./pages/PremiumThemes";
 import LevelsPage from "./pages/Levels";
 import StaffBdayPage from "./pages/StaffBday";
 import StaffContractsPage from "./pages/StaffContracts";
+import NewsPage from "./pages/News";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -115,6 +116,7 @@ const AppContent = () => {
       <Route path="/levels" element={user ? <LevelsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/staff-bday" element={user ? <StaffBdayPage /> : <Navigate to="/auth" replace />} />
       <Route path="/staff-contracts" element={user ? <StaffContractsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/news" element={user ? <NewsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

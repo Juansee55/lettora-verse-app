@@ -863,6 +863,39 @@ export type Database = {
           },
         ]
       }
+      news: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          news_type: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          news_type?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          news_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string

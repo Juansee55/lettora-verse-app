@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/navigation/BottomNav";
 import BookCard from "@/components/books/BookCard";
 import { useLanguage } from "@/contexts/LanguageContext";
-import FloatingHearts from "@/components/valentines/FloatingHearts";
 import { useNameColors } from "@/hooks/useNameColors";
 
 const categories = [
@@ -145,7 +144,6 @@ const ExplorePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="px-4 pt-3 pb-2">

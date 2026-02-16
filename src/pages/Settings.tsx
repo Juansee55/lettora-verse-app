@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Bell, Moon, Sun, Globe, Lock, Download, HardDrive, Trash2,
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
-  ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText,
+  ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -294,6 +294,13 @@ const SettingsPage = () => {
         {/* Staff */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <IOSSettingSection title="Staff">
+            <IOSSettingItem
+              icon={<Newspaper className="w-4 h-4" />}
+              iconBg="bg-emerald-500"
+              title={t("news")}
+              subtitle={t("newsDesc")}
+              onClick={() => navigate("/news")}
+            />
             <IOSSettingItem
               icon={<Cake className="w-4 h-4" />}
               iconBg="bg-pink-400"

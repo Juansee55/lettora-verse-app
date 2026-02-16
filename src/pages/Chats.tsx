@@ -11,7 +11,6 @@ import ChatListItem from "@/components/chat/ChatListItem";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import FloatingHearts from "@/components/valentines/FloatingHearts";
 
 interface Conversation {
   id: string;
@@ -166,7 +165,6 @@ const ChatsPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <FloatingHearts />
       {/* iOS Header */}
       <div className="ios-header">
         <div className="px-4 pt-3 pb-2">
