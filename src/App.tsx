@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,37 +10,37 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
-import Onboarding from "./pages/Onboarding";
-import Auth from "./pages/Auth";
-import HomePage from "./pages/Home";
-import ExplorePage from "./pages/Explore";
-import LibraryPage from "./pages/Library";
-import ChatsPage from "./pages/Chats";
-import ChatConversationPage from "./pages/ChatConversation";
-import ProfilePage from "./pages/Profile";
-import BookDetailPage from "./pages/BookDetail";
-import WritePage from "./pages/Write";
-import AdvancedWritePage from "./pages/AdvancedWrite";
-import MicrostoriesPage from "./pages/Microstories";
-import UserProfilePage from "./pages/UserProfile";
-import EditProfilePage from "./pages/EditProfile";
-import AdminPage from "./pages/Admin";
-import ChapterReaderPage from "./pages/ChapterReader";
-import SettingsPage from "./pages/Settings";
-import FeedPage from "./pages/Feed";
-import ReelsPage from "./pages/Reels";
 
-import NotificationsPage from "./pages/Notifications";
-import AdminsPage from "./pages/Admins";
-import InventoryPage from "./pages/Inventory";
-import HashtagPage from "./pages/Hashtag";
-import TrendingHashtagsPage from "./pages/TrendingHashtags";
-import PremiumThemesPage from "./pages/PremiumThemes";
-import LevelsPage from "./pages/Levels";
-import StaffBdayPage from "./pages/StaffBday";
-import StaffContractsPage from "./pages/StaffContracts";
-import NewsPage from "./pages/News";
-import NotFound from "./pages/NotFound";
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Auth = lazy(() => import("./pages/Auth"));
+const HomePage = lazy(() => import("./pages/Home"));
+const ExplorePage = lazy(() => import("./pages/Explore"));
+const LibraryPage = lazy(() => import("./pages/Library"));
+const ChatsPage = lazy(() => import("./pages/Chats"));
+const ChatConversationPage = lazy(() => import("./pages/ChatConversation"));
+const ProfilePage = lazy(() => import("./pages/Profile"));
+const BookDetailPage = lazy(() => import("./pages/BookDetail"));
+const WritePage = lazy(() => import("./pages/Write"));
+const AdvancedWritePage = lazy(() => import("./pages/AdvancedWrite"));
+const MicrostoriesPage = lazy(() => import("./pages/Microstories"));
+const UserProfilePage = lazy(() => import("./pages/UserProfile"));
+const EditProfilePage = lazy(() => import("./pages/EditProfile"));
+const AdminPage = lazy(() => import("./pages/Admin"));
+const ChapterReaderPage = lazy(() => import("./pages/ChapterReader"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const FeedPage = lazy(() => import("./pages/Feed"));
+const ReelsPage = lazy(() => import("./pages/Reels"));
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
+const AdminsPage = lazy(() => import("./pages/Admins"));
+const InventoryPage = lazy(() => import("./pages/Inventory"));
+const HashtagPage = lazy(() => import("./pages/Hashtag"));
+const TrendingHashtagsPage = lazy(() => import("./pages/TrendingHashtags"));
+const PremiumThemesPage = lazy(() => import("./pages/PremiumThemes"));
+const LevelsPage = lazy(() => import("./pages/Levels"));
+const StaffBdayPage = lazy(() => import("./pages/StaffBday"));
+const StaffContractsPage = lazy(() => import("./pages/StaffContracts"));
+const NewsPage = lazy(() => import("./pages/News"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +85,7 @@ const AppContent = () => {
   }
 
   return (
+    <Suspense fallback={<LoadingScreen />}>
     <Routes>
       <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : user ? <Navigate to="/home" replace /> : <Navigate to="/auth" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
@@ -119,6 +120,7 @@ const AppContent = () => {
       <Route path="/news" element={user ? <NewsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
