@@ -5,6 +5,7 @@ import {
   User, Bell, Moon, Sun, Globe, Lock, Download, HardDrive, Trash2,
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
+  MessageSquare, Crown,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,7 @@ const SettingsPage = () => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -55,6 +57,10 @@ const SettingsPage = () => {
       if (profile) {
         setPrivateProfile(profile.is_private || false);
       }
+
+      // Check admin role
+      const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      setIsAdmin(!!roleData);
 
       const usage = await getStorageUsage();
       setStorageUsed(usage.used);
@@ -292,7 +298,28 @@ const SettingsPage = () => {
           </IOSSettingSection>
         </motion.div>
 
-        {/* Staff */}
+        {/* Admin Panel - only visible for admins */}
+        {isAdmin && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <IOSSettingSection title="Administración">
+              <IOSSettingItem
+                icon={<Crown className="w-4 h-4" />}
+                iconBg="bg-amber-500"
+                title="Panel de Admin"
+                subtitle="Gestionar usuarios, roles y moderación"
+                onClick={() => navigate("/admin")}
+              />
+              <IOSSettingItem
+                icon={<MessageSquare className="w-4 h-4" />}
+                iconBg="bg-violet-500"
+                title="Chat de Admins"
+                subtitle="Chat general del equipo"
+                onClick={() => navigate("/admin-chat")}
+              />
+            </IOSSettingSection>
+          </motion.div>
+        )}
+
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <IOSSettingSection title="Staff">
             <IOSSettingItem
