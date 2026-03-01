@@ -86,6 +86,7 @@ const SettingsPage = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    toast({ title: t("logout"), description: "¡Hasta pronto! 👋" });
     navigate("/auth");
   };
 
@@ -397,16 +398,29 @@ const SettingsPage = () => {
 
       {/* Logout Dialog */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("logoutConfirm")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("logoutDescription")}</AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl max-w-[320px]">
+          <AlertDialogHeader className="items-center text-center">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-2"
+            >
+              <LogOut className="w-6 h-6 text-destructive" />
+            </motion.div>
+            <AlertDialogTitle className="text-[17px]">{t("logoutConfirm")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px]">{t("logoutDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout} className="bg-destructive hover:bg-destructive/90 rounded-xl">
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-destructive hover:bg-destructive/90 rounded-xl w-full h-11 text-[15px] font-semibold"
+            >
               {t("logout")}
             </AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl w-full h-11 text-[15px] mt-0">
+              {t("cancel")}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
