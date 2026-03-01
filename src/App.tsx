@@ -42,6 +42,7 @@ const LevelsPage = lazy(() => import("./pages/Levels"));
 const StaffBdayPage = lazy(() => import("./pages/StaffBday"));
 const StaffContractsPage = lazy(() => import("./pages/StaffContracts"));
 const NewsPage = lazy(() => import("./pages/News"));
+const AdminChatPage = lazy(() => import("./pages/AdminChat"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -120,6 +121,7 @@ const AppContent = () => {
       <Route path="/staff-bday" element={user ? <StaffBdayPage /> : <Navigate to="/auth" replace />} />
       <Route path="/staff-contracts" element={user ? <StaffContractsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/news" element={user ? <NewsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/admin-chat" element={user ? <AdminChatPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
