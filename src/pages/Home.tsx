@@ -11,7 +11,7 @@ import {
   Loader2,
   Sparkles,
   BarChart3,
-  Heart,
+  
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -212,12 +212,12 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            onClick={() => navigate("/feed")}
+            onClick={() => navigate("/write")}
             className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 active:scale-[0.98] transition-transform shadow-md"
           >
-            <Heart className="w-6 h-6 text-primary-foreground mb-2" />
-            <h3 className="text-primary-foreground font-semibold text-[15px]">Feed & Stories</h3>
-            <p className="text-primary-foreground/70 text-[12px]">Comparte contenido</p>
+            <BookOpen className="w-6 h-6 text-primary-foreground mb-2" />
+            <h3 className="text-primary-foreground font-semibold text-[15px]">Escribir</h3>
+            <p className="text-primary-foreground/70 text-[12px]">Crea tu historia</p>
           </motion.div>
         </div>
 

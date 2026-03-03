@@ -30,8 +30,6 @@ const EditProfilePage = lazy(() => import("./pages/EditProfile"));
 const AdminPage = lazy(() => import("./pages/Admin"));
 const ChapterReaderPage = lazy(() => import("./pages/ChapterReader"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
-const FeedPage = lazy(() => import("./pages/Feed"));
-const ReelsPage = lazy(() => import("./pages/Reels"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminsPage = lazy(() => import("./pages/Admins"));
 const InventoryPage = lazy(() => import("./pages/Inventory"));
@@ -104,8 +102,6 @@ const AppContent = () => {
       <Route path="/write/advanced" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced/:bookId" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/microstories" element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/feed" element={user ? <FeedPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/reels" element={user ? <ReelsPage /> : <Navigate to="/auth" replace />} />
       
       <Route path="/user/:userId" element={user ? <UserProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/edit-profile" element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} />

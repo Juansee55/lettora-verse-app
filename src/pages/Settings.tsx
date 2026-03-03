@@ -40,6 +40,10 @@ const SettingsPage = () => {
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showNameColorPicker, setShowNameColorPicker] = useState(false);
+  const [nameColors, setNameColors] = useState<any[]>([]);
+  const [currentNameColor, setCurrentNameColor] = useState<string | null>(null);
+  const [savingColor, setSavingColor] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -60,7 +64,28 @@ const SettingsPage = () => {
 
       // Check admin role
       const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-      setIsAdmin(!!roleData);
+      const adminStatus = !!roleData;
+      setIsAdmin(adminStatus);
+
+      // Load name colors for admins
+      if (adminStatus) {
+        const { data: colors } = await supabase
+          .from("profile_items")
+          .select("id, name, css_value, image_url")
+          .eq("item_type", "name_color");
+        if (colors) setNameColors(colors);
+
+        // Get current equipped color
+        const { data: equipped } = await supabase
+          .from("user_items")
+          .select("item_id, profile_items(css_value)")
+          .eq("user_id", user.id)
+          .eq("is_equipped", true);
+        if (equipped) {
+          const colorItem = (equipped as any[]).find(e => e.profile_items?.css_value);
+          if (colorItem) setCurrentNameColor(colorItem.profile_items.css_value);
+        }
+      }
 
       const usage = await getStorageUsage();
       setStorageUsed(usage.used);
@@ -88,6 +113,49 @@ const SettingsPage = () => {
       await supabase.from("profiles").update({ is_private: value }).eq("id", user.id);
     }
     saveSettings("privateProfile", value);
+  };
+
+  const handleNameColorChange = async (colorItem: any) => {
+    if (!user) return;
+    setSavingColor(true);
+
+    // Unequip all current name_color items
+    const { data: userItems } = await supabase
+      .from("user_items")
+      .select("id, profile_items(item_type)")
+      .eq("user_id", user.id)
+      .eq("is_equipped", true);
+
+    if (userItems) {
+      for (const item of userItems as any[]) {
+        if (item.profile_items?.item_type === "name_color") {
+          await supabase.from("user_items").update({ is_equipped: false }).eq("id", item.id);
+        }
+      }
+    }
+
+    if (colorItem) {
+      // Ensure user owns the item, if not insert it (admins get all colors)
+      const { data: existing } = await supabase
+        .from("user_items")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("item_id", colorItem.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from("user_items").update({ is_equipped: true }).eq("id", existing.id);
+      } else {
+        await supabase.from("user_items").insert({ user_id: user.id, item_id: colorItem.id, is_equipped: true });
+      }
+      setCurrentNameColor(colorItem.css_value);
+    } else {
+      setCurrentNameColor(null);
+    }
+
+    setSavingColor(false);
+    setShowNameColorPicker(false);
+    toast({ title: "Color de nombre actualizado ✨" });
   };
 
   const handleLogout = async () => {
@@ -316,6 +384,13 @@ const SettingsPage = () => {
                 subtitle="Chat general del equipo"
                 onClick={() => navigate("/admin-chat")}
               />
+              <IOSSettingItem
+                icon={<Palette className="w-4 h-4" />}
+                iconBg="bg-gradient-to-r from-pink-500 to-purple-500"
+                title="Color de nombre"
+                subtitle="Elige el color de tu nombre"
+                onClick={() => setShowNameColorPicker(true)}
+              />
             </IOSSettingSection>
           </motion.div>
         )}
@@ -469,6 +544,63 @@ const SettingsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Name Color Picker */}
+      <AnimatePresence>
+        {showNameColorPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowNameColorPicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Color de nombre</h2>
+                <button onClick={() => setShowNameColorPicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-8 max-h-[60vh] overflow-y-auto">
+                {/* Default / no color */}
+                <button
+                  onClick={() => handleNameColorChange(null)}
+                  disabled={savingColor}
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors ${
+                    !currentNameColor ? "bg-primary/10" : "hover:bg-muted/50"
+                  }`}
+                >
+                  <span className="text-[17px]">Predeterminado</span>
+                  {!currentNameColor && <Check className="w-5 h-5 text-primary" />}
+                </button>
+                {nameColors.map((color) => (
+                  <button
+                    key={color.id}
+                    onClick={() => handleNameColorChange(color)}
+                    disabled={savingColor}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors ${
+                      currentNameColor === color.css_value ? "bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{color.image_url}</span>
+                      <span className={`text-[17px] font-semibold ${color.css_value}`}>{color.name}</span>
+                    </div>
+                    {currentNameColor === color.css_value && <Check className="w-5 h-5 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
