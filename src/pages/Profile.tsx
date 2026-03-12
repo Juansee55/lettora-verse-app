@@ -68,6 +68,7 @@ const ProfilePage = () => {
   const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [adminTitle, setAdminTitle] = useState<AdminTitle>(null);
