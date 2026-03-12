@@ -304,6 +304,9 @@ const BookDetailPage = () => {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-[17px]">Atrás</span>
           </button>
+          <button className="text-primary active:opacity-60" onClick={() => setShowQR(true)}>
+            <QrCode className="w-5 h-5" />
+          </button>
           <button className="text-primary active:opacity-60" onClick={() => setShowShare(true)}>
             <Share2 className="w-5 h-5" />
           </button>
