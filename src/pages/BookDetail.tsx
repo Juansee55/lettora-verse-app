@@ -31,6 +31,7 @@ import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
+import QRCodeModal from "@/components/qr/QRCodeModal";
 
 interface BookData {
   id: string;
