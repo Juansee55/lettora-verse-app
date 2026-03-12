@@ -108,6 +108,7 @@ const BookDetailPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [sagaEntries, setSagaEntries] = useState<SagaEntry[]>([]);
   const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
 
