@@ -474,6 +474,15 @@ const ProfilePage = () => {
         />
       )}
 
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${window.location.origin}/user/${currentUserId}`}
+        title="Mi perfil"
+        subtitle={`@${profile?.username || "usuario"}`}
+      />
+
       {/* Delete Book Dialog */}
       <AlertDialog open={!!bookToDelete} onOpenChange={(o) => !o && setBookToDelete(null)}>
         <AlertDialogContent className="rounded-2xl">
