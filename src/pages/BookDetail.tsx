@@ -742,6 +742,15 @@ const BookDetailPage = () => {
         />
       )}
 
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${window.location.origin}/book/${id}`}
+        title={book?.title || "Libro"}
+        subtitle="Escanea para abrir este libro"
+      />
+
       {/* Collaborators Modal */}
       {book && isAuthor && (
         <BookCollaboratorsModal
