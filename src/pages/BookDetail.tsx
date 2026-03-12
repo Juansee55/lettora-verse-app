@@ -23,6 +23,7 @@ import {
   Loader2 as DownloadLoader,
   Check,
   Library,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
+import QRCodeModal from "@/components/qr/QRCodeModal";
 
 interface BookData {
   id: string;
@@ -107,6 +109,7 @@ const BookDetailPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [sagaEntries, setSagaEntries] = useState<SagaEntry[]>([]);
   const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
 
@@ -301,6 +304,9 @@ const BookDetailPage = () => {
           <button onClick={() => navigate("/home")} className="flex items-center gap-1 text-primary active:opacity-60">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-[17px]">Atrás</span>
+          </button>
+          <button className="text-primary active:opacity-60" onClick={() => setShowQR(true)}>
+            <QrCode className="w-5 h-5" />
           </button>
           <button className="text-primary active:opacity-60" onClick={() => setShowShare(true)}>
             <Share2 className="w-5 h-5" />
@@ -735,6 +741,15 @@ const BookDetailPage = () => {
           }}
         />
       )}
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${window.location.origin}/book/${id}`}
+        title={book?.title || "Libro"}
+        subtitle="Escanea para abrir este libro"
+      />
 
       {/* Collaborators Modal */}
       {book && isAuthor && (

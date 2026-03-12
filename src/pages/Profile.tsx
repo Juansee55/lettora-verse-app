@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
-  Grid3X3, List, Crown, ChevronRight, Trash2,
+  Grid3X3, List, Crown, ChevronRight, Trash2, QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import QRCodeModal from "@/components/qr/QRCodeModal";
 
 
 interface Profile {
@@ -67,6 +68,7 @@ const ProfilePage = () => {
   const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [adminTitle, setAdminTitle] = useState<AdminTitle>(null);
@@ -155,13 +157,16 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* iOS Header */}
-      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
+      {/* iOS 26 Header */}
+      <header className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
           <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             @{profile?.username || "usuario"}
           </h1>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowQR(true)}>
+              <QrCode className="w-5 h-5" />
+            </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowShare(true)}>
               <Share2 className="w-5 h-5" />
             </Button>
@@ -468,6 +473,15 @@ const ProfilePage = () => {
           }}
         />
       )}
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${window.location.origin}/user/${currentUserId}`}
+        title="Mi perfil"
+        subtitle={`@${profile?.username || "usuario"}`}
+      />
 
       {/* Delete Book Dialog */}
       <AlertDialog open={!!bookToDelete} onOpenChange={(o) => !o && setBookToDelete(null)}>
