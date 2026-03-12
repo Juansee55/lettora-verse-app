@@ -157,13 +157,16 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* iOS Header */}
-      <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30">
+      {/* iOS 26 Header */}
+      <header className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
           <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             @{profile?.username || "usuario"}
           </h1>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowQR(true)}>
+              <QrCode className="w-5 h-5" />
+            </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowShare(true)}>
               <Share2 className="w-5 h-5" />
             </Button>
