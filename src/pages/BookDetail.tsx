@@ -23,6 +23,7 @@ import {
   Loader2 as DownloadLoader,
   Check,
   Library,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
