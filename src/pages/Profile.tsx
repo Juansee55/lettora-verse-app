@@ -20,6 +20,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import QRCodeModal from "@/components/qr/QRCodeModal";
 
 
 interface Profile {
