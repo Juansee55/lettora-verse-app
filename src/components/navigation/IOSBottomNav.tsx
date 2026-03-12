@@ -16,33 +16,38 @@ const IOSBottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-t border-border/30 pb-safe">
-      <div className="flex items-center justify-around h-[50px] max-w-lg mx-auto">
-        {navItems.map(({ path, icon: Icon, label }) => {
-          const isActive = location.pathname === path;
-          return (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <div className="relative">
-                <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute -inset-1.5 bg-primary/10 rounded-full -z-10"
-                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                  />
+    <nav className="fixed bottom-4 left-4 right-4 z-50 pb-safe">
+      <div className="liquid-glass rounded-[22px] mx-auto max-w-md overflow-hidden">
+        <div className="flex items-center justify-around h-[56px] px-1">
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const isActive = location.pathname === path;
+            return (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={cn(
+                  "flex flex-col items-center justify-center h-full px-3 gap-0.5 transition-all relative rounded-2xl",
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
-              </div>
-              <span className="text-[10px] font-medium">{label}</span>
-            </button>
-          );
-        })}
+              >
+                <div className="relative">
+                  <Icon className="w-[21px] h-[21px]" strokeWidth={isActive ? 2.5 : 1.8} />
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute -inset-2.5 bg-primary/12 rounded-2xl -z-10"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px] transition-all",
+                  isActive ? "font-semibold" : "font-medium opacity-70"
+                )}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
