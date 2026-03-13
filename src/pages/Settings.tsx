@@ -347,17 +347,73 @@ const SettingsPage = () => {
               }
               showChevron={false}
             />
+            <IOSSettingItem
+              icon={<Heart className="w-4 h-4" />}
+              iconBg="bg-rose-500"
+              title="Likes"
+              subtitle="Notificar cuando alguien da like"
+              action={
+                <Switch
+                  checked={notifyLikes}
+                  onCheckedChange={(v) => { setNotifyLikes(v); saveSettings("notifyLikes", v); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<MessageCircleHeart className="w-4 h-4" />}
+              iconBg="bg-orange-500"
+              title="Comentarios"
+              subtitle="Notificar nuevos comentarios"
+              action={
+                <Switch
+                  checked={notifyComments}
+                  onCheckedChange={(v) => { setNotifyComments(v); saveSettings("notifyComments", v); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<UserPlus2 className="w-4 h-4" />}
+              iconBg="bg-green-500"
+              title="Nuevos seguidores"
+              subtitle="Notificar cuando alguien te sigue"
+              action={
+                <Switch
+                  checked={notifyFollowers}
+                  onCheckedChange={(v) => { setNotifyFollowers(v); saveSettings("notifyFollowers", v); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
+            <IOSSettingItem
+              icon={<MessageSquare className="w-4 h-4" />}
+              iconBg="bg-violet-500"
+              title="Mensajes"
+              subtitle="Notificar nuevos mensajes"
+              action={
+                <Switch
+                  checked={notifyMessages}
+                  onCheckedChange={(v) => { setNotifyMessages(v); saveSettings("notifyMessages", v); }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
+            />
           </IOSSettingSection>
         </motion.div>
 
-        {/* Privacy */}
+        {/* Privacy & Security */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <IOSSettingSection title={t("privacy")}>
             <IOSSettingItem
               icon={<Shield className="w-4 h-4" />}
               iconBg="bg-green-500"
               title={t("privateProfile")}
-              subtitle={t("privateProfileDesc")}
+              subtitle="Solo tus seguidores ven tu contenido"
               action={
                 <Switch
                   checked={privateProfile}
@@ -381,10 +437,25 @@ const SettingsPage = () => {
               showChevron={false}
             />
             <IOSSettingItem
-              icon={<Lock className="w-4 h-4" />}
+              icon={<KeyRound className="w-4 h-4" />}
               iconBg="bg-gray-500"
               title={t("changePassword")}
-              onClick={() => toast({ title: t("comingSoon") })}
+              subtitle="Actualiza tu contraseña"
+              onClick={() => setShowPasswordDialog(true)}
+            />
+            <IOSSettingItem
+              icon={<Ban className="w-4 h-4" />}
+              iconBg="bg-amber-500"
+              title="Usuarios bloqueados"
+              value={blockedUsers.length > 0 ? `${blockedUsers.length}` : "0"}
+              onClick={() => setShowBlockedUsers(true)}
+            />
+            <IOSSettingItem
+              icon={<Trash2 className="w-4 h-4" />}
+              title="Eliminar cuenta"
+              subtitle="Elimina tu cuenta permanentemente"
+              onClick={() => setShowDeleteAccountDialog(true)}
+              danger
             />
           </IOSSettingSection>
         </motion.div>
