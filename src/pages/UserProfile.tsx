@@ -29,6 +29,7 @@ interface UserProfileData {
   location: string | null;
   website: string | null;
   is_verified: boolean;
+  is_private: boolean;
   created_at: string;
 }
 
