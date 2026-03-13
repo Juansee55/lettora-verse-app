@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, Users, Heart, Eye, MapPin,
   Link as LinkIcon, Calendar, MoreHorizontal, UserPlus,
   UserCheck, MessageCircle, Share2, Flag, QrCode,
-  Shield, X, Copy, Check, Sparkles, Ban,
+  Shield, X, Copy, Check, Sparkles, Ban, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
