@@ -37,14 +37,26 @@ const SettingsPage = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [privateProfile, setPrivateProfile] = useState(false);
   const [showReadingActivity, setShowReadingActivity] = useState(true);
+  const [notifyLikes, setNotifyLikes] = useState(true);
+  const [notifyComments, setNotifyComments] = useState(true);
+  const [notifyFollowers, setNotifyFollowers] = useState(true);
+  const [notifyMessages, setNotifyMessages] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showNameColorPicker, setShowNameColorPicker] = useState(false);
   const [nameColors, setNameColors] = useState<any[]>([]);
   const [currentNameColor, setCurrentNameColor] = useState<string | null>(null);
   const [savingColor, setSavingColor] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
