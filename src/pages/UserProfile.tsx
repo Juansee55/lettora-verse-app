@@ -294,6 +294,7 @@ const UserProfilePage = () => {
   }
 
   const isOwnProfile = currentUserId === userId;
+  const isPrivateAndLocked = profile?.is_private && !isFollowing && !isOwnProfile;
   const profileUrl = `${window.location.origin}/user/${userId}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(profileUrl)}&size=200x200&bgcolor=ffffff&color=6B46C1`;
 
