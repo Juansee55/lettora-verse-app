@@ -13,7 +13,6 @@ import {
   BarChart3,
 } from "lucide-react";
 import { AnimatedLettoraIcon } from "@/components/AnimatedLettoraIcon";
-import { AnimatedLettoraIcon } from "@/components/AnimatedLettoraIcon";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
