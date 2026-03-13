@@ -148,12 +148,7 @@ const HomePage = () => {
       <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/30 relative">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-md">
-                <BookOpen className="w-[18px] h-[18px] text-primary-foreground" />
-              </div>
-              <h1 className="text-[22px] font-bold">Lettora</h1>
-            </div>
+            <AnimatedLettoraIcon size="sm" />
             <div className="flex items-center gap-1">
               <Button 
                 variant="ios-ghost" 
