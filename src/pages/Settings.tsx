@@ -747,6 +747,153 @@ const SettingsPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Password Change Dialog */}
+      <AnimatePresence>
+        {showPasswordDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowPasswordDialog(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Cambiar contraseña</h2>
+                <button onClick={() => setShowPasswordDialog(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-4 pb-8 space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Nueva contraseña</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full h-11 px-4 rounded-xl border border-input bg-background text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Confirmar contraseña</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repite la contraseña"
+                    className="w-full h-11 px-4 rounded-xl border border-input bg-background text-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={changingPassword || !newPassword || !confirmPassword}
+                  className="w-full h-11 bg-primary text-primary-foreground rounded-xl font-semibold text-[15px] disabled:opacity-50 flex items-center justify-center"
+                >
+                  {changingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : "Actualizar contraseña"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Blocked Users Sheet */}
+      <AnimatePresence>
+        {showBlockedUsers && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowBlockedUsers(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden max-h-[70vh]"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Usuarios bloqueados</h2>
+                <button onClick={() => setShowBlockedUsers(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-8 overflow-y-auto">
+                {blockedUsers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Ban className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-muted-foreground text-[15px]">No tienes usuarios bloqueados</p>
+                  </div>
+                ) : (
+                  blockedUsers.map((blockedUser) => (
+                    <div key={blockedUser.id} className="flex items-center gap-3 px-4 py-3 rounded-xl">
+                      <div className="w-10 h-10 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground font-bold overflow-hidden flex-shrink-0">
+                        {blockedUser.avatar_url ? (
+                          <img src={blockedUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          blockedUser.display_name?.[0]?.toUpperCase() || "?"
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-[15px] truncate">{blockedUser.display_name || "Usuario"}</p>
+                        <p className="text-[13px] text-muted-foreground">@{blockedUser.username || "user"}</p>
+                      </div>
+                      <button
+                        onClick={() => handleUnblockUser(blockedUser.id)}
+                        className="px-3 py-1.5 bg-destructive/10 text-destructive text-[13px] font-semibold rounded-lg"
+                      >
+                        Desbloquear
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <AlertDialogContent className="rounded-2xl max-w-[320px]">
+          <AlertDialogHeader className="items-center text-center">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-2"
+            >
+              <AlertTriangle className="w-6 h-6 text-destructive" />
+            </motion.div>
+            <AlertDialogTitle className="text-[17px]">¿Eliminar tu cuenta?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px]">
+              Esta acción es permanente. Se eliminarán todos tus datos, libros, microrrelatos y seguidores. No se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="bg-destructive hover:bg-destructive/90 rounded-xl w-full h-11 text-[15px] font-semibold"
+            >
+              {deletingAccount ? <Loader2 className="w-5 h-5 animate-spin" /> : "Eliminar cuenta"}
+            </AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl w-full h-11 text-[15px] mt-0">
+              Cancelar
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
