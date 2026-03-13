@@ -206,6 +206,47 @@ const SettingsPage = () => {
     setShowClearCacheDialog(false);
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "La contraseña debe tener al menos 6 caracteres", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Las contraseñas no coinciden", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPassword(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Contraseña actualizada ✅" });
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordDialog(false);
+    }
+  };
+
+  const handleUnblockUser = async (blockedId: string) => {
+    if (!user) return;
+    await (supabase.from("user_blocks" as any).delete().eq("blocker_id", user.id).eq("blocked_id", blockedId) as any);
+    setBlockedUsers(prev => prev.filter(u => u.id !== blockedId));
+    toast({ title: "Usuario desbloqueado" });
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    // Delete profile (cascade will handle related data)
+    if (user) {
+      await supabase.from("profiles").delete().eq("id", user.id);
+    }
+    await supabase.auth.signOut();
+    setDeletingAccount(false);
+    toast({ title: "Cuenta eliminada", description: "Tu cuenta ha sido eliminada." });
+    navigate("/auth");
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
