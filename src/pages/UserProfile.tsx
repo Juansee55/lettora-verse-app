@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, Users, Heart, Eye, MapPin,
   Link as LinkIcon, Calendar, MoreHorizontal, UserPlus,
   UserCheck, MessageCircle, Share2, Flag, QrCode,
-  Shield, X, Copy, Check, Sparkles, Ban,
+  Shield, X, Copy, Check, Sparkles, Ban, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ interface UserProfileData {
   location: string | null;
   website: string | null;
   is_verified: boolean;
+  is_private: boolean;
   created_at: string;
 }
 
@@ -293,6 +294,7 @@ const UserProfilePage = () => {
   }
 
   const isOwnProfile = currentUserId === userId;
+  const isPrivateAndLocked = profile?.is_private && !isFollowing && !isOwnProfile;
   const profileUrl = `${window.location.origin}/user/${userId}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(profileUrl)}&size=200x200&bgcolor=ffffff&color=6B46C1`;
 
@@ -370,7 +372,12 @@ const UserProfilePage = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
+                  {profile.is_private && (
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 mt-1">
                   {levelData && <LevelBadge levelData={levelData} compact />}
                   {isMutual && !isOwnProfile && (
@@ -460,94 +467,119 @@ const UserProfilePage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="sticky top-0 z-30 bg-background/70 backdrop-blur-2xl border-b border-border/50 mt-4">
-        <div className="flex">
-          {[
-            { key: "books" as const, icon: BookOpen, label: "Libros", count: books.length },
-            { key: "microstories" as const, icon: Sparkles, label: "Microrrelatos", count: microstories.length },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 transition-colors ${
-                activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span className="text-[14px] font-medium">{tab.label}</span>
-              <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {isPrivateAndLocked ? (
+        /* Private Profile Locked View */
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-16 px-6 text-center"
+        >
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Shield className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-display font-bold mb-2">Cuenta privada</h3>
+          <p className="text-muted-foreground text-[15px] mb-6 max-w-xs">
+            Sigue a este usuario para ver sus libros, microrrelatos y actividad.
+          </p>
+          {!isFollowing && (
+            <Button variant="ios" size="ios-lg" onClick={handleFollow} className="px-8">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Solicitar seguir
+            </Button>
+          )}
+        </motion.div>
+      ) : (
+        <>
+          {/* Tabs */}
+          <div className="sticky top-0 z-30 bg-background/70 backdrop-blur-2xl border-b border-border/50 mt-4">
+            <div className="flex">
+              {[
+                { key: "books" as const, icon: BookOpen, label: "Libros", count: books.length },
+                { key: "microstories" as const, icon: Sparkles, label: "Microrrelatos", count: microstories.length },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 transition-colors ${
+                    activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span className="text-[14px] font-medium">{tab.label}</span>
+                  <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded-full">{tab.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Content */}
-      <div className="px-4 py-4">
-        {activeTab === "books" ? (
-          books.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-display font-semibold text-lg mb-2">Sin libros publicados</h3>
-              <p className="text-muted-foreground text-[15px]">Este usuario aún no ha publicado libros.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {books.map((book, i) => (
-                <motion.div
-                  key={book.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.04 }}
-                  onClick={() => navigate(`/book/${book.id}`)}
-                  className="aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer relative group"
-                >
-                  {book.cover_url ? (
-                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-hero flex items-center justify-center">
-                      <BookOpen className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                    <div>
-                      <p className="text-white text-xs font-medium line-clamp-2">{book.title}</p>
-                      <p className="text-white/70 text-[10px]">{book.reads_count} lecturas</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )
-        ) : (
-          microstories.length === 0 ? (
-            <div className="text-center py-12">
-              <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-display font-semibold text-lg mb-2">Sin microrrelatos</h3>
-              <p className="text-muted-foreground text-[15px]">Este usuario aún no ha publicado microrrelatos.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {microstories.map((story, i) => (
-                <motion.div
-                  key={story.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="ios-section p-4"
-                >
-                  {story.title && <h4 className="font-display font-semibold text-[15px] mb-1">{story.title}</h4>}
-                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{story.content}</p>
-                  <div className="flex items-center gap-3 mt-2 text-[12px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {story.likes_count}</span>
-                    <span>{formatShortDate(story.created_at)}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )
-        )}
-      </div>
+          {/* Content */}
+          <div className="px-4 py-4">
+            {activeTab === "books" ? (
+              books.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-display font-semibold text-lg mb-2">Sin libros publicados</h3>
+                  <p className="text-muted-foreground text-[15px]">Este usuario aún no ha publicado libros.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {books.map((book, i) => (
+                    <motion.div
+                      key={book.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.04 }}
+                      onClick={() => navigate(`/book/${book.id}`)}
+                      className="aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer relative group"
+                    >
+                      {book.cover_url ? (
+                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-hero flex items-center justify-center">
+                          <BookOpen className="w-8 h-8 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                        <div>
+                          <p className="text-white text-xs font-medium line-clamp-2">{book.title}</p>
+                          <p className="text-white/70 text-[10px]">{book.reads_count} lecturas</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )
+            ) : (
+              microstories.length === 0 ? (
+                <div className="text-center py-12">
+                  <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-display font-semibold text-lg mb-2">Sin microrrelatos</h3>
+                  <p className="text-muted-foreground text-[15px]">Este usuario aún no ha publicado microrrelatos.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {microstories.map((story, i) => (
+                    <motion.div
+                      key={story.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="ios-section p-4"
+                    >
+                      {story.title && <h4 className="font-display font-semibold text-[15px] mb-1">{story.title}</h4>}
+                      <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{story.content}</p>
+                      <div className="flex items-center gap-3 mt-2 text-[12px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {story.likes_count}</span>
+                        <span>{formatShortDate(story.created_at)}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </>
+      )}
 
       {/* More Options Sheet */}
       <AnimatePresence>
