@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Search,
-  BookOpen,
   Bell,
   TrendingUp,
   Clock,
@@ -11,8 +10,8 @@ import {
   Loader2,
   Sparkles,
   BarChart3,
-  
 } from "lucide-react";
+import { AnimatedLettoraIcon } from "@/components/AnimatedLettoraIcon";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
