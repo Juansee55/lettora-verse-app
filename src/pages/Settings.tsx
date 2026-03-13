@@ -109,7 +109,28 @@ const SettingsPage = () => {
         setNotifications(parsed.notifications ?? true);
         setEmailNotifications(parsed.emailNotifications ?? true);
         setShowReadingActivity(parsed.showReadingActivity ?? true);
+        setNotifyLikes(parsed.notifyLikes ?? true);
+        setNotifyComments(parsed.notifyComments ?? true);
+        setNotifyFollowers(parsed.notifyFollowers ?? true);
+        setNotifyMessages(parsed.notifyMessages ?? true);
       }
+
+      // Load blocked users
+      const { data: blocks } = await supabase
+        .from("user_blocks" as any)
+        .select("id, blocked_id")
+        .eq("blocker_id", user.id);
+      if (blocks) {
+        const blockedIds = (blocks as any[]).map(b => b.blocked_id);
+        if (blockedIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_url")
+            .in("id", blockedIds);
+          setBlockedUsers(profiles || []);
+        }
+      }
+
       setLoading(false);
     };
     loadSettings();
