@@ -372,7 +372,12 @@ const UserProfilePage = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
+                  {profile.is_private && (
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 mt-1">
                   {levelData && <LevelBadge levelData={levelData} compact />}
                   {isMutual && !isOwnProfile && (
