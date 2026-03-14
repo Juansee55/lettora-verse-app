@@ -63,6 +63,9 @@ const WritePage = () => {
   // Tags state
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
