@@ -40,7 +40,9 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
   // URL mode
   const [url, setUrl] = useState("");
   const [fetching, setFetching] = useState(false);
