@@ -442,7 +442,16 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
               )}
             </div>
 
-            {/* Publish */}
+            {/* Book Configuration */}
+            <BookConfigSection
+              ageRating={ageRating}
+              setAgeRating={setAgeRating}
+              aiGenerated={aiGenerated}
+              setAiGenerated={setAiGenerated}
+              requestVerification={requestVerification}
+              setRequestVerification={setRequestVerification}
+            />
+
             <Button
               onClick={handlePublish}
               disabled={publishing || !title.trim() || (mode === "pdf" && !pdfFile) || (mode === "url" && !url.trim())}
