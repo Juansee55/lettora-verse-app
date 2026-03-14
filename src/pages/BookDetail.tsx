@@ -125,6 +125,7 @@ const BookDetailPage = () => {
         .select(`
           id, title, description, cover_url, genre, reads_count, likes_count,
           comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order,
+          age_rating, ai_generated, verification_status,
           profiles:author_id (id, display_name, username, avatar_url)
         `)
         .eq("id", id)
