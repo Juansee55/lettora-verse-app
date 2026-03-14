@@ -25,6 +25,7 @@ import { useReadingSettings } from "@/hooks/useReadingSettings";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { ReadingSettingsSheet } from "@/components/reader/ReadingSettingsSheet";
 import { PageTransition } from "@/components/reader/PageTransition";
+import PDFViewer from "@/components/reader/PDFViewer";
 
 interface ChapterData {
   id: string;
