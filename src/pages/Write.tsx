@@ -467,6 +467,8 @@ La primera línea es siempre la más importante."
           {content.split(/\s+/).filter(Boolean).length} palabras • {content.length} caracteres
         </motion.div>
       </main>
+
+      <ImportBookModal open={showImportModal} onClose={() => setShowImportModal(false)} />
     </div>
   );
 };
