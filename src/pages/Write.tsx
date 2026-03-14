@@ -444,6 +444,23 @@ const WritePage = () => {
           )}
         </motion.div>
 
+        {/* Book Configuration */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16 }}
+          className="mb-6"
+        >
+          <BookConfigSection
+            ageRating={ageRating}
+            setAgeRating={setAgeRating}
+            aiGenerated={aiGenerated}
+            setAiGenerated={setAiGenerated}
+            requestVerification={requestVerification}
+            setRequestVerification={setRequestVerification}
+          />
+        </motion.div>
+
         {/* Minimal formatting bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
