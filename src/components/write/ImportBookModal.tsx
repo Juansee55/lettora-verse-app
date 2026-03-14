@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import BookConfigSection from "@/components/write/BookConfigSection";
 
 const categories = [
   "Romance", "Fantasía", "Misterio", "Poesía",
@@ -39,7 +40,9 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
-
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
   // URL mode
   const [url, setUrl] = useState("");
   const [fetching, setFetching] = useState(false);
@@ -53,6 +56,7 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
     setTitle(""); setDescription(""); setCoverPreview(null); setCoverFile(null);
     setCategory("Romance"); setTags([]); setTagInput(""); setUrl("");
     setPdfFile(null); setFetching(false); setPublishing(false);
+    setAgeRating("all"); setAiGenerated(false); setRequestVerification(false);
   };
 
   const handleClose = () => { resetState(); onClose(); };
@@ -136,7 +140,10 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
         author_id: user.id,
         status: "published",
         tags: tags.length > 0 ? tags : null,
-      }).select().single();
+        age_rating: ageRating,
+        ai_generated: aiGenerated,
+        verification_status: requestVerification ? "pending" : "not_requested",
+      } as any).select().single();
 
       if (error || !book) throw error || new Error("No book created");
 
@@ -435,7 +442,16 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
               )}
             </div>
 
-            {/* Publish */}
+            {/* Book Configuration */}
+            <BookConfigSection
+              ageRating={ageRating}
+              setAgeRating={setAgeRating}
+              aiGenerated={aiGenerated}
+              setAiGenerated={setAiGenerated}
+              requestVerification={requestVerification}
+              setRequestVerification={setRequestVerification}
+            />
+
             <Button
               onClick={handlePublish}
               disabled={publishing || !title.trim() || (mode === "pdf" && !pdfFile) || (mode === "url" && !url.trim())}

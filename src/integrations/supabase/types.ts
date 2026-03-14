@@ -168,6 +168,8 @@ export type Database = {
       }
       books: {
         Row: {
+          age_rating: string | null
+          ai_generated: boolean | null
           author_id: string
           comments_count: number | null
           cover_url: string | null
@@ -184,8 +186,11 @@ export type Database = {
           tags: string[] | null
           title: string
           updated_at: string | null
+          verification_status: string | null
         }
         Insert: {
+          age_rating?: string | null
+          ai_generated?: boolean | null
           author_id: string
           comments_count?: number | null
           cover_url?: string | null
@@ -202,8 +207,11 @@ export type Database = {
           tags?: string[] | null
           title: string
           updated_at?: string | null
+          verification_status?: string | null
         }
         Update: {
+          age_rating?: string | null
+          ai_generated?: boolean | null
           author_id?: string
           comments_count?: number | null
           cover_url?: string | null
@@ -220,6 +228,7 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+          verification_status?: string | null
         }
         Relationships: [
           {

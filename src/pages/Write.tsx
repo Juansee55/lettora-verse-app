@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ImportBookModal from "@/components/write/ImportBookModal";
+import BookConfigSection from "@/components/write/BookConfigSection";
 
 const categories = [
   "Romance", "Fantasía", "Misterio", "Poesía",
@@ -62,6 +63,9 @@ const WritePage = () => {
   // Tags state
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -131,7 +135,10 @@ const WritePage = () => {
       is_saga: isSaga,
       parent_saga_id: parentSagaId,
       tags: tags.length > 0 ? tags : null,
-    }).select().single();
+      age_rating: ageRating,
+      ai_generated: aiGenerated,
+      verification_status: requestVerification ? "pending" : "not_requested",
+    } as any).select().single();
 
     if (error || !book) {
       toast({ title: "Error", description: "No se pudo guardar.", variant: "destructive" });
@@ -435,6 +442,23 @@ const WritePage = () => {
               </Button>
             </div>
           )}
+        </motion.div>
+
+        {/* Book Configuration */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16 }}
+          className="mb-6"
+        >
+          <BookConfigSection
+            ageRating={ageRating}
+            setAgeRating={setAgeRating}
+            aiGenerated={aiGenerated}
+            setAiGenerated={setAiGenerated}
+            requestVerification={requestVerification}
+            setRequestVerification={setRequestVerification}
+          />
         </motion.div>
 
         {/* Minimal formatting bar */}
