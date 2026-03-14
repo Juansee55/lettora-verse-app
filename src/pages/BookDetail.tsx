@@ -48,6 +48,9 @@ interface BookData {
   is_saga: boolean | null;
   parent_saga_id: string | null;
   saga_order: number | null;
+  age_rating: string | null;
+  ai_generated: boolean | null;
+  verification_status: string | null;
   profiles: {
     id: string;
     display_name: string | null;
