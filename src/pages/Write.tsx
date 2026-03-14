@@ -40,6 +40,7 @@ interface UserSaga {
 const WritePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showImportModal, setShowImportModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
