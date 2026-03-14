@@ -140,7 +140,10 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
         author_id: user.id,
         status: "published",
         tags: tags.length > 0 ? tags : null,
-      }).select().single();
+        age_rating: ageRating,
+        ai_generated: aiGenerated,
+        verification_status: requestVerification ? "pending" : "not_requested",
+      } as any).select().single();
 
       if (error || !book) throw error || new Error("No book created");
 
