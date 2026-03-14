@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ImportBookModal from "@/components/write/ImportBookModal";
 
 const categories = [
   "Romance", "Fantasía", "Misterio", "Poesía",
@@ -39,6 +40,7 @@ interface UserSaga {
 const WritePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showImportModal, setShowImportModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -282,6 +284,13 @@ const WritePage = () => {
             Colaborar
           </button>
           <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1 px-4 py-2 rounded-full bg-accent/20 text-accent-foreground text-[13px] font-medium"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Importar
+          </button>
+          <button
             onClick={() => navigate("/write/advanced")}
             className="flex items-center gap-1 px-4 py-2 rounded-full bg-primary/10 text-primary text-[13px] font-medium ml-auto"
           >
@@ -458,6 +467,8 @@ La primera línea es siempre la más importante."
           {content.split(/\s+/).filter(Boolean).length} palabras • {content.length} caracteres
         </motion.div>
       </main>
+
+      <ImportBookModal open={showImportModal} onClose={() => setShowImportModal(false)} />
     </div>
   );
 };
