@@ -56,6 +56,7 @@ const ImportBookModal = ({ open, onClose }: ImportBookModalProps) => {
     setTitle(""); setDescription(""); setCoverPreview(null); setCoverFile(null);
     setCategory("Romance"); setTags([]); setTagInput(""); setUrl("");
     setPdfFile(null); setFetching(false); setPublishing(false);
+    setAgeRating("all"); setAiGenerated(false); setRequestVerification(false);
   };
 
   const handleClose = () => { resetState(); onClose(); };
