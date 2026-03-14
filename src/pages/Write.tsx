@@ -284,6 +284,13 @@ const WritePage = () => {
             Colaborar
           </button>
           <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1 px-4 py-2 rounded-full bg-accent/20 text-accent-foreground text-[13px] font-medium"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Importar
+          </button>
+          <button
             onClick={() => navigate("/write/advanced")}
             className="flex items-center gap-1 px-4 py-2 rounded-full bg-primary/10 text-primary text-[13px] font-medium ml-auto"
           >
