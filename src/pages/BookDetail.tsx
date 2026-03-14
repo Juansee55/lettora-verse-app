@@ -357,10 +357,30 @@ const BookDetailPage = () => {
               <p className="text-[15px] text-primary font-medium mb-1">
                 {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
               </p>
-              <div className="flex items-center gap-1.5 mb-3">
+              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                 <span className="text-[13px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full">
                   {book.genre || "General"}
                 </span>
+                {book.age_rating && book.age_rating !== "all" && (
+                  <span className="text-[13px] font-semibold bg-destructive/10 text-destructive px-2.5 py-0.5 rounded-full">
+                    {book.age_rating}
+                  </span>
+                )}
+                {book.ai_generated && (
+                  <span className="text-[13px] bg-accent/20 text-accent-foreground px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    🤖 IA
+                  </span>
+                )}
+                {book.verification_status === "approved" && (
+                  <span className="text-[13px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    ✓ Verificado
+                  </span>
+                )}
+                {book.verification_status === "pending" && (
+                  <span className="text-[13px] bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
+                    ⏳ En revisión
+                  </span>
+                )}
               </div>
             </div>
 
