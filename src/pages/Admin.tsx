@@ -262,6 +262,9 @@ const AdminPage = () => {
             <h1 className="font-display font-semibold text-[17px]">Admin</h1>
           </div>
           <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setShowBookStats(true)}>
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setShowRoleDialog(true)}>
               <ShieldPlus className="w-5 h-5 text-primary" />
             </Button>
