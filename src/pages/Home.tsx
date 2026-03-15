@@ -23,6 +23,7 @@ import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import PromotionStats from "@/components/promotions/PromotionStats";
 import AnnouncementBanner from "@/components/announcements/AnnouncementBanner";
+import EventBanner from "@/components/events/EventBanner";
 
 interface Book {
   id: string;
