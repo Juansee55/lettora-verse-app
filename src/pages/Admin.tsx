@@ -752,6 +752,15 @@ const AdminPage = () => {
         onClose={() => setShowNewsModal(false)}
         onCreated={fetchNews}
       />
+      <CreateEventModal
+        isOpen={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        onCreated={fetchEvents}
+      />
+      <BookStatsModal
+        isOpen={showBookStats}
+        onClose={() => setShowBookStats(false)}
+      />
     </div>
   );
 };
