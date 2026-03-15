@@ -5,12 +5,15 @@ import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
+  Trophy, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ModerationPanel from "@/components/reports/ModerationPanel";
 import CreateContractModal from "@/components/admin/CreateContractModal";
+import CreateEventModal from "@/components/admin/CreateEventModal";
+import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -37,7 +40,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -59,6 +62,9 @@ const AdminPage = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [newsItems, setNewsItems] = useState<any[]>([]);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [showBookStats, setShowBookStats] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
@@ -78,6 +84,7 @@ const AdminPage = () => {
     fetchAdminRoles();
     fetchContracts();
     fetchNews();
+    fetchEvents();
   };
 
   const fetchContracts = async () => {
@@ -94,6 +101,14 @@ const AdminPage = () => {
       .select("*")
       .order("created_at", { ascending: false }) as any;
     setNewsItems(data || []);
+  };
+
+  const fetchEvents = async () => {
+    const { data } = await supabase
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setEvents(data || []);
   };
 
   const fetchUsers = async () => {
@@ -247,6 +262,9 @@ const AdminPage = () => {
             <h1 className="font-display font-semibold text-[17px]">Admin</h1>
           </div>
           <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setShowBookStats(true)}>
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setShowRoleDialog(true)}>
               <ShieldPlus className="w-5 h-5 text-primary" />
             </Button>
@@ -263,6 +281,7 @@ const AdminPage = () => {
             { key: "roles" as const, icon: Tag, label: "Cargos" },
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
+            { key: "events" as const, icon: Trophy, label: "Eventos" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -536,6 +555,42 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "events" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona eventos de microrrelatos.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowEventModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nuevo
+            </Button>
+          </div>
+          {events.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Trophy className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay eventos creados.</p>
+            </div>
+          ) : (
+            events.map((ev: any) => (
+              <div
+                key={ev.id}
+                className="bg-card rounded-2xl border border-border/50 p-4 active:scale-[0.98] transition-transform cursor-pointer"
+                onClick={() => navigate(`/event/${ev.id}`)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-[15px]">{ev.title}</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    ev.status === "active" ? "bg-primary/10 text-primary" :
+                    ev.status === "paused" ? "bg-amber-500/10 text-amber-500" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {ev.status === "active" ? "En vivo" : ev.status === "paused" ? "Pausado" : "Finalizado"}
+                  </span>
+                </div>
+                {ev.description && <p className="text-[13px] text-muted-foreground mb-1">{ev.description}</p>}
+                <span className="text-[12px] text-muted-foreground">{new Date(ev.created_at).toLocaleDateString()}</span>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
@@ -696,6 +751,15 @@ const AdminPage = () => {
         isOpen={showNewsModal}
         onClose={() => setShowNewsModal(false)}
         onCreated={fetchNews}
+      />
+      <CreateEventModal
+        isOpen={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        onCreated={fetchEvents}
+      />
+      <BookStatsModal
+        isOpen={showBookStats}
+        onClose={() => setShowBookStats(false)}
       />
     </div>
   );

@@ -23,6 +23,7 @@ import CreatePromotionModal from "@/components/promotions/CreatePromotionModal";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 import PromotionStats from "@/components/promotions/PromotionStats";
 import AnnouncementBanner from "@/components/announcements/AnnouncementBanner";
+import EventBanner from "@/components/events/EventBanner";
 
 interface Book {
   id: string;
@@ -188,6 +189,9 @@ const HomePage = () => {
           </div>
         </div>
       </header>
+
+      {/* Event Banner */}
+      <EventBanner />
 
       {/* Content */}
       <main className="px-4 py-5 space-y-6">
