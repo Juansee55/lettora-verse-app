@@ -555,6 +555,42 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "events" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona eventos de microrrelatos.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowEventModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nuevo
+            </Button>
+          </div>
+          {events.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Trophy className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay eventos creados.</p>
+            </div>
+          ) : (
+            events.map((ev: any) => (
+              <div
+                key={ev.id}
+                className="bg-card rounded-2xl border border-border/50 p-4 active:scale-[0.98] transition-transform cursor-pointer"
+                onClick={() => navigate(`/event/${ev.id}`)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-[15px]">{ev.title}</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    ev.status === "active" ? "bg-primary/10 text-primary" :
+                    ev.status === "paused" ? "bg-amber-500/10 text-amber-500" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {ev.status === "active" ? "En vivo" : ev.status === "paused" ? "Pausado" : "Finalizado"}
+                  </span>
+                </div>
+                {ev.description && <p className="text-[13px] text-muted-foreground mb-1">{ev.description}</p>}
+                <span className="text-[12px] text-muted-foreground">{new Date(ev.created_at).toLocaleDateString()}</span>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
