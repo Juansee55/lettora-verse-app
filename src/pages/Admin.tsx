@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ModerationPanel from "@/components/reports/ModerationPanel";
 import CreateContractModal from "@/components/admin/CreateContractModal";
+import CreateEventModal from "@/components/admin/CreateEventModal";
+import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
