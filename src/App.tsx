@@ -41,6 +41,7 @@ const StaffBdayPage = lazy(() => import("./pages/StaffBday"));
 const StaffContractsPage = lazy(() => import("./pages/StaffContracts"));
 const NewsPage = lazy(() => import("./pages/News"));
 const AdminChatPage = lazy(() => import("./pages/AdminChat"));
+const EventRoomPage = lazy(() => import("./pages/EventRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
