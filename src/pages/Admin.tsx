@@ -84,6 +84,7 @@ const AdminPage = () => {
     fetchAdminRoles();
     fetchContracts();
     fetchNews();
+    fetchEvents();
   };
 
   const fetchContracts = async () => {
