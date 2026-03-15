@@ -5,6 +5,7 @@ import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
+  Trophy, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
