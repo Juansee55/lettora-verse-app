@@ -103,6 +103,14 @@ const AdminPage = () => {
     setNewsItems(data || []);
   };
 
+  const fetchEvents = async () => {
+    const { data } = await supabase
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setEvents(data || []);
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     const { data } = await supabase
