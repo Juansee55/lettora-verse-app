@@ -190,6 +190,9 @@ const HomePage = () => {
         </div>
       </header>
 
+      {/* Event Banner */}
+      <EventBanner />
+
       {/* Content */}
       <main className="px-4 py-5 space-y-6">
         {/* Quick Access Banners */}

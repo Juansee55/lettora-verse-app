@@ -119,6 +119,7 @@ const AppContent = () => {
       <Route path="/staff-contracts" element={user ? <StaffContractsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/news" element={user ? <NewsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admin-chat" element={user ? <AdminChatPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/event/:eventId" element={user ? <EventRoomPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
