@@ -281,6 +281,7 @@ const AdminPage = () => {
             { key: "roles" as const, icon: Tag, label: "Cargos" },
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
+            { key: "events" as const, icon: Trophy, label: "Eventos" },
           ].map(tab => (
             <button
               key={tab.key}
