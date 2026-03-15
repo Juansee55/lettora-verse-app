@@ -62,6 +62,9 @@ const AdminPage = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [newsItems, setNewsItems] = useState<any[]>([]);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [showBookStats, setShowBookStats] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
