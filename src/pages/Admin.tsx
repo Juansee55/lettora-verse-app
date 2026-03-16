@@ -67,6 +67,9 @@ const AdminPage = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [showBookStats, setShowBookStats] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showStaffBdayModal, setShowStaffBdayModal] = useState(false);
+  const [staffBdays, setStaffBdays] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
