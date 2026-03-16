@@ -33,6 +33,7 @@ import ShareBookAsImage from "@/components/share/ShareBookAsImage";
 import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import QRCodeModal from "@/components/qr/QRCodeModal";
+import BookReviewsSection from "@/components/reviews/BookReviewsSection";
 
 interface BookData {
   id: string;
