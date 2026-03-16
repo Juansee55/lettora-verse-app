@@ -72,6 +72,9 @@ const UserProfilePage = () => {
   const [copied, setCopied] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
+  const [followersVisibility, setFollowersVisibility] = useState("all");
+  const [showFollowersList, setShowFollowersList] = useState(false);
+  const [followersListType, setFollowersListType] = useState<"followers" | "following">("followers");
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
   const [adminTitle, setAdminTitle] = useState<string | null>(null);
   const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
