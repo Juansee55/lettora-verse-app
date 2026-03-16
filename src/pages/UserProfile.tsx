@@ -18,6 +18,7 @@ import LevelBadge from "@/components/levels/LevelBadge";
 import { useUserLevel } from "@/hooks/useUserLevel";
 import PremiumBadge from "@/components/premium/PremiumBadge";
 import { usePremium } from "@/hooks/usePremium";
+import FollowersListModal from "@/components/followers/FollowersListModal";
 
 interface UserProfileData {
   id: string;
@@ -71,6 +72,9 @@ const UserProfilePage = () => {
   const [copied, setCopied] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
+  const [followersVisibility, setFollowersVisibility] = useState("all");
+  const [showFollowersList, setShowFollowersList] = useState(false);
+  const [followersListType, setFollowersListType] = useState<"followers" | "following">("followers");
   const [targetUserRole, setTargetUserRole] = useState<"admin" | "moderator" | null>(null);
   const [adminTitle, setAdminTitle] = useState<string | null>(null);
   const [equippedItems, setEquippedItems] = useState<{ frame: string | null; background: string | null; nameColor: string | null }>({ frame: null, background: null, nameColor: null });
@@ -151,7 +155,10 @@ const UserProfilePage = () => {
 
   const fetchProfile = async () => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      setFollowersVisibility((data as any).followers_visibility || "all");
+    }
   };
 
   const fetchBooks = async () => {
@@ -446,17 +453,18 @@ const UserProfilePage = () => {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Libros", value: books.length, icon: BookOpen },
-                { label: "Seguidores", value: followersCount, icon: Users },
-                { label: "Siguiendo", value: followingCount, icon: Heart },
-                { label: "Lecturas", value: books.reduce((a, b) => a + (b.reads_count || 0), 0), icon: Eye },
+                { label: "Libros", value: books.length, onClick: undefined },
+                { label: "Seguidores", value: followersCount, onClick: () => { setFollowersListType("followers"); setShowFollowersList(true); } },
+                { label: "Siguiendo", value: followingCount, onClick: () => { setFollowersListType("following"); setShowFollowersList(true); } },
+                { label: "Lecturas", value: books.reduce((a, b) => a + (b.reads_count || 0), 0), onClick: undefined },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="text-center py-2"
+                  className={`text-center py-2 ${stat.onClick ? "cursor-pointer active:bg-muted/50 rounded-xl" : ""}`}
+                  onClick={stat.onClick}
                 >
                   <p className="font-bold text-lg">{stat.value}</p>
                   <p className="text-[11px] text-muted-foreground">{stat.label}</p>
@@ -695,6 +703,16 @@ const UserProfilePage = () => {
           contentTitle={profile.display_name || profile.username || "Usuario"}
         />
       )}
+
+      <FollowersListModal
+        isOpen={showFollowersList}
+        onClose={() => setShowFollowersList(false)}
+        userId={userId!}
+        type={followersListType}
+        isOwnProfile={isOwnProfile}
+        followersVisibility={followersVisibility}
+        isFollower={isFollowing}
+      />
 
       <BottomNav />
     </div>

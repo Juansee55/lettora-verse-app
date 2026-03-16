@@ -5,7 +5,7 @@ import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
-  Trophy, BarChart3,
+  Trophy, BarChart3, Cake, UserPlus2, UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,8 @@ import CreateContractModal from "@/components/admin/CreateContractModal";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
+import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
+import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -40,7 +42,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -65,6 +67,9 @@ const AdminPage = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [showBookStats, setShowBookStats] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showStaffBdayModal, setShowStaffBdayModal] = useState(false);
+  const [staffBdays, setStaffBdays] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
@@ -85,6 +90,7 @@ const AdminPage = () => {
     fetchContracts();
     fetchNews();
     fetchEvents();
+    fetchStaffBdays();
   };
 
   const fetchContracts = async () => {
@@ -109,6 +115,20 @@ const AdminPage = () => {
       .select("*")
       .order("created_at", { ascending: false });
     setEvents(data || []);
+  };
+
+  const fetchStaffBdays = async () => {
+    const { data } = await supabase
+      .from("staff_birthdays" as any)
+      .select("*")
+      .order("created_at", { ascending: false }) as any;
+    setStaffBdays(data || []);
+  };
+
+  const closeStaffBday = async (id: string) => {
+    await (supabase.from("staff_birthdays" as any).update({ is_active: false } as any).eq("id", id) as any);
+    fetchStaffBdays();
+    toast({ title: "Cumpleaños cerrado" });
   };
 
   const fetchUsers = async () => {
@@ -262,6 +282,9 @@ const AdminPage = () => {
             <h1 className="font-display font-semibold text-[17px]">Admin</h1>
           </div>
           <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setShowFollowersModal(true)}>
+              <UserPlus2 className="w-5 h-5 text-primary" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setShowBookStats(true)}>
               <BarChart3 className="w-5 h-5 text-primary" />
             </Button>
@@ -282,6 +305,7 @@ const AdminPage = () => {
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
             { key: "events" as const, icon: Trophy, label: "Eventos" },
+            { key: "bday" as const, icon: Cake, label: "Bday" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -591,6 +615,43 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "bday" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona cumpleaños del staff.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowStaffBdayModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Abrir
+            </Button>
+          </div>
+          {staffBdays.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Cake className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay cumpleaños registrados.</p>
+            </div>
+          ) : (
+            staffBdays.map((b: any) => (
+              <div key={b.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-[15px]">🎂 Cumpleaños</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    b.is_active ? "bg-pink-500/10 text-pink-500" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {b.is_active ? "Activo" : "Cerrado"}
+                  </span>
+                </div>
+                {b.message && <p className="text-[13px] text-muted-foreground mb-2">{b.message}</p>}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-muted-foreground">{new Date(b.created_at).toLocaleDateString()}</span>
+                  {b.is_active && (
+                    <Button size="sm" variant="outline" className="rounded-full text-destructive border-destructive/30" onClick={() => closeStaffBday(b.id)}>
+                      Cerrar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
@@ -761,6 +822,20 @@ const AdminPage = () => {
         isOpen={showBookStats}
         onClose={() => setShowBookStats(false)}
       />
+      <AdminFollowersModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+      />
+      <CreateStaffBdayModal
+        isOpen={showStaffBdayModal}
+        onClose={() => setShowStaffBdayModal(false)}
+        onCreated={fetchStaffBdays}
+      />
+    </div>
+  );
+};
+
+export default AdminPage;
     </div>
   );
 };
