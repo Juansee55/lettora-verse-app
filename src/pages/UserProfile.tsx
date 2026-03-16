@@ -704,6 +704,16 @@ const UserProfilePage = () => {
         />
       )}
 
+      <FollowersListModal
+        isOpen={showFollowersList}
+        onClose={() => setShowFollowersList(false)}
+        userId={userId!}
+        type={followersListType}
+        isOwnProfile={isOwnProfile}
+        followersVisibility={followersVisibility}
+        isFollower={isFollowing}
+      />
+
       <BottomNav />
     </div>
   );
