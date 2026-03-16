@@ -281,7 +281,10 @@ const AdvancedWritePage = () => {
           status: saveStatus,
           is_saga: isSaga,
           tags: tags.length > 0 ? tags : null,
-        }).select().single();
+          age_rating: ageRating,
+          ai_generated: aiGenerated,
+          verification_status: requestVerification ? "pending" : "not_requested",
+        } as any).select().single();
 
         if (error || !newBook) throw error;
 
