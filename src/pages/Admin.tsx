@@ -42,7 +42,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
