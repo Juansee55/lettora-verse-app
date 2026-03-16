@@ -15,6 +15,8 @@ import CreateContractModal from "@/components/admin/CreateContractModal";
 import CreateEventModal from "@/components/admin/CreateEventModal";
 import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
+import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
+import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
