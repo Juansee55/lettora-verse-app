@@ -69,12 +69,13 @@ const SettingsPage = () => {
       // Load profile settings from DB
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_private")
+        .select("is_private, followers_visibility")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile) {
         setPrivateProfile(profile.is_private || false);
+        setFollowersVisibility((profile as any).followers_visibility || "all");
       }
 
       // Check admin role
