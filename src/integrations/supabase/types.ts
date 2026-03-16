@@ -166,6 +166,44 @@ export type Database = {
           },
         ]
       }
+      book_reviews: {
+        Row: {
+          book_id: string
+          content: string | null
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reviews_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           age_rating: string | null
@@ -1159,6 +1197,7 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           display_name: string | null
+          followers_visibility: string
           id: string
           is_banned: boolean | null
           is_private: boolean | null
@@ -1176,6 +1215,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          followers_visibility?: string
           id: string
           is_banned?: boolean | null
           is_private?: boolean | null
@@ -1193,6 +1233,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          followers_visibility?: string
           id?: string
           is_banned?: boolean | null
           is_private?: boolean | null
@@ -1330,6 +1371,76 @@ export type Database = {
             columns: ["chapter_id"]
             isOneToOne: false
             referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_bday_messages: {
+        Row: {
+          bday_id: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          bday_id: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          bday_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_bday_messages_bday_id_fkey"
+            columns: ["bday_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_birthdays: {
+        Row: {
+          created_at: string
+          created_by: string
+          gift_item_id: string | null
+          id: string
+          is_active: boolean
+          message: string | null
+          staff_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          gift_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          staff_user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          gift_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          staff_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_birthdays_gift_item_id_fkey"
+            columns: ["gift_item_id"]
+            isOneToOne: false
+            referencedRelation: "profile_items"
             referencedColumns: ["id"]
           },
         ]
