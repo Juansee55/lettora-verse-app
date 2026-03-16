@@ -112,6 +112,9 @@ const AdvancedWritePage = () => {
     setStatus((bookData.status as "draft" | "published") || "draft");
     setIsSaga(bookData.is_saga || false);
     setTags(bookData.tags || []);
+    setAgeRating((bookData as any).age_rating || "all");
+    setAiGenerated((bookData as any).ai_generated || false);
+    setRequestVerification((bookData as any).verification_status === "pending");
 
     // Load chapters
     const { data: chaptersData } = await supabase
