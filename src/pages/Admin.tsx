@@ -117,6 +117,20 @@ const AdminPage = () => {
     setEvents(data || []);
   };
 
+  const fetchStaffBdays = async () => {
+    const { data } = await supabase
+      .from("staff_birthdays" as any)
+      .select("*")
+      .order("created_at", { ascending: false }) as any;
+    setStaffBdays(data || []);
+  };
+
+  const closeStaffBday = async (id: string) => {
+    await (supabase.from("staff_birthdays" as any).update({ is_active: false } as any).eq("id", id) as any);
+    fetchStaffBdays();
+    toast({ title: "Cumpleaños cerrado" });
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     const { data } = await supabase
