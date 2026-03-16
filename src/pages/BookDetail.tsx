@@ -672,6 +672,9 @@ const BookDetailPage = () => {
         </div>
       )}
 
+      {/* Reviews Section */}
+      {id && <BookReviewsSection bookId={id} />}
+
       {/* Comments Section */}
       <div className="px-5 mb-4">
         <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">

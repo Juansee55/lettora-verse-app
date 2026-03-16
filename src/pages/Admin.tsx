@@ -822,6 +822,20 @@ const AdminPage = () => {
         isOpen={showBookStats}
         onClose={() => setShowBookStats(false)}
       />
+      <AdminFollowersModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+      />
+      <CreateStaffBdayModal
+        isOpen={showStaffBdayModal}
+        onClose={() => setShowStaffBdayModal(false)}
+        onCreated={fetchStaffBdays}
+      />
+    </div>
+  );
+};
+
+export default AdminPage;
     </div>
   );
 };
