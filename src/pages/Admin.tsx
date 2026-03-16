@@ -836,8 +836,3 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
-    </div>
-  );
-};
-
-export default AdminPage;
