@@ -63,6 +63,9 @@ const AdvancedWritePage = () => {
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [isSaga, setIsSaga] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
   
   const [chapters, setChapters] = useState<Chapter[]>([
     { id: "1", title: "Capítulo 1", content: "", chapter_number: 1, word_count: 0, notes: "" }
