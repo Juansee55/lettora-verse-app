@@ -36,6 +36,8 @@ const SettingsPage = () => {
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [privateProfile, setPrivateProfile] = useState(false);
+  const [followersVisibility, setFollowersVisibility] = useState<"all" | "followers" | "nobody">("all");
+  const [showFollowersVisibilityPicker, setShowFollowersVisibilityPicker] = useState(false);
   const [showReadingActivity, setShowReadingActivity] = useState(true);
   const [notifyLikes, setNotifyLikes] = useState(true);
   const [notifyComments, setNotifyComments] = useState(true);
