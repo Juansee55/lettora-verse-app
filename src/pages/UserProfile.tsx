@@ -155,7 +155,10 @@ const UserProfilePage = () => {
 
   const fetchProfile = async () => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      setFollowersVisibility((data as any).followers_visibility || "all");
+    }
   };
 
   const fetchBooks = async () => {
