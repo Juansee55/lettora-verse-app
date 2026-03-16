@@ -582,6 +582,17 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                     />
                   )}
                 </div>
+                {/* Book Config */}
+                <div className="mt-4">
+                  <BookConfigSection
+                    ageRating={ageRating}
+                    setAgeRating={setAgeRating}
+                    aiGenerated={aiGenerated}
+                    setAiGenerated={setAiGenerated}
+                    requestVerification={requestVerification}
+                    setRequestVerification={setRequestVerification}
+                  />
+                </div>
               </div>
             </motion.aside>
           )}
