@@ -427,6 +427,13 @@ const SettingsPage = () => {
               showChevron={false}
             />
             <IOSSettingItem
+              icon={<Users className="w-4 h-4" />}
+              iconBg="bg-indigo-500"
+              title="Visibilidad de seguidores"
+              subtitle={followersVisibility === "all" ? "Todos pueden ver" : followersVisibility === "followers" ? "Solo seguidores" : "Nadie puede ver"}
+              onClick={() => setShowFollowersVisibilityPicker(true)}
+            />
+            <IOSSettingItem
               icon={showReadingActivity ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               iconBg="bg-purple-500"
               title={t("showReadingActivity")}
