@@ -453,17 +453,18 @@ const UserProfilePage = () => {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Libros", value: books.length, icon: BookOpen },
-                { label: "Seguidores", value: followersCount, icon: Users },
-                { label: "Siguiendo", value: followingCount, icon: Heart },
-                { label: "Lecturas", value: books.reduce((a, b) => a + (b.reads_count || 0), 0), icon: Eye },
+                { label: "Libros", value: books.length, onClick: undefined },
+                { label: "Seguidores", value: followersCount, onClick: () => { setFollowersListType("followers"); setShowFollowersList(true); } },
+                { label: "Siguiendo", value: followingCount, onClick: () => { setFollowersListType("following"); setShowFollowersList(true); } },
+                { label: "Lecturas", value: books.reduce((a, b) => a + (b.reads_count || 0), 0), onClick: undefined },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="text-center py-2"
+                  className={`text-center py-2 ${stat.onClick ? "cursor-pointer active:bg-muted/50 rounded-xl" : ""}`}
+                  onClick={stat.onClick}
                 >
                   <p className="font-bold text-lg">{stat.value}</p>
                   <p className="text-[11px] text-muted-foreground">{stat.label}</p>
