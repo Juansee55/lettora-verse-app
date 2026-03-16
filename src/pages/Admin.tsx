@@ -90,6 +90,7 @@ const AdminPage = () => {
     fetchContracts();
     fetchNews();
     fetchEvents();
+    fetchStaffBdays();
   };
 
   const fetchContracts = async () => {
