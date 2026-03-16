@@ -615,6 +615,43 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "bday" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona cumpleaños del staff.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowStaffBdayModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Abrir
+            </Button>
+          </div>
+          {staffBdays.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Cake className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay cumpleaños registrados.</p>
+            </div>
+          ) : (
+            staffBdays.map((b: any) => (
+              <div key={b.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-[15px]">🎂 Cumpleaños</h3>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                    b.is_active ? "bg-pink-500/10 text-pink-500" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {b.is_active ? "Activo" : "Cerrado"}
+                  </span>
+                </div>
+                {b.message && <p className="text-[13px] text-muted-foreground mb-2">{b.message}</p>}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-muted-foreground">{new Date(b.created_at).toLocaleDateString()}</span>
+                  {b.is_active && (
+                    <Button size="sm" variant="outline" className="rounded-full text-destructive border-destructive/30" onClick={() => closeStaffBday(b.id)}>
+                      Cerrar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
