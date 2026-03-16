@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import BookConfigSection from "@/components/write/BookConfigSection";
 
 interface Chapter {
   id: string;
@@ -63,6 +64,9 @@ const AdvancedWritePage = () => {
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [isSaga, setIsSaga] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [ageRating, setAgeRating] = useState("all");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [requestVerification, setRequestVerification] = useState(false);
   
   const [chapters, setChapters] = useState<Chapter[]>([
     { id: "1", title: "Capítulo 1", content: "", chapter_number: 1, word_count: 0, notes: "" }
@@ -109,6 +113,9 @@ const AdvancedWritePage = () => {
     setStatus((bookData.status as "draft" | "published") || "draft");
     setIsSaga(bookData.is_saga || false);
     setTags(bookData.tags || []);
+    setAgeRating((bookData as any).age_rating || "all");
+    setAiGenerated((bookData as any).ai_generated || false);
+    setRequestVerification((bookData as any).verification_status === "pending");
 
     // Load chapters
     const { data: chaptersData } = await supabase
@@ -217,7 +224,10 @@ const AdvancedWritePage = () => {
           status: saveStatus,
           is_saga: isSaga,
           tags: tags.length > 0 ? tags : null,
-        }).eq("id", bookId);
+          age_rating: ageRating,
+          ai_generated: aiGenerated,
+          verification_status: requestVerification ? "pending" : "not_requested",
+        } as any).eq("id", bookId);
 
         // Update/create chapters
         for (const chapter of chapters) {
@@ -272,7 +282,10 @@ const AdvancedWritePage = () => {
           status: saveStatus,
           is_saga: isSaga,
           tags: tags.length > 0 ? tags : null,
-        }).select().single();
+          age_rating: ageRating,
+          ai_generated: aiGenerated,
+          verification_status: requestVerification ? "pending" : "not_requested",
+        } as any).select().single();
 
         if (error || !newBook) throw error;
 
@@ -568,6 +581,17 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                       }}
                     />
                   )}
+                </div>
+                {/* Book Config */}
+                <div className="mt-4">
+                  <BookConfigSection
+                    ageRating={ageRating}
+                    setAgeRating={setAgeRating}
+                    aiGenerated={aiGenerated}
+                    setAiGenerated={setAiGenerated}
+                    requestVerification={requestVerification}
+                    setRequestVerification={setRequestVerification}
+                  />
                 </div>
               </div>
             </motion.aside>

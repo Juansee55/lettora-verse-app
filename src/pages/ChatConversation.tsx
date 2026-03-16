@@ -464,6 +464,7 @@ const ChatConversationPage = () => {
         isOwn={selectedMessage?.sender_id === currentUserId}
         isAdmin={isAdminOrOwner}
         isGroup={convInfo?.is_group || false}
+        senderId={selectedMessage?.sender_id}
         onPin={handlePinMessage}
         onReport={handleReportMessage}
         onDelete={handleDeleteMessage}

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Pin, Flag, Trash2, Copy, X } from "lucide-react";
+import { Pin, Flag, Trash2, Copy, X, Ban } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageActionsSheetProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface MessageActionsSheetProps {
   isOwn: boolean;
   isAdmin: boolean;
   isGroup: boolean;
+  senderId?: string;
   onPin?: (messageId: string) => void;
   onReport?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
@@ -17,13 +19,35 @@ interface MessageActionsSheetProps {
 
 const MessageActionsSheet = ({
   isOpen, onClose, messageContent, messageId,
-  isOwn, isAdmin, isGroup, onPin, onReport, onDelete
+  isOwn, isAdmin, isGroup, senderId, onPin, onReport, onDelete
 }: MessageActionsSheetProps) => {
   if (!isOpen) return null;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(messageContent);
     toast.success("Mensaje copiado");
+    onClose();
+  };
+
+  const handleBlock = async () => {
+    if (!senderId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from("user_blocks").insert({
+      blocker_id: user.id,
+      blocked_id: senderId,
+    } as any);
+
+    if (error) {
+      if (error.code === "23505") toast.info("Usuario ya bloqueado");
+      else toast.error("Error al bloquear");
+    } else {
+      // Remove mutual follows
+      await supabase.from("followers").delete().eq("follower_id", user.id).eq("following_id", senderId);
+      await supabase.from("followers").delete().eq("follower_id", senderId).eq("following_id", user.id);
+      toast.success("Usuario bloqueado");
+    }
     onClose();
   };
 
@@ -41,6 +65,13 @@ const MessageActionsSheet = ({
       show: isGroup && isAdmin,
       onClick: () => { onPin?.(messageId); onClose(); },
       destructive: false,
+    },
+    {
+      icon: Ban,
+      label: "Bloquear usuario",
+      show: !isOwn && !!senderId,
+      onClick: handleBlock,
+      destructive: true,
     },
     {
       icon: Flag,

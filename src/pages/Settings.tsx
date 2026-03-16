@@ -36,6 +36,8 @@ const SettingsPage = () => {
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [privateProfile, setPrivateProfile] = useState(false);
+  const [followersVisibility, setFollowersVisibility] = useState<"all" | "followers" | "nobody">("all");
+  const [showFollowersVisibilityPicker, setShowFollowersVisibilityPicker] = useState(false);
   const [showReadingActivity, setShowReadingActivity] = useState(true);
   const [notifyLikes, setNotifyLikes] = useState(true);
   const [notifyComments, setNotifyComments] = useState(true);
@@ -67,12 +69,13 @@ const SettingsPage = () => {
       // Load profile settings from DB
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_private")
+        .select("is_private, followers_visibility")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile) {
         setPrivateProfile(profile.is_private || false);
+        setFollowersVisibility((profile as any).followers_visibility || "all");
       }
 
       // Check admin role
@@ -424,6 +427,13 @@ const SettingsPage = () => {
               showChevron={false}
             />
             <IOSSettingItem
+              icon={<Users className="w-4 h-4" />}
+              iconBg="bg-indigo-500"
+              title="Visibilidad de seguidores"
+              subtitle={followersVisibility === "all" ? "Todos pueden ver" : followersVisibility === "followers" ? "Solo seguidores" : "Nadie puede ver"}
+              onClick={() => setShowFollowersVisibilityPicker(true)}
+            />
+            <IOSSettingItem
               icon={showReadingActivity ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               iconBg="bg-purple-500"
               title={t("showReadingActivity")}
@@ -601,6 +611,62 @@ const SettingsPage = () => {
       </main>
 
       <IOSBottomNav />
+
+      {/* Followers Visibility Picker */}
+      <AnimatePresence>
+        {showFollowersVisibilityPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowFollowersVisibilityPicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">¿Quién puede ver tus seguidores?</h2>
+                <button onClick={() => setShowFollowersVisibilityPicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-8">
+                {([
+                  { value: "all", label: "Todos", desc: "Cualquiera puede ver tus seguidores" },
+                  { value: "followers", label: "Solo seguidores", desc: "Solo quienes te siguen pueden verlos" },
+                  { value: "nobody", label: "Nadie", desc: "Nadie puede ver tus seguidores" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={async () => {
+                      setFollowersVisibility(opt.value);
+                      setShowFollowersVisibilityPicker(false);
+                      if (user) {
+                        await supabase.from("profiles").update({ followers_visibility: opt.value } as any).eq("id", user.id);
+                      }
+                      toast({ title: "Visibilidad actualizada" });
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors ${
+                      followersVisibility === opt.value ? "bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div>
+                      <span className="text-[17px] font-medium">{opt.label}</span>
+                      <p className="text-[13px] text-muted-foreground">{opt.desc}</p>
+                    </div>
+                    {followersVisibility === opt.value && <Check className="w-5 h-5 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Language Picker Modal */}
       <AnimatePresence>
