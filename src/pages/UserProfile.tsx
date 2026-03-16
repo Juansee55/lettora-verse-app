@@ -18,6 +18,7 @@ import LevelBadge from "@/components/levels/LevelBadge";
 import { useUserLevel } from "@/hooks/useUserLevel";
 import PremiumBadge from "@/components/premium/PremiumBadge";
 import { usePremium } from "@/hooks/usePremium";
+import FollowersListModal from "@/components/followers/FollowersListModal";
 
 interface UserProfileData {
   id: string;
