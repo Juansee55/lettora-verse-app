@@ -223,7 +223,10 @@ const AdvancedWritePage = () => {
           status: saveStatus,
           is_saga: isSaga,
           tags: tags.length > 0 ? tags : null,
-        }).eq("id", bookId);
+          age_rating: ageRating,
+          ai_generated: aiGenerated,
+          verification_status: requestVerification ? "pending" : "not_requested",
+        } as any).eq("id", bookId);
 
         // Update/create chapters
         for (const chapter of chapters) {
