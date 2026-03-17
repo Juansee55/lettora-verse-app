@@ -120,6 +120,7 @@ const EventRoomPage = () => {
     setEvent(ev as any);
 
     await fetchParticipants();
+    await fetchRounds();
 
     // Check if user is participant
     const { data: part } = await supabase
