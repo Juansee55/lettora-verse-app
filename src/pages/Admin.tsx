@@ -94,6 +94,18 @@ const AdminPage = () => {
     fetchNews();
     fetchEvents();
     fetchStaffBdays();
+    fetchBadges();
+  };
+
+  const fetchBadges = async () => {
+    const { data } = await (supabase.from("user_badges" as any).select("*").order("created_at", { ascending: false }) as any);
+    setBadgesList(data || []);
+  };
+
+  const deleteBadge = async (id: string) => {
+    await (supabase.from("user_badges" as any).delete().eq("id", id) as any);
+    fetchBadges();
+    toast({ title: "Insignia eliminada" });
   };
 
   const fetchContracts = async () => {
