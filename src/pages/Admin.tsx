@@ -889,6 +889,11 @@ const AdminPage = () => {
         onClose={() => setShowStaffBdayModal(false)}
         onCreated={fetchStaffBdays}
       />
+      <CreateBadgeModal
+        isOpen={showBadgeModal}
+        onClose={() => setShowBadgeModal(false)}
+        onCreated={fetchBadges}
+      />
     </div>
   );
 };
