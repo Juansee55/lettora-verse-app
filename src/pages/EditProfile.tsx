@@ -28,7 +28,7 @@ const EditProfilePage = () => {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-
+  const [showBadgeSelector, setShowBadgeSelector] = useState(false);
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
