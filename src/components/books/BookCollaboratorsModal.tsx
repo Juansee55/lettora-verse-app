@@ -133,6 +133,15 @@ const BookCollaboratorsModal = ({
   }, [searchQuery, collaborators]);
 
   const handleInvite = async (userId: string) => {
+    if (collaborators.length >= 5) {
+      toast({
+        title: "Límite alcanzado",
+        description: "Máximo 5 colaboradores por libro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase.from("book_collaborators").insert({
       book_id: bookId,
       user_id: userId,
