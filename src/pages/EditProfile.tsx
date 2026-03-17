@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import BadgeSelector from "@/components/badges/BadgeSelector";
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
