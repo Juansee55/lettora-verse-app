@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Send, Loader2, Trophy, Users, Pause, Play,
   Square, UserMinus, UserPlus, HelpCircle, Crown, Shield, X,
-  Star, Minus, Plus,
+  Star, Minus, Plus, Zap, SkipForward,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
