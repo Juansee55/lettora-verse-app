@@ -297,6 +297,103 @@ const EventRoomPage = () => {
     }
   };
 
+  const fetchRounds = async () => {
+    const { data: roundsData } = await (supabase
+      .from("event_rounds" as any)
+      .select("*")
+      .eq("event_id", eventId!)
+      .order("round_number", { ascending: true }) as any);
+
+    if (roundsData) {
+      setRounds(roundsData);
+      const roundIds = roundsData.map((r: any) => r.id);
+      if (roundIds.length > 0) {
+        const { data: rp } = await (supabase
+          .from("event_round_participants" as any)
+          .select("*")
+          .in("round_id", roundIds) as any);
+        setRoundParticipants(rp || []);
+      }
+    }
+  };
+
+  const createRound = async () => {
+    const nextNumber = rounds.length + 1;
+    await (supabase.from("event_rounds" as any).insert({
+      event_id: eventId!,
+      round_number: nextNumber,
+      title: `Ronda ${nextNumber}`,
+      status: "pending",
+    }) as any);
+    await fetchRounds();
+    toast({ title: `🎯 Ronda ${nextNumber} creada` });
+  };
+
+  const startRound = async (roundId: string) => {
+    await (supabase.from("event_rounds" as any).update({ status: "active" } as any).eq("id", roundId) as any);
+    await fetchRounds();
+    toast({ title: "▶️ Ronda iniciada" });
+  };
+
+  const endRound = async (roundId: string) => {
+    await (supabase.from("event_rounds" as any).update({ status: "ended" } as any).eq("id", roundId) as any);
+    await fetchRounds();
+    toast({ title: "🏁 Ronda finalizada" });
+  };
+
+  const addParticipantToRound = async (roundId: string, userId: string) => {
+    const existing = roundParticipants.find(rp => rp.round_id === roundId && rp.user_id === userId);
+    if (existing) return;
+    await (supabase.from("event_round_participants" as any).insert({
+      round_id: roundId,
+      user_id: userId,
+      status: "active",
+    }) as any);
+    await fetchRounds();
+    toast({ title: "Participante añadido a la ronda" });
+  };
+
+  const eliminateFromRound = async (roundId: string, userId: string) => {
+    await (supabase.from("event_round_participants" as any)
+      .update({ status: "eliminated", eliminated_at: new Date().toISOString() } as any)
+      .eq("round_id", roundId)
+      .eq("user_id", userId) as any);
+    await fetchRounds();
+    toast({ title: "❌ Participante eliminado de la ronda" });
+  };
+
+  const advanceToNextRound = async (roundId: string) => {
+    const roundPartsActive = roundParticipants.filter(rp => rp.round_id === roundId && rp.status === "active");
+    const currentRound = rounds.find(r => r.id === roundId);
+    if (!currentRound) return;
+    
+    // End current round
+    await endRound(roundId);
+    
+    // Create next round
+    const nextNumber = currentRound.round_number + 1;
+    const { data: newRound } = await (supabase.from("event_rounds" as any).insert({
+      event_id: eventId!,
+      round_number: nextNumber,
+      title: `Ronda ${nextNumber}`,
+      status: "pending",
+    }).select().single() as any);
+    
+    if (newRound) {
+      // Add surviving participants
+      for (const p of roundPartsActive) {
+        await (supabase.from("event_round_participants" as any).insert({
+          round_id: newRound.id,
+          user_id: p.user_id,
+          status: "active",
+        }) as any);
+      }
+    }
+    
+    await fetchRounds();
+    toast({ title: `⚡ ${roundPartsActive.length} participantes avanzan a Ronda ${nextNumber}` });
+  };
+
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
