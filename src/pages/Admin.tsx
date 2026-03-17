@@ -17,6 +17,7 @@ import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
 import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
+import CreateBadgeModal from "@/components/admin/CreateBadgeModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
