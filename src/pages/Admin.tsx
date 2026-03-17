@@ -71,6 +71,8 @@ const AdminPage = () => {
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showStaffBdayModal, setShowStaffBdayModal] = useState(false);
   const [staffBdays, setStaffBdays] = useState<any[]>([]);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [badgesList, setBadgesList] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
