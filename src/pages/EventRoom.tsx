@@ -715,6 +715,117 @@ const EventRoomPage = () => {
                 </div>
               ))}
             </div>
+
+            {/* Elimination Rounds */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] font-semibold text-muted-foreground uppercase">
+                  Eliminatorias ({rounds.length} rondas)
+                </p>
+                <Button size="sm" variant="outline" className="rounded-xl h-8" onClick={createRound}>
+                  <Plus className="w-3 h-3 mr-1" /> Ronda
+                </Button>
+              </div>
+
+              {rounds.map(round => {
+                const roundParts = roundParticipants.filter(rp => rp.round_id === round.id);
+                const activeParts = roundParts.filter(rp => rp.status === "active");
+                const eliminatedParts = roundParts.filter(rp => rp.status === "eliminated");
+
+                return (
+                  <div key={round.id} className="bg-muted/30 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className={`w-4 h-4 ${round.status === "active" ? "text-green-500" : round.status === "ended" ? "text-muted-foreground" : "text-amber-500"}`} />
+                        <span className="font-semibold text-[14px]">{round.title}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                          round.status === "active" ? "bg-green-500/15 text-green-500" :
+                          round.status === "ended" ? "bg-muted text-muted-foreground" :
+                          "bg-amber-500/15 text-amber-500"
+                        }`}>
+                          {round.status === "active" ? "En curso" : round.status === "ended" ? "Finalizada" : "Pendiente"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Round controls */}
+                    <div className="flex gap-1.5 flex-wrap">
+                      {round.status === "pending" && (
+                        <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => startRound(round.id)}>
+                          <Play className="w-3 h-3 mr-1" /> Iniciar
+                        </Button>
+                      )}
+                      {round.status === "active" && (
+                        <>
+                          <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => endRound(round.id)}>
+                            <Square className="w-3 h-3 mr-1" /> Cerrar
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => advanceToNextRound(round.id)}>
+                            <SkipForward className="w-3 h-3 mr-1" /> Avanzar
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Add participants to round */}
+                    {round.status !== "ended" && (
+                      <div>
+                        <p className="text-[11px] text-muted-foreground mb-1">Añadir participante:</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {participants
+                            .filter(p => !roundParts.some(rp => rp.user_id === p.user_id))
+                            .slice(0, 8)
+                            .map(p => (
+                              <button
+                                key={p.user_id}
+                                onClick={() => addParticipantToRound(round.id, p.user_id)}
+                                className="px-2 py-1 bg-muted/60 rounded-full text-[11px] hover:bg-primary/10 transition-colors"
+                              >
+                                + {p.profile?.display_name || p.profile?.username || "?"}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Round participants */}
+                    {roundParts.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-muted-foreground">
+                          {activeParts.length} activos · {eliminatedParts.length} eliminados
+                        </p>
+                        {roundParts.map(rp => {
+                          const profile = participants.find(p => p.user_id === rp.user_id)?.profile;
+                          return (
+                            <div key={rp.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${rp.status === "eliminated" ? "opacity-50 line-through" : ""}`}>
+                              <div className="w-6 h-6 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground text-[10px] font-bold overflow-hidden">
+                                {profile?.avatar_url ? (
+                                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  profile?.display_name?.[0]?.toUpperCase() || "?"
+                                )}
+                              </div>
+                              <span className="text-[12px] flex-1">{profile?.display_name || profile?.username || "?"}</span>
+                              {rp.status === "active" && round.status === "active" && (
+                                <button
+                                  onClick={() => eliminateFromRound(round.id, rp.user_id)}
+                                  className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                >
+                                  Eliminar
+                                </button>
+                              )}
+                              {rp.status === "eliminated" && (
+                                <span className="text-[10px] text-destructive">Eliminado</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
