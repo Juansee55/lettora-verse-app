@@ -48,6 +48,23 @@ interface Participant {
   };
 }
 
+interface Round {
+  id: string;
+  event_id: string;
+  round_number: number;
+  title: string;
+  status: string;
+  created_at: string;
+}
+
+interface RoundParticipant {
+  id: string;
+  round_id: string;
+  user_id: string;
+  status: string;
+  eliminated_at: string | null;
+}
+
 const EventRoomPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
