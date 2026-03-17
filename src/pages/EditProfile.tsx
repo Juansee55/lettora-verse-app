@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Camera, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Save, Loader2, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import BadgeSelector from "@/components/badges/BadgeSelector";
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const EditProfilePage = () => {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-
+  const [showBadgeSelector, setShowBadgeSelector] = useState(false);
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -318,8 +319,20 @@ const EditProfilePage = () => {
               className="mt-1"
             />
           </div>
+
+          {/* Badge Selector Button */}
+          <Button
+            variant="outline"
+            className="w-full rounded-xl flex items-center gap-2"
+            onClick={() => setShowBadgeSelector(true)}
+          >
+            <Award className="w-4 h-4 text-primary" />
+            Gestionar insignias
+          </Button>
         </motion.div>
       </main>
+
+      <BadgeSelector isOpen={showBadgeSelector} onClose={() => setShowBadgeSelector(false)} />
     </div>
   );
 };

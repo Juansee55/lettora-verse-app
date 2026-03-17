@@ -5,7 +5,7 @@ import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
-  Trophy, BarChart3, Cake, UserPlus2, UserMinus,
+  Trophy, BarChart3, Cake, UserPlus2, UserMinus, Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import BookStatsModal from "@/components/admin/BookStatsModal";
 import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
 import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
+import CreateBadgeModal from "@/components/admin/CreateBadgeModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -42,7 +43,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -70,6 +71,8 @@ const AdminPage = () => {
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showStaffBdayModal, setShowStaffBdayModal] = useState(false);
   const [staffBdays, setStaffBdays] = useState<any[]>([]);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [badgesList, setBadgesList] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdminStatus();
@@ -91,6 +94,18 @@ const AdminPage = () => {
     fetchNews();
     fetchEvents();
     fetchStaffBdays();
+    fetchBadges();
+  };
+
+  const fetchBadges = async () => {
+    const { data } = await (supabase.from("user_badges" as any).select("*").order("created_at", { ascending: false }) as any);
+    setBadgesList(data || []);
+  };
+
+  const deleteBadge = async (id: string) => {
+    await (supabase.from("user_badges" as any).delete().eq("id", id) as any);
+    fetchBadges();
+    toast({ title: "Insignia eliminada" });
   };
 
   const fetchContracts = async () => {
@@ -306,6 +321,7 @@ const AdminPage = () => {
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
             { key: "events" as const, icon: Trophy, label: "Eventos" },
             { key: "bday" as const, icon: Cake, label: "Bday" },
+            { key: "badges" as const, icon: Award, label: "Insignias" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -652,6 +668,48 @@ const AdminPage = () => {
             ))
           )}
         </div>
+      ) : activeTab === "badges" ? (
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[14px] text-muted-foreground">Gestiona insignias de usuario.</p>
+            <Button size="sm" className="rounded-xl" onClick={() => setShowBadgeModal(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nueva
+            </Button>
+          </div>
+          {badgesList.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 text-center border border-border/50">
+              <Award className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">No hay insignias creadas.</p>
+            </div>
+          ) : (
+            badgesList.map((badge: any) => (
+              <div key={badge.id} className="bg-card rounded-2xl border border-border/50 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{badge.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-[15px]">{badge.name}</h3>
+                    {badge.description && <p className="text-[13px] text-muted-foreground truncate">{badge.description}</p>}
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium mt-1 ${
+                      badge.badge_type === 'birthday' ? 'bg-pink-500/15 text-pink-500' :
+                      badge.badge_type === 'event' ? 'bg-blue-500/15 text-blue-500' :
+                      badge.badge_type === 'achievement' ? 'bg-amber-500/15 text-amber-500' :
+                      'bg-primary/15 text-primary'
+                    }`}>
+                      {badge.badge_type === 'birthday' ? 'Cumpleaños' : badge.badge_type === 'event' ? 'Evento' : badge.badge_type === 'achievement' ? 'Logro' : 'General'}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline" size="sm"
+                    className="rounded-full text-destructive border-destructive/30 h-8 px-2"
+                    onClick={() => deleteBadge(badge.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       ) : null}
 
       {/* Quick Verify Dialog */}
@@ -830,6 +888,11 @@ const AdminPage = () => {
         isOpen={showStaffBdayModal}
         onClose={() => setShowStaffBdayModal(false)}
         onCreated={fetchStaffBdays}
+      />
+      <CreateBadgeModal
+        isOpen={showBadgeModal}
+        onClose={() => setShowBadgeModal(false)}
+        onCreated={fetchBadges}
       />
     </div>
   );

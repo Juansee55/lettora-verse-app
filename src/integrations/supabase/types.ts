@@ -660,6 +660,73 @@ export type Database = {
           },
         ]
       }
+      event_round_participants: {
+        Row: {
+          eliminated_at: string | null
+          id: string
+          round_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          eliminated_at?: string | null
+          id?: string
+          round_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          eliminated_at?: string | null
+          id?: string
+          round_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_round_participants_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "event_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_rounds: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          round_number: number
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          round_number?: number
+          status?: string
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          round_number?: number
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rounds_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -1549,6 +1616,39 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          emoji: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          badge_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          emoji?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          badge_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          emoji?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       user_blocks: {
         Row: {
           blocked_id: string
@@ -1593,6 +1693,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_equipped_badges: {
+        Row: {
+          badge_id: string
+          equipped_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          equipped_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          equipped_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_equipped_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "user_badges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_items: {
         Row: {

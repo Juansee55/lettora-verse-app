@@ -93,14 +93,35 @@ const AdvancedWritePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
 
-    const { data: bookData, error } = await supabase
+    // Try as author first
+    let { data: bookData, error } = await supabase
       .from("books")
       .select("*")
       .eq("id", bookId)
       .eq("author_id", user.id)
       .single();
 
+    // If not author, check if collaborator
     if (error || !bookData) {
+      const { data: collab } = await supabase
+        .from("book_collaborators")
+        .select("id, accepted_at")
+        .eq("book_id", bookId!)
+        .eq("user_id", user.id)
+        .not("accepted_at", "is", null)
+        .maybeSingle();
+
+      if (collab) {
+        const { data: collabBook } = await supabase
+          .from("books")
+          .select("*")
+          .eq("id", bookId)
+          .single();
+        bookData = collabBook;
+      }
+    }
+
+    if (!bookData) {
       toast({ title: "Error", description: "No se pudo cargar el libro.", variant: "destructive" });
       navigate("/profile");
       return;

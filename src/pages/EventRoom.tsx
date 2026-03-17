@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Send, Loader2, Trophy, Users, Pause, Play,
   Square, UserMinus, UserPlus, HelpCircle, Crown, Shield, X,
-  Star, Minus, Plus,
+  Star, Minus, Plus, Zap, SkipForward,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,23 @@ interface Participant {
   };
 }
 
+interface Round {
+  id: string;
+  event_id: string;
+  round_number: number;
+  title: string;
+  status: string;
+  created_at: string;
+}
+
+interface RoundParticipant {
+  id: string;
+  round_id: string;
+  user_id: string;
+  status: string;
+  eliminated_at: string | null;
+}
+
 const EventRoomPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -68,6 +85,9 @@ const EventRoomPage = () => {
   const [showAddUser, setShowAddUser] = useState(false);
   const [addUsername, setAddUsername] = useState("");
   const [pointsEdit, setPointsEdit] = useState<Record<string, number>>({});
+  const [rounds, setRounds] = useState<Round[]>([]);
+  const [roundParticipants, setRoundParticipants] = useState<RoundParticipant[]>([]);
+  const [showRoundsPanel, setShowRoundsPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const userIds = Object.keys(profiles);
@@ -100,6 +120,7 @@ const EventRoomPage = () => {
     setEvent(ev as any);
 
     await fetchParticipants();
+    await fetchRounds();
 
     // Check if user is participant
     const { data: part } = await supabase
@@ -274,6 +295,103 @@ const EventRoomPage = () => {
       setShowAddUser(false);
       await fetchParticipants();
     }
+  };
+
+  const fetchRounds = async () => {
+    const { data: roundsData } = await (supabase
+      .from("event_rounds" as any)
+      .select("*")
+      .eq("event_id", eventId!)
+      .order("round_number", { ascending: true }) as any);
+
+    if (roundsData) {
+      setRounds(roundsData);
+      const roundIds = roundsData.map((r: any) => r.id);
+      if (roundIds.length > 0) {
+        const { data: rp } = await (supabase
+          .from("event_round_participants" as any)
+          .select("*")
+          .in("round_id", roundIds) as any);
+        setRoundParticipants(rp || []);
+      }
+    }
+  };
+
+  const createRound = async () => {
+    const nextNumber = rounds.length + 1;
+    await (supabase.from("event_rounds" as any).insert({
+      event_id: eventId!,
+      round_number: nextNumber,
+      title: `Ronda ${nextNumber}`,
+      status: "pending",
+    }) as any);
+    await fetchRounds();
+    toast({ title: `🎯 Ronda ${nextNumber} creada` });
+  };
+
+  const startRound = async (roundId: string) => {
+    await (supabase.from("event_rounds" as any).update({ status: "active" } as any).eq("id", roundId) as any);
+    await fetchRounds();
+    toast({ title: "▶️ Ronda iniciada" });
+  };
+
+  const endRound = async (roundId: string) => {
+    await (supabase.from("event_rounds" as any).update({ status: "ended" } as any).eq("id", roundId) as any);
+    await fetchRounds();
+    toast({ title: "🏁 Ronda finalizada" });
+  };
+
+  const addParticipantToRound = async (roundId: string, userId: string) => {
+    const existing = roundParticipants.find(rp => rp.round_id === roundId && rp.user_id === userId);
+    if (existing) return;
+    await (supabase.from("event_round_participants" as any).insert({
+      round_id: roundId,
+      user_id: userId,
+      status: "active",
+    }) as any);
+    await fetchRounds();
+    toast({ title: "Participante añadido a la ronda" });
+  };
+
+  const eliminateFromRound = async (roundId: string, userId: string) => {
+    await (supabase.from("event_round_participants" as any)
+      .update({ status: "eliminated", eliminated_at: new Date().toISOString() } as any)
+      .eq("round_id", roundId)
+      .eq("user_id", userId) as any);
+    await fetchRounds();
+    toast({ title: "❌ Participante eliminado de la ronda" });
+  };
+
+  const advanceToNextRound = async (roundId: string) => {
+    const roundPartsActive = roundParticipants.filter(rp => rp.round_id === roundId && rp.status === "active");
+    const currentRound = rounds.find(r => r.id === roundId);
+    if (!currentRound) return;
+    
+    // End current round
+    await endRound(roundId);
+    
+    // Create next round
+    const nextNumber = currentRound.round_number + 1;
+    const { data: newRound } = await (supabase.from("event_rounds" as any).insert({
+      event_id: eventId!,
+      round_number: nextNumber,
+      title: `Ronda ${nextNumber}`,
+      status: "pending",
+    }).select().single() as any);
+    
+    if (newRound) {
+      // Add surviving participants
+      for (const p of roundPartsActive) {
+        await (supabase.from("event_round_participants" as any).insert({
+          round_id: newRound.id,
+          user_id: p.user_id,
+          status: "active",
+        }) as any);
+      }
+    }
+    
+    await fetchRounds();
+    toast({ title: `⚡ ${roundPartsActive.length} participantes avanzan a Ronda ${nextNumber}` });
   };
 
   const formatTime = (dateStr: string) => {
@@ -596,6 +714,117 @@ const EventRoomPage = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Elimination Rounds */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] font-semibold text-muted-foreground uppercase">
+                  Eliminatorias ({rounds.length} rondas)
+                </p>
+                <Button size="sm" variant="outline" className="rounded-xl h-8" onClick={createRound}>
+                  <Plus className="w-3 h-3 mr-1" /> Ronda
+                </Button>
+              </div>
+
+              {rounds.map(round => {
+                const roundParts = roundParticipants.filter(rp => rp.round_id === round.id);
+                const activeParts = roundParts.filter(rp => rp.status === "active");
+                const eliminatedParts = roundParts.filter(rp => rp.status === "eliminated");
+
+                return (
+                  <div key={round.id} className="bg-muted/30 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className={`w-4 h-4 ${round.status === "active" ? "text-green-500" : round.status === "ended" ? "text-muted-foreground" : "text-amber-500"}`} />
+                        <span className="font-semibold text-[14px]">{round.title}</span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                          round.status === "active" ? "bg-green-500/15 text-green-500" :
+                          round.status === "ended" ? "bg-muted text-muted-foreground" :
+                          "bg-amber-500/15 text-amber-500"
+                        }`}>
+                          {round.status === "active" ? "En curso" : round.status === "ended" ? "Finalizada" : "Pendiente"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Round controls */}
+                    <div className="flex gap-1.5 flex-wrap">
+                      {round.status === "pending" && (
+                        <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => startRound(round.id)}>
+                          <Play className="w-3 h-3 mr-1" /> Iniciar
+                        </Button>
+                      )}
+                      {round.status === "active" && (
+                        <>
+                          <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => endRound(round.id)}>
+                            <Square className="w-3 h-3 mr-1" /> Cerrar
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-full h-7 text-[11px]" onClick={() => advanceToNextRound(round.id)}>
+                            <SkipForward className="w-3 h-3 mr-1" /> Avanzar
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Add participants to round */}
+                    {round.status !== "ended" && (
+                      <div>
+                        <p className="text-[11px] text-muted-foreground mb-1">Añadir participante:</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {participants
+                            .filter(p => !roundParts.some(rp => rp.user_id === p.user_id))
+                            .slice(0, 8)
+                            .map(p => (
+                              <button
+                                key={p.user_id}
+                                onClick={() => addParticipantToRound(round.id, p.user_id)}
+                                className="px-2 py-1 bg-muted/60 rounded-full text-[11px] hover:bg-primary/10 transition-colors"
+                              >
+                                + {p.profile?.display_name || p.profile?.username || "?"}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Round participants */}
+                    {roundParts.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-muted-foreground">
+                          {activeParts.length} activos · {eliminatedParts.length} eliminados
+                        </p>
+                        {roundParts.map(rp => {
+                          const profile = participants.find(p => p.user_id === rp.user_id)?.profile;
+                          return (
+                            <div key={rp.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${rp.status === "eliminated" ? "opacity-50 line-through" : ""}`}>
+                              <div className="w-6 h-6 rounded-full bg-gradient-hero flex items-center justify-center text-primary-foreground text-[10px] font-bold overflow-hidden">
+                                {profile?.avatar_url ? (
+                                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  profile?.display_name?.[0]?.toUpperCase() || "?"
+                                )}
+                              </div>
+                              <span className="text-[12px] flex-1">{profile?.display_name || profile?.username || "?"}</span>
+                              {rp.status === "active" && round.status === "active" && (
+                                <button
+                                  onClick={() => eliminateFromRound(round.id, rp.user_id)}
+                                  className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                >
+                                  Eliminar
+                                </button>
+                              )}
+                              {rp.status === "eliminated" && (
+                                <span className="text-[10px] text-destructive">Eliminado</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </SheetContent>
