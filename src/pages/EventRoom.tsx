@@ -85,6 +85,9 @@ const EventRoomPage = () => {
   const [showAddUser, setShowAddUser] = useState(false);
   const [addUsername, setAddUsername] = useState("");
   const [pointsEdit, setPointsEdit] = useState<Record<string, number>>({});
+  const [rounds, setRounds] = useState<Round[]>([]);
+  const [roundParticipants, setRoundParticipants] = useState<RoundParticipant[]>([]);
+  const [showRoundsPanel, setShowRoundsPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const userIds = Object.keys(profiles);
