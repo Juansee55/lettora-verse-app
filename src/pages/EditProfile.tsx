@@ -319,8 +319,20 @@ const EditProfilePage = () => {
               className="mt-1"
             />
           </div>
+
+          {/* Badge Selector Button */}
+          <Button
+            variant="outline"
+            className="w-full rounded-xl flex items-center gap-2"
+            onClick={() => setShowBadgeSelector(true)}
+          >
+            <Award className="w-4 h-4 text-primary" />
+            Gestionar insignias
+          </Button>
         </motion.div>
       </main>
+
+      <BadgeSelector isOpen={showBadgeSelector} onClose={() => setShowBadgeSelector(false)} />
     </div>
   );
 };
