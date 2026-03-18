@@ -6,7 +6,7 @@ import {
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
-  MessageCircleHeart, BookHeart, UserPlus2,
+  MessageCircleHeart, BookHeart, UserPlus2, Swords,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -546,6 +546,13 @@ const SettingsPage = () => {
                 title="Color de nombre"
                 subtitle="Elige el color de tu nombre"
                 onClick={() => setShowNameColorPicker(true)}
+              />
+              <IOSSettingItem
+                icon={<Swords className="w-4 h-4" />}
+                iconBg="bg-gradient-to-r from-red-500 to-orange-500"
+                title="Gang Wars"
+                subtitle="Bases, gangs y territorio"
+                onClick={() => navigate("/gang-wars")}
               />
             </IOSSettingSection>
           </motion.div>
