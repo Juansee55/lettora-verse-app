@@ -6,7 +6,7 @@ import {
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
-  MessageCircleHeart, BookHeart, UserPlus2,
+  MessageCircleHeart, BookHeart, UserPlus2, Swords,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
