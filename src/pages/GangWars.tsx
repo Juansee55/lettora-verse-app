@@ -36,7 +36,12 @@ interface Base {
   max_hp: number;
   controlling_gang_id: string | null;
   controlled_since: string | null;
+  defender_id: string | null;
+  defender_hp: number;
+  defender_max_hp: number;
+  defender_respawn_at: string | null;
   gang?: Gang | null;
+  defender_profile?: { display_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
 interface LeaderboardEntry {
