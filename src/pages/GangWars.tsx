@@ -704,7 +704,31 @@ const GangWarsPage = () => {
           <div className="space-y-3">
             <Input placeholder="Nombre de la gang" value={gangName} onChange={e => setGangName(e.target.value)} maxLength={30} />
             <Textarea placeholder="Descripción (opcional)" value={gangDesc} onChange={e => setGangDesc(e.target.value)} maxLength={200} rows={3} />
-            <Input placeholder="URL de foto (opcional)" value={gangPhoto} onChange={e => setGangPhoto(e.target.value)} />
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Foto de la gang</label>
+              <div className="flex items-center gap-3">
+                {gangPhotoPreview ? (
+                  <div className="relative">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={gangPhotoPreview} />
+                      <AvatarFallback>G</AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={() => { setGangPhotoFile(null); setGangPhotoPreview(null); }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-16 h-16 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                    <Camera className="w-5 h-5 text-muted-foreground" />
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                  </label>
+                )}
+                <p className="text-xs text-muted-foreground">JPG, PNG. Máx 5MB</p>
+              </div>
+            </div>
             <Button onClick={handleCreateGang} disabled={!gangName.trim() || creating} variant="ios" className="w-full">
               {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Gang"}
             </Button>
