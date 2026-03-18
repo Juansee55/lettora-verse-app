@@ -618,6 +618,24 @@ const GangWarsPage = () => {
                         />
                       </div>
                     </div>
+                    {/* Defender info */}
+                    {base.defender_id && base.defender_profile && base.defender_hp > 0 && (
+                      <div className="flex items-center gap-1.5 bg-primary/10 rounded-lg px-2 py-1">
+                        <Avatar className="w-4 h-4">
+                          {base.defender_profile.avatar_url && <AvatarImage src={base.defender_profile.avatar_url} />}
+                          <AvatarFallback className="text-[7px] bg-primary/20">
+                            {(base.defender_profile.display_name || base.defender_profile.username || "U")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-[10px] font-medium text-primary truncate">
+                          {base.defender_profile.display_name || base.defender_profile.username}
+                        </span>
+                        <span className="text-[9px] text-destructive ml-auto font-bold">{base.defender_hp}❤️</span>
+                      </div>
+                    )}
+                    {base.defender_id && base.defender_hp <= 0 && (
+                      <div className="text-[10px] text-destructive font-medium text-center">💀 Defensor eliminado</div>
+                    )}
                     {base.gang ? (
                       <div className="flex items-center gap-1.5">
                         <Avatar className="w-4 h-4">
