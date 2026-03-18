@@ -74,7 +74,8 @@ const GangWarsPage = () => {
   const [showCreateGang, setShowCreateGang] = useState(false);
   const [gangName, setGangName] = useState("");
   const [gangDesc, setGangDesc] = useState("");
-  const [gangPhoto, setGangPhoto] = useState("");
+  const [gangPhotoFile, setGangPhotoFile] = useState<File | null>(null);
+  const [gangPhotoPreview, setGangPhotoPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [selectedBase, setSelectedBase] = useState<Base | null>(null);
   const [attackingGangId, setAttackingGangId] = useState<string | null>(null);
@@ -195,12 +196,42 @@ const GangWarsPage = () => {
     if (activeTab === "leaderboard" && allGangs.length > 0) loadLeaderboard();
   }, [activeTab, leaderboardTab, loadLeaderboard, allGangs]);
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Archivo muy grande", description: "Máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setGangPhotoFile(file);
+    setGangPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleCreateGang = async () => {
     if (!gangName.trim() || !userId) return;
     setCreating(true);
+
+    let photoUrl: string | null = null;
+
+    // Upload photo if selected
+    if (gangPhotoFile) {
+      const ext = gangPhotoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("gang-photos")
+        .upload(path, gangPhotoFile);
+      if (uploadError) {
+        toast({ title: "Error subiendo foto", description: uploadError.message, variant: "destructive" });
+        setCreating(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("gang-photos").getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
+
     const { data, error } = await supabase
       .from("gangs" as any)
-      .insert({ name: gangName.trim(), description: gangDesc.trim() || null, photo_url: gangPhoto.trim() || null, created_by: userId })
+      .insert({ name: gangName.trim(), description: gangDesc.trim() || null, photo_url: photoUrl, created_by: userId })
       .select()
       .single();
 
@@ -210,14 +241,14 @@ const GangWarsPage = () => {
       return;
     }
 
-    // Auto-join as leader
     await supabase.from("gang_members" as any).insert({ gang_id: (data as any).id, user_id: userId, is_leader: true });
 
     toast({ title: "¡Gang creada!", description: `${gangName} está lista` });
     setShowCreateGang(false);
     setGangName("");
     setGangDesc("");
-    setGangPhoto("");
+    setGangPhotoFile(null);
+    setGangPhotoPreview(null);
     setCreating(false);
     loadData();
   };
@@ -673,7 +704,31 @@ const GangWarsPage = () => {
           <div className="space-y-3">
             <Input placeholder="Nombre de la gang" value={gangName} onChange={e => setGangName(e.target.value)} maxLength={30} />
             <Textarea placeholder="Descripción (opcional)" value={gangDesc} onChange={e => setGangDesc(e.target.value)} maxLength={200} rows={3} />
-            <Input placeholder="URL de foto (opcional)" value={gangPhoto} onChange={e => setGangPhoto(e.target.value)} />
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Foto de la gang</label>
+              <div className="flex items-center gap-3">
+                {gangPhotoPreview ? (
+                  <div className="relative">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={gangPhotoPreview} />
+                      <AvatarFallback>G</AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={() => { setGangPhotoFile(null); setGangPhotoPreview(null); }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-16 h-16 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                    <Camera className="w-5 h-5 text-muted-foreground" />
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                  </label>
+                )}
+                <p className="text-xs text-muted-foreground">JPG, PNG. Máx 5MB</p>
+              </div>
+            </div>
             <Button onClick={handleCreateGang} disabled={!gangName.trim() || creating} variant="ios" className="w-full">
               {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Gang"}
             </Button>
