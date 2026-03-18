@@ -387,7 +387,7 @@ const GangWarsPage = () => {
     const nextNumber = bases.length > 0 ? Math.max(...bases.map(b => b.base_number)) + 1 : 1;
     const { error } = await supabase
       .from("territory_bases" as any)
-      .insert({ name: newBaseName.trim(), base_number: nextNumber, hp: 50, max_hp: 50 });
+      .insert({ name: newBaseName.trim(), base_number: nextNumber, hp: 5, max_hp: 5 });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
