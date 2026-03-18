@@ -36,7 +36,12 @@ interface Base {
   max_hp: number;
   controlling_gang_id: string | null;
   controlled_since: string | null;
+  defender_id: string | null;
+  defender_hp: number;
+  defender_max_hp: number;
+  defender_respawn_at: string | null;
   gang?: Gang | null;
+  defender_profile?: { display_name: string | null; username: string | null; avatar_url: string | null } | null;
 }
 
 interface LeaderboardEntry {
@@ -126,11 +131,26 @@ const GangWarsPage = () => {
     setAllGangs(gangsWithCount);
     setMyGangs(gangsWithCount.filter((g: any) => memberGangIds.includes(g.id)));
 
+    // Fetch defender profiles
+    const defenderIds = (basesData as any[] || [])
+      .map((b: any) => b.defender_id)
+      .filter(Boolean);
+    
+    let defenderProfiles: Record<string, any> = {};
+    if (defenderIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", defenderIds);
+      (profiles || []).forEach((p: any) => { defenderProfiles[p.id] = p; });
+    }
+
     const basesWithGang = (basesData as any[] || []).map((b: any) => ({
       ...b,
       gang: b.controlling_gang_id
         ? gangsWithCount.find((g: any) => g.id === b.controlling_gang_id) || null
         : null,
+      defender_profile: b.defender_id ? defenderProfiles[b.defender_id] || null : null,
     }));
     setBases(basesWithGang);
 
@@ -288,9 +308,44 @@ const GangWarsPage = () => {
         toast({ title: "No se pudo atacar", description: result.message, variant: "destructive" });
       } else if (result.captured) {
         toast({ title: "🏴 ¡Base capturada!", description: "La base ahora es tuya" });
+      } else if (result.defender_killed) {
+        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} no puede volver por 4 segundos. ¡Ataca la base!` });
+      } else if (result.hit_base) {
+        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP restante: ${result.new_hp}/5` });
       } else {
-        toast({ title: "⚔️ ¡Golpe!", description: `HP restante: ${result.new_hp}/${selectedBase?.max_hp || 50}` });
+        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP` });
       }
+    }
+    setActionLoading(false);
+    setSelectedBase(null);
+    loadData();
+  };
+
+  const handleEnterBase = async (baseId: string) => {
+    setActionLoading(true);
+    const { data, error } = await supabase.rpc("enter_base", { p_base_id: baseId } as any);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      const result = data as any;
+      if (!result.success) {
+        toast({ title: "No puedes entrar", description: result.message, variant: "destructive" });
+      } else {
+        toast({ title: "🛡️ ¡Defendiendo!", description: "Estás protegiendo esta base" });
+      }
+    }
+    setActionLoading(false);
+    setSelectedBase(null);
+    loadData();
+  };
+
+  const handleLeaveBase = async (baseId: string) => {
+    setActionLoading(true);
+    const { data, error } = await supabase.rpc("leave_base", { p_base_id: baseId } as any);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saliste de la base" });
     }
     setActionLoading(false);
     setSelectedBase(null);
@@ -307,7 +362,7 @@ const GangWarsPage = () => {
       if (!result.success) {
         toast({ title: "No se pudo curar", description: result.message, variant: "destructive" });
       } else {
-        toast({ title: "💚 ¡Base curada!", description: `HP: ${result.new_hp}/${selectedBase?.max_hp || 50}` });
+        toast({ title: "💚 ¡Base curada!", description: `HP: ${result.new_hp}/${selectedBase?.max_hp || 5}` });
       }
     }
     setActionLoading(false);
@@ -332,7 +387,7 @@ const GangWarsPage = () => {
     const nextNumber = bases.length > 0 ? Math.max(...bases.map(b => b.base_number)) + 1 : 1;
     const { error } = await supabase
       .from("territory_bases" as any)
-      .insert({ name: newBaseName.trim(), base_number: nextNumber, hp: 50, max_hp: 50 });
+      .insert({ name: newBaseName.trim(), base_number: nextNumber, hp: 5, max_hp: 5 });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
@@ -563,6 +618,24 @@ const GangWarsPage = () => {
                         />
                       </div>
                     </div>
+                    {/* Defender info */}
+                    {base.defender_id && base.defender_profile && base.defender_hp > 0 && (
+                      <div className="flex items-center gap-1.5 bg-primary/10 rounded-lg px-2 py-1">
+                        <Avatar className="w-4 h-4">
+                          {base.defender_profile.avatar_url && <AvatarImage src={base.defender_profile.avatar_url} />}
+                          <AvatarFallback className="text-[7px] bg-primary/20">
+                            {(base.defender_profile.display_name || base.defender_profile.username || "U")[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-[10px] font-medium text-primary truncate">
+                          {base.defender_profile.display_name || base.defender_profile.username}
+                        </span>
+                        <span className="text-[9px] text-destructive ml-auto font-bold">{base.defender_hp}❤️</span>
+                      </div>
+                    )}
+                    {base.defender_id && base.defender_hp <= 0 && (
+                      <div className="text-[10px] text-destructive font-medium text-center">💀 Defensor eliminado</div>
+                    )}
                     {base.gang ? (
                       <div className="flex items-center gap-1.5">
                         <Avatar className="w-4 h-4">
@@ -830,77 +903,157 @@ const GangWarsPage = () => {
                 Base #{selectedBase?.base_number}
               </DialogDescription>
             </DialogHeader>
-            {selectedBase && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <span className={`text-2xl font-bold ${
-                    (selectedBase.hp / selectedBase.max_hp) > 0.5 ? 'text-green-500' :
-                    (selectedBase.hp / selectedBase.max_hp) > 0.2 ? 'text-yellow-500' : 'text-destructive'
-                  }`}>
-                    {selectedBase.hp}
-                  </span>
-                  <span className="text-muted-foreground text-sm">/{selectedBase.max_hp} HP</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      (selectedBase.hp / selectedBase.max_hp) > 0.5 ? 'bg-green-500' :
-                      (selectedBase.hp / selectedBase.max_hp) > 0.2 ? 'bg-yellow-500' : 'bg-destructive'
-                    }`}
-                    style={{ width: `${(selectedBase.hp / selectedBase.max_hp) * 100}%` }}
-                  />
-                </div>
-                {selectedBase.gang && (
-                  <div className="flex items-center gap-2 justify-center liquid-glass rounded-xl px-3 py-2">
-                    <Avatar className="w-6 h-6">
-                      {selectedBase.gang.photo_url && <AvatarImage src={selectedBase.gang.photo_url} />}
-                      <AvatarFallback className="text-[9px]">{selectedBase.gang.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium">{selectedBase.gang.name}</span>
-                    <span className="text-[11px] text-muted-foreground ml-auto">
-                      <Clock className="w-3 h-3 inline mr-0.5" />
-                      {getControlHours(selectedBase.controlled_since)}
-                    </span>
-                  </div>
-                )}
+            {selectedBase && (() => {
+              const isMyBase = myGangIds.includes(selectedBase.controlling_gang_id || "");
+              const isDefender = selectedBase.defender_id === userId;
+              const hasDefender = selectedBase.defender_id && selectedBase.defender_hp > 0;
+              const defenderDead = selectedBase.defender_id && selectedBase.defender_hp <= 0;
+              const respawnActive = selectedBase.defender_respawn_at && new Date(selectedBase.defender_respawn_at) > new Date();
 
-                {myGangIds.length > 0 ? (
-                  <div className="flex gap-2">
-                    {!myGangIds.includes(selectedBase.controlling_gang_id || "") && (
-                      <Button
-                        className="flex-1"
-                        variant="ios-destructive"
-                        size="ios-md"
-                        onClick={() => handleAttack(selectedBase.id)}
-                        disabled={actionLoading}
-                      >
-                        {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Swords className="w-4 h-4 mr-1.5" /> Atacar</>}
-                      </Button>
-                    )}
-                    {myGangIds.includes(selectedBase.controlling_gang_id || "") && selectedBase.hp < selectedBase.max_hp && (
-                      <Button
-                        className="flex-1"
-                        variant="ios"
-                        size="ios-md"
-                        onClick={() => handleHeal(selectedBase.id)}
-                        disabled={actionLoading}
-                      >
-                        {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Heart className="w-4 h-4 mr-1.5" /> Curar</>}
-                      </Button>
-                    )}
-                    {myGangIds.includes(selectedBase.controlling_gang_id || "") && selectedBase.hp >= selectedBase.max_hp && (
-                      <div className="w-full liquid-glass rounded-xl p-3 text-center">
-                        <p className="text-sm text-green-500 font-medium">✅ Base al máximo</p>
+              return (
+                <div className="space-y-4">
+                  {/* Base HP */}
+                  <div className="text-center">
+                    <span className={`text-2xl font-bold ${
+                      (selectedBase.hp / selectedBase.max_hp) > 0.5 ? 'text-green-500' :
+                      (selectedBase.hp / selectedBase.max_hp) > 0.2 ? 'text-yellow-500' : 'text-destructive'
+                    }`}>
+                      {selectedBase.hp}
+                    </span>
+                    <span className="text-muted-foreground text-sm">/{selectedBase.max_hp} HP</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        (selectedBase.hp / selectedBase.max_hp) > 0.5 ? 'bg-green-500' :
+                        (selectedBase.hp / selectedBase.max_hp) > 0.2 ? 'bg-yellow-500' : 'bg-destructive'
+                      }`}
+                      style={{ width: `${(selectedBase.hp / selectedBase.max_hp) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* Gang info */}
+                  {selectedBase.gang && (
+                    <div className="flex items-center gap-2 justify-center liquid-glass rounded-xl px-3 py-2">
+                      <Avatar className="w-6 h-6">
+                        {selectedBase.gang.photo_url && <AvatarImage src={selectedBase.gang.photo_url} />}
+                        <AvatarFallback className="text-[9px]">{selectedBase.gang.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{selectedBase.gang.name}</span>
+                      <span className="text-[11px] text-muted-foreground ml-auto">
+                        <Clock className="w-3 h-3 inline mr-0.5" />
+                        {getControlHours(selectedBase.controlled_since)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Defender info */}
+                  {hasDefender && selectedBase.defender_profile && (
+                    <div className="liquid-glass rounded-xl p-3 flex items-center gap-3">
+                      <Avatar className="w-10 h-10 ring-2 ring-primary/30">
+                        {selectedBase.defender_profile.avatar_url && <AvatarImage src={selectedBase.defender_profile.avatar_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                          {(selectedBase.defender_profile.display_name || selectedBase.defender_profile.username || "U")[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">
+                          {selectedBase.defender_profile.display_name || selectedBase.defender_profile.username}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">🛡️ Defendiendo</p>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="liquid-glass rounded-xl p-3 text-center">
-                    <p className="text-sm text-muted-foreground">Únete a una gang para participar</p>
-                  </div>
-                )}
-              </div>
-            )}
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-destructive">{selectedBase.defender_hp}❤️</p>
+                        <p className="text-[10px] text-muted-foreground">/{selectedBase.defender_max_hp}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {defenderDead && respawnActive && (
+                    <div className="liquid-glass rounded-xl p-3 text-center">
+                      <p className="text-sm font-medium text-destructive">💀 Defensor eliminado</p>
+                      <p className="text-[11px] text-muted-foreground">No puede volver por 4 segundos</p>
+                    </div>
+                  )}
+
+                  {!hasDefender && !defenderDead && selectedBase.controlling_gang_id && (
+                    <div className="liquid-glass rounded-xl p-2 text-center">
+                      <p className="text-[12px] text-muted-foreground">⚠️ Sin defensor</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {myGangIds.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {/* Attack button (enemy base) */}
+                      {!isMyBase && selectedBase.controlling_gang_id && (
+                        <Button
+                          className="w-full"
+                          variant="ios-destructive"
+                          size="ios-md"
+                          onClick={() => handleAttack(selectedBase.id)}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Swords className="w-4 h-4 mr-1.5" /> {hasDefender ? 'Atacar Defensor' : 'Atacar Base'}</>}
+                        </Button>
+                      )}
+                      {/* Capture free base */}
+                      {!selectedBase.controlling_gang_id && (
+                        <Button
+                          className="w-full"
+                          variant="ios"
+                          size="ios-md"
+                          onClick={() => handleAttack(selectedBase.id)}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Target className="w-4 h-4 mr-1.5" /> Capturar Base</>}
+                        </Button>
+                      )}
+                      {/* Enter as defender (own base) */}
+                      {isMyBase && !isDefender && (
+                        <Button
+                          className="w-full"
+                          variant="ios"
+                          size="ios-md"
+                          onClick={() => handleEnterBase(selectedBase.id)}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Shield className="w-4 h-4 mr-1.5" /> Entrar a Defender</>}
+                        </Button>
+                      )}
+                      {/* Leave base (I'm defending) */}
+                      {isMyBase && isDefender && (
+                        <Button
+                          className="w-full"
+                          variant="ios-secondary"
+                          size="ios-md"
+                          onClick={() => handleLeaveBase(selectedBase.id)}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><LogOut className="w-4 h-4 mr-1.5" /> Dejar de Defender</>}
+                        </Button>
+                      )}
+                      {/* Heal own base */}
+                      {isMyBase && selectedBase.hp < selectedBase.max_hp && (
+                        <Button
+                          className="w-full"
+                          variant="ios"
+                          size="ios-md"
+                          onClick={() => handleHeal(selectedBase.id)}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Heart className="w-4 h-4 mr-1.5" /> Curar Base</>}
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="liquid-glass rounded-xl p-3 text-center">
+                      <p className="text-sm text-muted-foreground">Únete a una gang para participar</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </DialogContent>
         </Dialog>
 

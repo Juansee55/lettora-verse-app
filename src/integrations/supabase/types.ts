@@ -1794,6 +1794,10 @@ export type Database = {
           base_number: number
           controlled_since: string | null
           controlling_gang_id: string | null
+          defender_hp: number
+          defender_id: string | null
+          defender_max_hp: number
+          defender_respawn_at: string | null
           hp: number
           id: string
           max_hp: number
@@ -1803,6 +1807,10 @@ export type Database = {
           base_number: number
           controlled_since?: string | null
           controlling_gang_id?: string | null
+          defender_hp?: number
+          defender_id?: string | null
+          defender_max_hp?: number
+          defender_respawn_at?: string | null
           hp?: number
           id?: string
           max_hp?: number
@@ -1812,6 +1820,10 @@ export type Database = {
           base_number?: number
           controlled_since?: string | null
           controlling_gang_id?: string | null
+          defender_hp?: number
+          defender_id?: string | null
+          defender_max_hp?: number
+          defender_respawn_at?: string | null
           hp?: number
           id?: string
           max_hp?: number
@@ -2065,6 +2077,7 @@ export type Database = {
         Returns: undefined
       }
       calculate_level: { Args: { p_xp: number }; Returns: number }
+      enter_base: { Args: { p_base_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2077,6 +2090,7 @@ export type Database = {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
+      leave_base: { Args: { p_base_id: string }; Returns: Json }
       purchase_item: {
         Args: { p_item_id: string; p_user_id: string }
         Returns: boolean
