@@ -73,6 +73,84 @@ export type Database = {
         }
         Relationships: []
       }
+      base_attacks: {
+        Row: {
+          attacker_gang_id: string
+          attacker_id: string
+          base_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          attacker_gang_id: string
+          attacker_id: string
+          base_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          attacker_gang_id?: string
+          attacker_id?: string
+          base_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_attacks_attacker_gang_id_fkey"
+            columns: ["attacker_gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_attacks_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "territory_bases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_control_history: {
+        Row: {
+          base_id: string
+          ended_at: string | null
+          gang_id: string
+          id: string
+          started_at: string
+        }
+        Insert: {
+          base_id: string
+          ended_at?: string | null
+          gang_id: string
+          id?: string
+          started_at?: string
+        }
+        Update: {
+          base_id?: string
+          ended_at?: string | null
+          gang_id?: string
+          id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_control_history_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "territory_bases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_control_history_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_collaborators: {
         Row: {
           accepted_at: string | null
@@ -795,6 +873,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gang_allies: {
+        Row: {
+          allied_gang_id: string
+          created_at: string
+          gang_id: string
+          id: string
+        }
+        Insert: {
+          allied_gang_id: string
+          created_at?: string
+          gang_id: string
+          id?: string
+        }
+        Update: {
+          allied_gang_id?: string
+          created_at?: string
+          gang_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gang_allies_allied_gang_id_fkey"
+            columns: ["allied_gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gang_allies_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gang_members: {
+        Row: {
+          gang_id: string
+          id: string
+          is_leader: boolean
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          gang_id: string
+          id?: string
+          is_leader?: boolean
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          gang_id?: string
+          id?: string
+          is_leader?: boolean
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gang_members_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gangs: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          photo_url?: string | null
+        }
+        Relationships: []
       }
       group_invitations: {
         Row: {
@@ -1616,6 +1789,44 @@ export type Database = {
           },
         ]
       }
+      territory_bases: {
+        Row: {
+          base_number: number
+          controlled_since: string | null
+          controlling_gang_id: string | null
+          hp: number
+          id: string
+          max_hp: number
+          name: string
+        }
+        Insert: {
+          base_number: number
+          controlled_since?: string | null
+          controlling_gang_id?: string | null
+          hp?: number
+          id?: string
+          max_hp?: number
+          name: string
+        }
+        Update: {
+          base_number?: number
+          controlled_since?: string | null
+          controlling_gang_id?: string | null
+          hp?: number
+          id?: string
+          max_hp?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "territory_bases_controlling_gang_id_fkey"
+            columns: ["controlling_gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_badges: {
         Row: {
           badge_type: string
@@ -1845,6 +2056,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      attack_base: {
+        Args: { p_attacker_gang_id: string; p_base_id: string }
+        Returns: Json
+      }
       award_xp: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
@@ -1857,6 +2072,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      heal_base: { Args: { p_base_id: string }; Returns: Json }
       is_conversation_participant: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
