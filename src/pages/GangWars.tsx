@@ -131,11 +131,26 @@ const GangWarsPage = () => {
     setAllGangs(gangsWithCount);
     setMyGangs(gangsWithCount.filter((g: any) => memberGangIds.includes(g.id)));
 
+    // Fetch defender profiles
+    const defenderIds = (basesData as any[] || [])
+      .map((b: any) => b.defender_id)
+      .filter(Boolean);
+    
+    let defenderProfiles: Record<string, any> = {};
+    if (defenderIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", defenderIds);
+      (profiles || []).forEach((p: any) => { defenderProfiles[p.id] = p; });
+    }
+
     const basesWithGang = (basesData as any[] || []).map((b: any) => ({
       ...b,
       gang: b.controlling_gang_id
         ? gangsWithCount.find((g: any) => g.id === b.controlling_gang_id) || null
         : null,
+      defender_profile: b.defender_id ? defenderProfiles[b.defender_id] || null : null,
     }));
     setBases(basesWithGang);
 
