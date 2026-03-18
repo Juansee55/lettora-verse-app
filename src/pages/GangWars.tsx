@@ -74,7 +74,8 @@ const GangWarsPage = () => {
   const [showCreateGang, setShowCreateGang] = useState(false);
   const [gangName, setGangName] = useState("");
   const [gangDesc, setGangDesc] = useState("");
-  const [gangPhoto, setGangPhoto] = useState("");
+  const [gangPhotoFile, setGangPhotoFile] = useState<File | null>(null);
+  const [gangPhotoPreview, setGangPhotoPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [selectedBase, setSelectedBase] = useState<Base | null>(null);
   const [attackingGangId, setAttackingGangId] = useState<string | null>(null);
