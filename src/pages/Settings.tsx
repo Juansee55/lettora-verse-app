@@ -547,6 +547,13 @@ const SettingsPage = () => {
                 subtitle="Elige el color de tu nombre"
                 onClick={() => setShowNameColorPicker(true)}
               />
+              <IOSSettingItem
+                icon={<Swords className="w-4 h-4" />}
+                iconBg="bg-gradient-to-r from-red-500 to-orange-500"
+                title="Gang Wars"
+                subtitle="Bases, gangs y territorio"
+                onClick={() => navigate("/gang-wars")}
+              />
             </IOSSettingSection>
           </motion.div>
         )}
