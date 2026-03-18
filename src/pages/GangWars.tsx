@@ -196,12 +196,42 @@ const GangWarsPage = () => {
     if (activeTab === "leaderboard" && allGangs.length > 0) loadLeaderboard();
   }, [activeTab, leaderboardTab, loadLeaderboard, allGangs]);
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Archivo muy grande", description: "Máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setGangPhotoFile(file);
+    setGangPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleCreateGang = async () => {
     if (!gangName.trim() || !userId) return;
     setCreating(true);
+
+    let photoUrl: string | null = null;
+
+    // Upload photo if selected
+    if (gangPhotoFile) {
+      const ext = gangPhotoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("gang-photos")
+        .upload(path, gangPhotoFile);
+      if (uploadError) {
+        toast({ title: "Error subiendo foto", description: uploadError.message, variant: "destructive" });
+        setCreating(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("gang-photos").getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
+
     const { data, error } = await supabase
       .from("gangs" as any)
-      .insert({ name: gangName.trim(), description: gangDesc.trim() || null, photo_url: gangPhoto.trim() || null, created_by: userId })
+      .insert({ name: gangName.trim(), description: gangDesc.trim() || null, photo_url: photoUrl, created_by: userId })
       .select()
       .single();
 
@@ -211,14 +241,14 @@ const GangWarsPage = () => {
       return;
     }
 
-    // Auto-join as leader
     await supabase.from("gang_members" as any).insert({ gang_id: (data as any).id, user_id: userId, is_leader: true });
 
     toast({ title: "¡Gang creada!", description: `${gangName} está lista` });
     setShowCreateGang(false);
     setGangName("");
     setGangDesc("");
-    setGangPhoto("");
+    setGangPhotoFile(null);
+    setGangPhotoPreview(null);
     setCreating(false);
     loadData();
   };
