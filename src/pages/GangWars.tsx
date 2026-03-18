@@ -362,7 +362,7 @@ const GangWarsPage = () => {
       if (!result.success) {
         toast({ title: "No se pudo curar", description: result.message, variant: "destructive" });
       } else {
-        toast({ title: "💚 ¡Base curada!", description: `HP: ${result.new_hp}/${selectedBase?.max_hp || 50}` });
+        toast({ title: "💚 ¡Base curada!", description: `HP: ${result.new_hp}/${selectedBase?.max_hp || 5}` });
       }
     }
     setActionLoading(false);
