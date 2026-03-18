@@ -308,9 +308,44 @@ const GangWarsPage = () => {
         toast({ title: "No se pudo atacar", description: result.message, variant: "destructive" });
       } else if (result.captured) {
         toast({ title: "🏴 ¡Base capturada!", description: "La base ahora es tuya" });
+      } else if (result.defender_killed) {
+        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} no puede volver por 4 segundos. ¡Ataca la base!` });
+      } else if (result.hit_base) {
+        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP restante: ${result.new_hp}/5` });
       } else {
-        toast({ title: "⚔️ ¡Golpe!", description: `HP restante: ${result.new_hp}/${selectedBase?.max_hp || 50}` });
+        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP` });
       }
+    }
+    setActionLoading(false);
+    setSelectedBase(null);
+    loadData();
+  };
+
+  const handleEnterBase = async (baseId: string) => {
+    setActionLoading(true);
+    const { data, error } = await supabase.rpc("enter_base", { p_base_id: baseId } as any);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      const result = data as any;
+      if (!result.success) {
+        toast({ title: "No puedes entrar", description: result.message, variant: "destructive" });
+      } else {
+        toast({ title: "🛡️ ¡Defendiendo!", description: "Estás protegiendo esta base" });
+      }
+    }
+    setActionLoading(false);
+    setSelectedBase(null);
+    loadData();
+  };
+
+  const handleLeaveBase = async (baseId: string) => {
+    setActionLoading(true);
+    const { data, error } = await supabase.rpc("leave_base", { p_base_id: baseId } as any);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Saliste de la base" });
     }
     setActionLoading(false);
     setSelectedBase(null);
