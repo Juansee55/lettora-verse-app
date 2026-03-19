@@ -1236,7 +1236,7 @@ const GangWarsPage = () => {
     );
   }
 
-  // ─── WEAPON HANDLERS ───
+  // ─── WEAPON HANDLERS (defined in renderDialogs scope) ───
   const handleWeaponPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
