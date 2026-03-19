@@ -608,6 +608,8 @@ const GangWarsPage = () => {
               {activeSection === "rewards" && renderRewards()}
               {activeSection === "shop" && renderShop()}
               {activeSection === "arsenal" && renderArsenal()}
+              {activeSection === "bots" && renderBots()}
+              {activeSection === "fort" && renderFort()}
             </motion.div>
           </AnimatePresence>
         </div>
