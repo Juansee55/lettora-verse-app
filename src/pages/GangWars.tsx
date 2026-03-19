@@ -166,6 +166,33 @@ const GangWarsPage = () => {
       .select("*");
     setAllies(alliesData as any[] || []);
 
+    // Load reward claims
+    const { data: claimsData } = await supabase
+      .from("gang_reward_claims" as any)
+      .select("*");
+    setGangRewardClaims(claimsData as any[] || []);
+
+    // Load badges for reward selection
+    const { data: badgesData } = await supabase
+      .from("user_badges")
+      .select("*")
+      .eq("is_active", true);
+    setRewardBadges(badgesData || []);
+
+    // Calculate total hours per gang
+    const { data: historyAll } = await supabase
+      .from("base_control_history" as any)
+      .select("gang_id, started_at, ended_at");
+    const now = new Date();
+    const hoursMap: Record<string, number> = {};
+    (historyAll as any[] || []).forEach((h: any) => {
+      const start = new Date(h.started_at);
+      const end = h.ended_at ? new Date(h.ended_at) : now;
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      hoursMap[h.gang_id] = (hoursMap[h.gang_id] || 0) + hours;
+    });
+    setGangTotalHours(hoursMap);
+
     setLoading(false);
   }, [navigate]);
 
