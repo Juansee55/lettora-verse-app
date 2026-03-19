@@ -57,6 +57,7 @@ const SECTION_ITEMS = [
   { id: "mygangs", icon: Shield, label: "Mis Gangs", color: "text-green-500" },
   { id: "leaderboard", icon: Trophy, label: "Ranking", color: "text-yellow-500" },
   { id: "map", icon: Map, label: "Mapa", color: "text-purple-500" },
+  { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
 ];
 
 const GangWarsPage = () => {
