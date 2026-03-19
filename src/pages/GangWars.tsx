@@ -61,6 +61,8 @@ const SECTION_ITEMS = [
   { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
   { id: "shop", icon: ShoppingBag, label: "Tienda de Armas", color: "text-emerald-500" },
   { id: "arsenal", icon: Backpack, label: "Arsenal / Loadout", color: "text-cyan-500" },
+  { id: "bots", icon: Bot, label: "Bots", color: "text-indigo-500" },
+  { id: "fort", icon: Castle, label: "Fort", color: "text-rose-500" },
 ];
 
 const RARITY_COLORS: Record<string, string> = {
