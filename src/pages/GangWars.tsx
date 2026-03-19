@@ -60,6 +60,53 @@ const SECTION_ITEMS = [
   { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
 ];
 
+const AdminClaimRow = ({ claim, gangName, badges, selectedBadge, onSelectBadge, onApprove, onReject, loading }: {
+  claim: any; gangName: string; badges: any[]; selectedBadge: string | null;
+  onSelectBadge: (id: string) => void; onApprove: () => void; onReject: () => void; loading: boolean;
+}) => {
+  const [claimProfile, setClaimProfile] = useState<any>(null);
+  useEffect(() => {
+    supabase.from("profiles").select("display_name, username, avatar_url").eq("id", claim.user_id).single()
+      .then(({ data }) => setClaimProfile(data));
+  }, [claim.user_id]);
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <Avatar className="w-9 h-9">
+          {claimProfile?.avatar_url && <AvatarImage src={claimProfile.avatar_url} />}
+          <AvatarFallback className="bg-muted text-xs">{(claimProfile?.display_name || "U")[0]}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">{claimProfile?.display_name || claimProfile?.username || "Usuario"}</p>
+          <p className="text-[11px] text-muted-foreground">Gang: {gangName}</p>
+        </div>
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {badges.map((b: any) => (
+          <button
+            key={b.id}
+            onClick={() => onSelectBadge(b.id)}
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              selectedBadge === b.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-foreground"
+            }`}
+          >
+            {b.emoji} {b.name}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Button size="ios-sm" variant="ios" onClick={onApprove} disabled={loading} className="flex-1">
+          <Check className="w-3.5 h-3.5 mr-1" /> Aprobar
+        </Button>
+        <Button size="ios-sm" variant="ios-destructive" onClick={onReject} disabled={loading} className="flex-1">
+          <XCircle className="w-3.5 h-3.5 mr-1" /> Rechazar
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const GangWarsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
