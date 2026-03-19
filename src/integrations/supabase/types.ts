@@ -942,6 +942,51 @@ export type Database = {
           },
         ]
       }
+      gang_reward_claims: {
+        Row: {
+          badge_id: string | null
+          claimed_at: string
+          gang_id: string
+          granted_by: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          badge_id?: string | null
+          claimed_at?: string
+          gang_id: string
+          granted_by?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string | null
+          claimed_at?: string
+          gang_id?: string
+          granted_by?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gang_reward_claims_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "user_badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gang_reward_claims_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gangs: {
         Row: {
           created_at: string
