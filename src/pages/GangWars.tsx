@@ -59,7 +59,28 @@ const SECTION_ITEMS = [
   { id: "leaderboard", icon: Trophy, label: "Ranking", color: "text-yellow-500" },
   { id: "map", icon: Map, label: "Mapa", color: "text-purple-500" },
   { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
+  { id: "shop", icon: ShoppingBag, label: "Tienda de Armas", color: "text-emerald-500" },
+  { id: "arsenal", icon: Backpack, label: "Arsenal / Loadout", color: "text-cyan-500" },
 ];
+
+const RARITY_COLORS: Record<string, string> = {
+  common: "text-muted-foreground",
+  rare: "text-blue-500",
+  epic: "text-purple-500",
+  legendary: "text-amber-500",
+};
+const RARITY_BG: Record<string, string> = {
+  common: "bg-muted/50",
+  rare: "bg-blue-500/10",
+  epic: "bg-purple-500/10",
+  legendary: "bg-amber-500/10",
+};
+const RARITY_LABELS: Record<string, string> = {
+  common: "Común",
+  rare: "Rara",
+  epic: "Épica",
+  legendary: "Legendaria",
+};
 
 const AdminClaimRow = ({ claim, gangName, badges, selectedBadge, onSelectBadge, onApprove, onReject, loading }: {
   claim: any; gangName: string; badges: any[]; selectedBadge: string | null;
