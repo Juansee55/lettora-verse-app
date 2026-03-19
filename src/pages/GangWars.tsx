@@ -926,6 +926,216 @@ const GangWarsPage = () => {
     );
   }
 
+  const handleClaimReward = async (gangId: string) => {
+    if (!userId) return;
+    setClaimLoading(true);
+    const { error } = await supabase
+      .from("gang_reward_claims" as any)
+      .insert({ gang_id: gangId, user_id: userId, status: "pending" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "🎖️ ¡Solicitud enviada!", description: "Un administrador revisará tu solicitud" });
+      loadData();
+    }
+    setClaimLoading(false);
+  };
+
+  const handleApproveClaim = async (claimId: string, badgeId: string | null) => {
+    if (!badgeId) {
+      toast({ title: "Selecciona una medalla", variant: "destructive" });
+      return;
+    }
+    setClaimLoading(true);
+    const { error } = await supabase
+      .from("gang_reward_claims" as any)
+      .update({ status: "approved", badge_id: badgeId, granted_by: userId })
+      .eq("id", claimId);
+    
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      // Also equip the badge to the user
+      const claim = gangRewardClaims.find((c: any) => c.id === claimId);
+      if (claim) {
+        await supabase.from("user_equipped_badges").insert({ 
+          user_id: claim.user_id, 
+          badge_id: badgeId 
+        });
+      }
+      toast({ title: "✅ Recompensa aprobada" });
+      loadData();
+    }
+    setClaimLoading(false);
+  };
+
+  const handleRejectClaim = async (claimId: string) => {
+    setClaimLoading(true);
+    const { error } = await supabase
+      .from("gang_reward_claims" as any)
+      .update({ status: "rejected" })
+      .eq("id", claimId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Solicitud rechazada" });
+      loadData();
+    }
+    setClaimLoading(false);
+  };
+
+  function renderRewards() {
+    const MILESTONE_HOURS = 2000;
+    const MAX_CLAIMS = 13;
+
+    return (
+      <div className="space-y-4">
+        {/* Milestone info */}
+        <div className="liquid-glass-strong rounded-2xl p-5 text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-500 mx-auto flex items-center justify-center shadow-lg">
+            <Award className="w-7 h-7 text-white" />
+          </div>
+          <h3 className="text-lg font-bold">Recompensa de Gang</h3>
+          <p className="text-sm text-muted-foreground">
+            Al alcanzar <span className="font-bold text-foreground">{MILESTONE_HOURS}h</span> de control total, 
+            <span className="font-bold text-foreground"> 13 miembros</span> conseguirán una medalla especial.
+          </p>
+        </div>
+
+        {/* Gangs progress */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Progreso de tus Gangs</h4>
+          
+          {myGangs.length === 0 ? (
+            <div className="text-center py-12">
+              <Shield className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground">Únete a una gang primero</p>
+            </div>
+          ) : (
+            myGangs.map(gang => {
+              const totalHours = Math.round((gangTotalHours[gang.id] || 0) * 100) / 100;
+              const reachedMilestone = totalHours >= MILESTONE_HOURS;
+              const progressPercent = Math.min(100, (totalHours / MILESTONE_HOURS) * 100);
+              const gangClaims = gangRewardClaims.filter((c: any) => c.gang_id === gang.id);
+              const myClaim = gangClaims.find((c: any) => c.user_id === userId);
+              const approvedClaims = gangClaims.filter((c: any) => c.status === "approved").length;
+              const canClaim = reachedMilestone && !myClaim && approvedClaims < MAX_CLAIMS;
+
+              return (
+                <div key={gang.id} className="liquid-glass rounded-2xl overflow-hidden">
+                  <div className="p-4 flex items-center gap-3">
+                    <Avatar className="w-12 h-12 ring-2 ring-amber-500/20">
+                      {gang.photo_url && <AvatarImage src={gang.photo_url} />}
+                      <AvatarFallback className="bg-amber-500/10 text-amber-600 font-bold text-lg">
+                        {gang.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[15px] truncate">{gang.name}</p>
+                      <p className="text-xs text-muted-foreground">{totalHours.toFixed(1)}h / {MILESTONE_HOURS}h</p>
+                    </div>
+                    {reachedMilestone && (
+                      <div className="px-2.5 py-1 bg-amber-500/20 rounded-full">
+                        <span className="text-[11px] font-bold text-amber-600">🏆 ¡Logrado!</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="px-4 pb-2">
+                    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Claim section */}
+                  {reachedMilestone && (
+                    <div className="border-t border-border/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground font-medium">
+                          <Gift className="w-3.5 h-3.5 inline mr-1" />
+                          Medallas reclamadas: {approvedClaims}/{MAX_CLAIMS}
+                        </span>
+                      </div>
+
+                      {myClaim ? (
+                        <div className={`rounded-xl px-3 py-2 text-center text-sm font-medium ${
+                          myClaim.status === "approved" 
+                            ? "bg-green-500/10 text-green-600" 
+                            : myClaim.status === "rejected"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-amber-500/10 text-amber-600"
+                        }`}>
+                          {myClaim.status === "approved" && "✅ Medalla recibida"}
+                          {myClaim.status === "pending" && "⏳ Solicitud pendiente"}
+                          {myClaim.status === "rejected" && "❌ Solicitud rechazada"}
+                        </div>
+                      ) : canClaim ? (
+                        <Button
+                          onClick={() => handleClaimReward(gang.id)}
+                          disabled={claimLoading}
+                          variant="ios"
+                          size="ios-md"
+                          className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:opacity-90"
+                        >
+                          {claimLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Award className="w-4 h-4 mr-1.5" /> Reclamar Medalla</>}
+                        </Button>
+                      ) : approvedClaims >= MAX_CLAIMS ? (
+                        <div className="rounded-xl px-3 py-2 text-center text-sm font-medium bg-muted text-muted-foreground">
+                          Ya se reclamaron las 13 medallas
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Admin panel: pending claims */}
+        {isAdmin && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+              Panel Admin — Solicitudes
+            </h4>
+            
+            {gangRewardClaims.filter((c: any) => c.status === "pending").length === 0 ? (
+              <div className="liquid-glass rounded-2xl p-6 text-center">
+                <Check className="w-10 h-10 text-muted-foreground/20 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No hay solicitudes pendientes</p>
+              </div>
+            ) : (
+              <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
+                {gangRewardClaims
+                  .filter((c: any) => c.status === "pending")
+                  .map((claim: any) => {
+                    const gang = allGangs.find(g => g.id === claim.gang_id);
+                    return (
+                      <AdminClaimRow
+                        key={claim.id}
+                        claim={claim}
+                        gangName={gang?.name || "Desconocida"}
+                        badges={rewardBadges}
+                        selectedBadge={selectedRewardBadge}
+                        onSelectBadge={setSelectedRewardBadge}
+                        onApprove={() => handleApproveClaim(claim.id, selectedRewardBadge)}
+                        onReject={() => handleRejectClaim(claim.id)}
+                        loading={claimLoading}
+                      />
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderDialogs() {
     return (
       <>
