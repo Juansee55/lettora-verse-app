@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Swords, Shield, Users, Trophy, Map, Plus, LogOut, Heart,
   ChevronRight, Camera, X, Crown, Clock, Target, Loader2,
-  Trash2, Award, Gift, Check, XCircle,
+  Trash2, Award, Gift, Check, XCircle, ShoppingBag, Backpack,
+  ArrowUp, Crosshair, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -58,7 +59,28 @@ const SECTION_ITEMS = [
   { id: "leaderboard", icon: Trophy, label: "Ranking", color: "text-yellow-500" },
   { id: "map", icon: Map, label: "Mapa", color: "text-purple-500" },
   { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
+  { id: "shop", icon: ShoppingBag, label: "Tienda de Armas", color: "text-emerald-500" },
+  { id: "arsenal", icon: Backpack, label: "Arsenal / Loadout", color: "text-cyan-500" },
 ];
+
+const RARITY_COLORS: Record<string, string> = {
+  common: "text-muted-foreground",
+  rare: "text-blue-500",
+  epic: "text-purple-500",
+  legendary: "text-amber-500",
+};
+const RARITY_BG: Record<string, string> = {
+  common: "bg-muted/50",
+  rare: "bg-blue-500/10",
+  epic: "bg-purple-500/10",
+  legendary: "bg-amber-500/10",
+};
+const RARITY_LABELS: Record<string, string> = {
+  common: "Común",
+  rare: "Rara",
+  epic: "Épica",
+  legendary: "Legendaria",
+};
 
 const AdminClaimRow = ({ claim, gangName, badges, selectedBadge, onSelectBadge, onApprove, onReject, loading }: {
   claim: any; gangName: string; badges: any[]; selectedBadge: string | null;
@@ -141,6 +163,22 @@ const GangWarsPage = () => {
   const [rewardBadges, setRewardBadges] = useState<any[]>([]);
   const [selectedRewardBadge, setSelectedRewardBadge] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState(false);
+  // Weapons
+  const [allWeapons, setAllWeapons] = useState<any[]>([]);
+  const [myWeapons, setMyWeapons] = useState<any[]>([]);
+  const [myLoadout, setMyLoadout] = useState<any[]>([]);
+  const [userCoins, setUserCoins] = useState(0);
+  // Admin weapon creation
+  const [showCreateWeapon, setShowCreateWeapon] = useState(false);
+  const [weaponName, setWeaponName] = useState("");
+  const [weaponDesc, setWeaponDesc] = useState("");
+  const [weaponDamage, setWeaponDamage] = useState("1");
+  const [weaponPrice, setWeaponPrice] = useState("50");
+  const [weaponRarity, setWeaponRarity] = useState("common");
+  const [weaponPhotoFile, setWeaponPhotoFile] = useState<File | null>(null);
+  const [weaponPhotoPreview, setWeaponPhotoPreview] = useState<string | null>(null);
+  const [creatingWeapon, setCreatingWeapon] = useState(false);
+  const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -239,6 +277,19 @@ const GangWarsPage = () => {
       hoursMap[h.gang_id] = (hoursMap[h.gang_id] || 0) + hours;
     });
     setGangTotalHours(hoursMap);
+
+    // Load weapons
+    const { data: weaponsData } = await supabase.from("weapons" as any).select("*").order("created_at", { ascending: false });
+    setAllWeapons(weaponsData as any[] || []);
+
+    const { data: myWeaponsData } = await supabase.from("user_weapons" as any).select("*").eq("user_id", user.id);
+    setMyWeapons(myWeaponsData as any[] || []);
+
+    const { data: loadoutData } = await supabase.from("weapon_loadout" as any).select("*").eq("user_id", user.id);
+    setMyLoadout(loadoutData as any[] || []);
+
+    const { data: coinsData } = await supabase.from("user_coins").select("balance").eq("user_id", user.id).single();
+    setUserCoins(coinsData?.balance || 0);
 
     setLoading(false);
   }, [navigate]);
@@ -388,13 +439,13 @@ const GangWarsPage = () => {
       if (!result.success) {
         toast({ title: "No se pudo atacar", description: result.message, variant: "destructive" });
       } else if (result.captured) {
-        toast({ title: "🏴 ¡Base capturada!", description: "La base ahora es tuya" });
+        toast({ title: "🏴 ¡Base capturada!", description: `Daño: ${result.damage || 1}` });
       } else if (result.defender_killed) {
-        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} no puede volver por 4 segundos. ¡Ataca la base!` });
+        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} fuera 4s. Daño: ${result.damage || 1}` });
       } else if (result.hit_base) {
-        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP restante: ${result.new_hp}/5` });
+        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP: ${result.new_hp}/5 · Daño: ${result.damage || 1}` });
       } else {
-        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP` });
+        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP · Daño: ${result.damage || 1}` });
       }
     }
     setActionLoading(false);
@@ -534,6 +585,8 @@ const GangWarsPage = () => {
               {activeSection === "leaderboard" && renderLeaderboard()}
               {activeSection === "map" && renderMap()}
               {activeSection === "rewards" && renderRewards()}
+              {activeSection === "shop" && renderShop()}
+              {activeSection === "arsenal" && renderArsenal()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1183,6 +1236,299 @@ const GangWarsPage = () => {
     );
   }
 
+  // ─── WEAPON HANDLERS ───
+  const handleWeaponPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Archivo muy grande", description: "Máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setWeaponPhotoFile(file);
+    setWeaponPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleCreateWeapon = async () => {
+    if (!weaponName.trim() || !userId) return;
+    setCreatingWeapon(true);
+    let imageUrl: string | null = null;
+    if (weaponPhotoFile) {
+      const ext = weaponPhotoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("weapon-images").upload(path, weaponPhotoFile);
+      if (upErr) { toast({ title: "Error subiendo imagen", variant: "destructive" }); setCreatingWeapon(false); return; }
+      const { data: urlData } = supabase.storage.from("weapon-images").getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+    const { error } = await supabase.from("weapons" as any).insert({
+      name: weaponName.trim(), description: weaponDesc.trim() || null,
+      image_url: imageUrl, base_damage: parseInt(weaponDamage) || 1,
+      price: parseInt(weaponPrice) || 50, rarity: weaponRarity, created_by: userId,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      toast({ title: "⚔️ Arma creada" });
+      setShowCreateWeapon(false);
+      setWeaponName(""); setWeaponDesc(""); setWeaponDamage("1"); setWeaponPrice("50");
+      setWeaponRarity("common"); setWeaponPhotoFile(null); setWeaponPhotoPreview(null);
+      loadData();
+    }
+    setCreatingWeapon(false);
+  };
+
+  const handleBuyWeapon = async (weaponId: string) => {
+    setWeaponActionLoading(true);
+    const { data, error } = await supabase.rpc("buy_weapon", { p_weapon_id: weaponId } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "No se pudo comprar", description: r.message, variant: "destructive" });
+      else { toast({ title: "🎉 ¡Arma comprada!" }); loadData(); }
+    }
+    setWeaponActionLoading(false);
+  };
+
+  const handleUpgradeWeapon = async (userWeaponId: string) => {
+    setWeaponActionLoading(true);
+    const { data, error } = await supabase.rpc("upgrade_weapon", { p_user_weapon_id: userWeaponId } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "No se pudo mejorar", description: r.message, variant: "destructive" });
+      else { toast({ title: `⬆️ ¡Nivel ${r.new_level}!`, description: `Costó ${r.cost} monedas` }); loadData(); }
+    }
+    setWeaponActionLoading(false);
+  };
+
+  const handleEquipWeapon = async (userWeaponId: string) => {
+    // Find next free slot
+    const usedSlots = myLoadout.map((l: any) => l.slot_number);
+    const freeSlot = [1, 2, 3, 4].find(s => !usedSlots.includes(s));
+    if (!freeSlot) { toast({ title: "Loadout lleno", description: "Máximo 4 armas. Desequipa una primero.", variant: "destructive" }); return; }
+    setWeaponActionLoading(true);
+    const { error } = await supabase.from("weapon_loadout" as any).insert({ user_id: userId, user_weapon_id: userWeaponId, slot_number: freeSlot });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else { toast({ title: "Arma equipada en slot " + freeSlot }); loadData(); }
+    setWeaponActionLoading(false);
+  };
+
+  const handleUnequipWeapon = async (loadoutId: string) => {
+    setWeaponActionLoading(true);
+    const { error } = await supabase.from("weapon_loadout" as any).delete().eq("id", loadoutId);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else { toast({ title: "Arma desequipada" }); loadData(); }
+    setWeaponActionLoading(false);
+  };
+
+  const handleDeleteWeapon = async (weaponId: string) => {
+    const { error } = await supabase.from("weapons" as any).delete().eq("id", weaponId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: "Arma eliminada" }); loadData(); }
+  };
+
+  // ─── RENDER SHOP ───
+  function renderShop() {
+    return (
+      <div className="space-y-4">
+        {/* Admin: create weapon */}
+        {isAdmin && (
+          <Button onClick={() => setShowCreateWeapon(true)} variant="ios" size="ios-lg" className="w-full">
+            <Plus className="w-5 h-5 mr-2" /> Crear Arma
+          </Button>
+        )}
+
+        {/* Coins display */}
+        <div className="liquid-glass rounded-2xl p-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">Tus monedas</span>
+          <span className="text-lg font-bold">🪙 {userCoins}</span>
+        </div>
+
+        {allWeapons.length === 0 ? (
+          <div className="text-center py-16">
+            <Swords className="w-14 h-14 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">No hay armas en la tienda</p>
+            {isAdmin && <p className="text-xs text-muted-foreground mt-1">Crea la primera arma</p>}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {allWeapons.map((weapon: any) => {
+              const owned = myWeapons.some((w: any) => w.weapon_id === weapon.id);
+              const canAfford = userCoins >= weapon.price;
+              return (
+                <div key={weapon.id} className={`liquid-glass rounded-2xl overflow-hidden ${RARITY_BG[weapon.rarity] || ""}`}>
+                  {weapon.image_url ? (
+                    <div className="h-28 bg-muted/30 flex items-center justify-center overflow-hidden relative">
+                      <img src={weapon.image_url} alt={weapon.name} className="w-full h-full object-cover" />
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteWeapon(weapon.id)} className="absolute top-2 left-2 w-5 h-5 bg-destructive/80 rounded-full flex items-center justify-center">
+                          <Trash2 className="w-2.5 h-2.5 text-white" />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-28 bg-muted/30 flex items-center justify-center relative">
+                      <Swords className="w-10 h-10 text-muted-foreground/30" />
+                      {isAdmin && (
+                        <button onClick={() => handleDeleteWeapon(weapon.id)} className="absolute top-2 left-2 w-5 h-5 bg-destructive/80 rounded-full flex items-center justify-center">
+                          <Trash2 className="w-2.5 h-2.5 text-white" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-3 space-y-1.5">
+                    <p className="text-sm font-bold truncate">{weapon.name}</p>
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <span className={`font-semibold ${RARITY_COLORS[weapon.rarity]}`}>{RARITY_LABELS[weapon.rarity]}</span>
+                      <span className="text-destructive font-bold flex items-center gap-0.5"><Zap className="w-3 h-3" />{weapon.base_damage}</span>
+                    </div>
+                    {weapon.description && <p className="text-[11px] text-muted-foreground line-clamp-2">{weapon.description}</p>}
+                    {owned ? (
+                      <div className="text-[11px] font-semibold text-green-600 text-center bg-green-500/10 rounded-lg py-1.5">✅ En tu arsenal</div>
+                    ) : (
+                      <Button
+                        size="ios-sm"
+                        variant="ios"
+                        className="w-full text-xs"
+                        disabled={!canAfford || weaponActionLoading}
+                        onClick={() => handleBuyWeapon(weapon.id)}
+                      >
+                        {weaponActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>🪙 {weapon.price}</>}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── RENDER ARSENAL / LOADOUT ───
+  function renderArsenal() {
+    const loadoutWeaponIds = myLoadout.map((l: any) => l.user_weapon_id);
+
+    // Calculate total loadout damage
+    const totalDamage = myLoadout.reduce((sum: number, l: any) => {
+      const uw = myWeapons.find((w: any) => w.id === l.user_weapon_id);
+      if (!uw) return sum;
+      const weapon = allWeapons.find((w: any) => w.id === uw.weapon_id);
+      if (!weapon) return sum;
+      return sum + weapon.base_damage + (uw.upgrade_level - 1);
+    }, 0);
+
+    return (
+      <div className="space-y-4">
+        {/* Loadout */}
+        <div className="liquid-glass-strong rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold flex items-center gap-2"><Crosshair className="w-4 h-4 text-primary" /> Loadout Activo</h3>
+            <span className="text-xs font-bold text-destructive"><Zap className="w-3 h-3 inline" /> Daño total: {totalDamage || 1}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map(slot => {
+              const loadoutItem = myLoadout.find((l: any) => l.slot_number === slot);
+              const uw = loadoutItem ? myWeapons.find((w: any) => w.id === loadoutItem.user_weapon_id) : null;
+              const weapon = uw ? allWeapons.find((w: any) => w.id === uw.weapon_id) : null;
+              return (
+                <div key={slot} className="liquid-glass rounded-xl aspect-square flex flex-col items-center justify-center p-1 relative">
+                  {weapon ? (
+                    <>
+                      {weapon.image_url ? (
+                        <img src={weapon.image_url} alt={weapon.name} className="w-full h-full object-cover rounded-lg absolute inset-0" />
+                      ) : (
+                        <Swords className="w-6 h-6 text-muted-foreground/50" />
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm px-1 py-0.5 rounded-b-xl">
+                        <p className="text-[9px] font-bold truncate text-center">{weapon.name}</p>
+                        <p className="text-[8px] text-destructive text-center font-bold">Nv{uw.upgrade_level} · {weapon.base_damage + (uw.upgrade_level - 1)}dmg</p>
+                      </div>
+                      <button
+                        onClick={() => handleUnequipWeapon(loadoutItem.id)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center"
+                      >
+                        <X className="w-2.5 h-2.5 text-white" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-muted-foreground/30 text-lg font-bold">{slot}</div>
+                      <p className="text-[8px] text-muted-foreground">Vacío</p>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Coins */}
+        <div className="liquid-glass rounded-2xl p-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">Tus monedas</span>
+          <span className="text-lg font-bold">🪙 {userCoins}</span>
+        </div>
+
+        {/* Inventory */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Tu Arsenal ({myWeapons.length} armas)</h4>
+          {myWeapons.length === 0 ? (
+            <div className="text-center py-12">
+              <Backpack className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground">No tienes armas</p>
+              <p className="text-xs text-muted-foreground mt-1">Compra en la tienda</p>
+            </div>
+          ) : (
+            <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
+              {myWeapons.map((uw: any) => {
+                const weapon = allWeapons.find((w: any) => w.id === uw.weapon_id);
+                if (!weapon) return null;
+                const isEquipped = loadoutWeaponIds.includes(uw.id);
+                const currentDamage = weapon.base_damage + (uw.upgrade_level - 1);
+                const upgradeCost = uw.upgrade_level * 30;
+                const canUpgrade = uw.upgrade_level < 10 && userCoins >= upgradeCost;
+
+                return (
+                  <div key={uw.id} className="flex items-center gap-3 p-3">
+                    <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center ${RARITY_BG[weapon.rarity]}`}>
+                      {weapon.image_url ? (
+                        <img src={weapon.image_url} alt={weapon.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Swords className="w-5 h-5 text-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{weapon.name}</p>
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className={`font-medium ${RARITY_COLORS[weapon.rarity]}`}>{RARITY_LABELS[weapon.rarity]}</span>
+                        <span className="text-destructive font-bold"><Zap className="w-3 h-3 inline" />{currentDamage}</span>
+                        <span className="text-muted-foreground">Nv.{uw.upgrade_level}/10</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      {!isEquipped ? (
+                        <Button size="ios-sm" variant="ios" className="text-[10px] h-7 px-2" onClick={() => handleEquipWeapon(uw.id)} disabled={weaponActionLoading}>
+                          <Crosshair className="w-3 h-3 mr-0.5" /> Equipar
+                        </Button>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-green-600 text-center">Equipada</span>
+                      )}
+                      {uw.upgrade_level < 10 && (
+                        <Button size="ios-sm" variant="ios-secondary" className="text-[10px] h-7 px-2" onClick={() => handleUpgradeWeapon(uw.id)} disabled={!canUpgrade || weaponActionLoading}>
+                          <ArrowUp className="w-3 h-3 mr-0.5" /> 🪙{upgradeCost}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function renderDialogs() {
     return (
       <>
@@ -1445,6 +1791,70 @@ const GangWarsPage = () => {
               {allGangs.filter(g => g.id !== showAllyPicker && !allies.some(a => a.gang_id === showAllyPicker && a.allied_gang_id === g.id)).length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">No hay gangs disponibles</p>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* CREATE WEAPON DIALOG (Admin) */}
+        <Dialog open={showCreateWeapon} onOpenChange={setShowCreateWeapon}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[340px] border-0">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Crear Arma</DialogTitle>
+              <DialogDescription className="text-[13px]">Añadir al catálogo de la tienda</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input placeholder="Nombre del arma" value={weaponName} onChange={e => setWeaponName(e.target.value)} maxLength={40} className="rounded-xl bg-muted/50 border-0 h-11" />
+              <Textarea placeholder="Descripción (opcional)" value={weaponDesc} onChange={e => setWeaponDesc(e.target.value)} maxLength={200} rows={2} className="rounded-xl bg-muted/50 border-0" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Daño base</label>
+                  <Input type="number" value={weaponDamage} onChange={e => setWeaponDamage(e.target.value)} min={1} max={10} className="rounded-xl bg-muted/50 border-0 h-10" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Precio (monedas)</label>
+                  <Input type="number" value={weaponPrice} onChange={e => setWeaponPrice(e.target.value)} min={1} className="rounded-xl bg-muted/50 border-0 h-10" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Rareza</label>
+                <div className="flex gap-1.5">
+                  {(["common", "rare", "epic", "legendary"] as const).map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setWeaponRarity(r)}
+                      className={`flex-1 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                        weaponRarity === r ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
+                      }`}
+                    >
+                      {RARITY_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-2 block">Imagen del arma</label>
+                <div className="flex items-center gap-3">
+                  {weaponPhotoPreview ? (
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-primary/20">
+                        <img src={weaponPhotoPreview} alt="preview" className="w-full h-full object-cover" />
+                      </div>
+                      <button onClick={() => { setWeaponPhotoFile(null); setWeaponPhotoPreview(null); }} className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-2xl bg-muted/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleWeaponPhotoSelect} />
+                    </label>
+                  )}
+                  <p className="text-[12px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                </div>
+              </div>
+              <Button onClick={handleCreateWeapon} disabled={!weaponName.trim() || creatingWeapon} variant="ios" size="ios-lg" className="w-full">
+                {creatingWeapon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Arma"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
