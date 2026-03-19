@@ -439,13 +439,13 @@ const GangWarsPage = () => {
       if (!result.success) {
         toast({ title: "No se pudo atacar", description: result.message, variant: "destructive" });
       } else if (result.captured) {
-        toast({ title: "🏴 ¡Base capturada!", description: "La base ahora es tuya" });
+        toast({ title: "🏴 ¡Base capturada!", description: `Daño: ${result.damage || 1}` });
       } else if (result.defender_killed) {
-        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} no puede volver por 4 segundos. ¡Ataca la base!` });
+        toast({ title: "💀 ¡Defensor eliminado!", description: `${result.defender_name} fuera 4s. Daño: ${result.damage || 1}` });
       } else if (result.hit_base) {
-        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP restante: ${result.new_hp}/5` });
+        toast({ title: "⚔️ ¡Golpe a la base!", description: `HP: ${result.new_hp}/5 · Daño: ${result.damage || 1}` });
       } else {
-        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP` });
+        toast({ title: "⚔️ ¡Golpe al defensor!", description: `${result.defender_name}: ${result.defender_hp}/5 HP · Daño: ${result.damage || 1}` });
       }
     }
     setActionLoading(false);
