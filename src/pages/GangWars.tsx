@@ -1529,7 +1529,7 @@ const GangWarsPage = () => {
     );
   }
 
-  function renderDialogs() {
+  const renderDialogs = () => {
     return (
       <>
         {/* BASE ACTION DIALOG */}
