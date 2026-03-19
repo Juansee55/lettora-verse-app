@@ -1236,8 +1236,8 @@ const GangWarsPage = () => {
     );
   }
 
-  // ─── WEAPON HANDLERS ───
-  const handleWeaponPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── WEAPON HANDLERS (hoisted) ───
+  function handleWeaponPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -1246,9 +1246,9 @@ const GangWarsPage = () => {
     }
     setWeaponPhotoFile(file);
     setWeaponPhotoPreview(URL.createObjectURL(file));
-  };
+  }
 
-  const handleCreateWeapon = async () => {
+  async function handleCreateWeapon() {
     if (!weaponName.trim() || !userId) return;
     setCreatingWeapon(true);
     let imageUrl: string | null = null;
@@ -1274,9 +1274,9 @@ const GangWarsPage = () => {
       loadData();
     }
     setCreatingWeapon(false);
-  };
+  }
 
-  const handleBuyWeapon = async (weaponId: string) => {
+  async function handleBuyWeapon(weaponId: string) {
     setWeaponActionLoading(true);
     const { data, error } = await supabase.rpc("buy_weapon", { p_weapon_id: weaponId } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
@@ -1286,9 +1286,9 @@ const GangWarsPage = () => {
       else { toast({ title: "🎉 ¡Arma comprada!" }); loadData(); }
     }
     setWeaponActionLoading(false);
-  };
+  }
 
-  const handleUpgradeWeapon = async (userWeaponId: string) => {
+  async function handleUpgradeWeapon(userWeaponId: string) {
     setWeaponActionLoading(true);
     const { data, error } = await supabase.rpc("upgrade_weapon", { p_user_weapon_id: userWeaponId } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
@@ -1298,10 +1298,9 @@ const GangWarsPage = () => {
       else { toast({ title: `⬆️ ¡Nivel ${r.new_level}!`, description: `Costó ${r.cost} monedas` }); loadData(); }
     }
     setWeaponActionLoading(false);
-  };
+  }
 
-  const handleEquipWeapon = async (userWeaponId: string) => {
-    // Find next free slot
+  async function handleEquipWeapon(userWeaponId: string) {
     const usedSlots = myLoadout.map((l: any) => l.slot_number);
     const freeSlot = [1, 2, 3, 4].find(s => !usedSlots.includes(s));
     if (!freeSlot) { toast({ title: "Loadout lleno", description: "Máximo 4 armas. Desequipa una primero.", variant: "destructive" }); return; }
@@ -1310,21 +1309,21 @@ const GangWarsPage = () => {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else { toast({ title: "Arma equipada en slot " + freeSlot }); loadData(); }
     setWeaponActionLoading(false);
-  };
+  }
 
-  const handleUnequipWeapon = async (loadoutId: string) => {
+  async function handleUnequipWeapon(loadoutId: string) {
     setWeaponActionLoading(true);
     const { error } = await supabase.from("weapon_loadout" as any).delete().eq("id", loadoutId);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
     else { toast({ title: "Arma desequipada" }); loadData(); }
     setWeaponActionLoading(false);
-  };
+  }
 
-  const handleDeleteWeapon = async (weaponId: string) => {
+  async function handleDeleteWeapon(weaponId: string) {
     const { error } = await supabase.from("weapons" as any).delete().eq("id", weaponId);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else { toast({ title: "Arma eliminada" }); loadData(); }
-  };
+  }
 
   // ─── RENDER SHOP ───
   function renderShop() {
