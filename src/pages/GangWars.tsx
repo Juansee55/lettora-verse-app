@@ -278,6 +278,19 @@ const GangWarsPage = () => {
     });
     setGangTotalHours(hoursMap);
 
+    // Load weapons
+    const { data: weaponsData } = await supabase.from("weapons" as any).select("*").order("created_at", { ascending: false });
+    setAllWeapons(weaponsData as any[] || []);
+
+    const { data: myWeaponsData } = await supabase.from("user_weapons" as any).select("*").eq("user_id", user.id);
+    setMyWeapons(myWeaponsData as any[] || []);
+
+    const { data: loadoutData } = await supabase.from("weapon_loadout" as any).select("*").eq("user_id", user.id);
+    setMyLoadout(loadoutData as any[] || []);
+
+    const { data: coinsData } = await supabase.from("user_coins").select("balance").eq("user_id", user.id).single();
+    setUserCoins(coinsData?.balance || 0);
+
     setLoading(false);
   }, [navigate]);
 
