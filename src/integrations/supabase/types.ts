@@ -363,6 +363,45 @@ export type Database = {
           },
         ]
       }
+      bot_attack_log: {
+        Row: {
+          attacked_at: string
+          base_id: string
+          bot_id: string
+          damage_dealt: number
+          id: string
+        }
+        Insert: {
+          attacked_at?: string
+          base_id: string
+          bot_id: string
+          damage_dealt?: number
+          id?: string
+        }
+        Update: {
+          attacked_at?: string
+          base_id?: string
+          bot_id?: string
+          damage_dealt?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_attack_log_base_id_fkey"
+            columns: ["base_id"]
+            isOneToOne: false
+            referencedRelation: "territory_bases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_attack_log_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "user_bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapter_likes: {
         Row: {
           chapter_id: string
@@ -873,6 +912,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fort_events: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          started_at: string
+          status: string
+          top_gangs: Json | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          top_gangs?: Json | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          top_gangs?: Json | null
+        }
+        Relationships: []
       }
       gang_allies: {
         Row: {
@@ -1938,6 +2004,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bots: {
+        Row: {
+          bot_name: string
+          gang_id: string
+          id: string
+          is_active: boolean
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          bot_name?: string
+          gang_id: string
+          id?: string
+          is_active?: boolean
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          bot_name?: string
+          gang_id?: string
+          id?: string
+          is_active?: boolean
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bots_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_coins: {
         Row: {
           balance: number
@@ -2220,6 +2321,14 @@ export type Database = {
       award_xp: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
+      }
+      bot_auto_attack: {
+        Args: { p_base_id: string; p_bot_id: string; p_gang_id: string }
+        Returns: Json
+      }
+      buy_bot: {
+        Args: { p_bot_name?: string; p_gang_id: string }
+        Returns: Json
       }
       buy_weapon: { Args: { p_weapon_id: string }; Returns: Json }
       calculate_level: { Args: { p_xp: number }; Returns: number }
