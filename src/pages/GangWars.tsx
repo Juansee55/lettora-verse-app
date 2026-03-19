@@ -585,6 +585,8 @@ const GangWarsPage = () => {
               {activeSection === "leaderboard" && renderLeaderboard()}
               {activeSection === "map" && renderMap()}
               {activeSection === "rewards" && renderRewards()}
+              {activeSection === "shop" && renderShop()}
+              {activeSection === "arsenal" && renderArsenal()}
             </motion.div>
           </AnimatePresence>
         </div>
