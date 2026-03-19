@@ -5,7 +5,7 @@ import {
   Swords, Shield, Users, Trophy, Map, Plus, LogOut, Heart,
   ChevronRight, Camera, X, Crown, Clock, Target, Loader2,
   Trash2, Award, Gift, Check, XCircle, ShoppingBag, Backpack,
-  ArrowUp, Crosshair, Zap,
+  ArrowUp, Crosshair, Zap, Bot, Castle, Timer,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +61,8 @@ const SECTION_ITEMS = [
   { id: "rewards", icon: Award, label: "Recompensa de Gang", color: "text-amber-500" },
   { id: "shop", icon: ShoppingBag, label: "Tienda de Armas", color: "text-emerald-500" },
   { id: "arsenal", icon: Backpack, label: "Arsenal / Loadout", color: "text-cyan-500" },
+  { id: "bots", icon: Bot, label: "Bots", color: "text-indigo-500" },
+  { id: "fort", icon: Castle, label: "Fort", color: "text-rose-500" },
 ];
 
 const RARITY_COLORS: Record<string, string> = {
@@ -178,6 +180,15 @@ const GangWarsPage = () => {
   const [weaponPhotoFile, setWeaponPhotoFile] = useState<File | null>(null);
   const [weaponPhotoPreview, setWeaponPhotoPreview] = useState<string | null>(null);
   const [creatingWeapon, setCreatingWeapon] = useState(false);
+  // Bots
+  const [myBots, setMyBots] = useState<any[]>([]);
+  const [botLoading, setBotLoading] = useState(false);
+  const [botName, setBotName] = useState("Bot");
+  const [selectedBotGang, setSelectedBotGang] = useState<string | null>(null);
+  // Fort
+  const [fortEvents, setFortEvents] = useState<any[]>([]);
+  const [activeFort, setActiveFort] = useState<any>(null);
+
   const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -290,6 +301,16 @@ const GangWarsPage = () => {
 
     const { data: coinsData } = await supabase.from("user_coins").select("balance").eq("user_id", user.id).single();
     setUserCoins(coinsData?.balance || 0);
+
+    // Load bots
+    const { data: botsData } = await supabase.from("user_bots" as any).select("*").eq("user_id", user.id);
+    setMyBots(botsData as any[] || []);
+
+    // Load fort events (last 10)
+    const { data: fortData } = await supabase.from("fort_events" as any).select("*").order("created_at", { ascending: false }).limit(10);
+    setFortEvents(fortData as any[] || []);
+    const active = (fortData as any[] || []).find((f: any) => f.status === "active");
+    setActiveFort(active || null);
 
     setLoading(false);
   }, [navigate]);
@@ -587,6 +608,8 @@ const GangWarsPage = () => {
               {activeSection === "rewards" && renderRewards()}
               {activeSection === "shop" && renderShop()}
               {activeSection === "arsenal" && renderArsenal()}
+              {activeSection === "bots" && renderBots()}
+              {activeSection === "fort" && renderFort()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1522,6 +1545,286 @@ const GangWarsPage = () => {
                 );
               })}
             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── BOT HANDLERS (hoisted) ───
+  async function handleBuyBot() {
+    const gangId = selectedBotGang || (myGangIds.length > 0 ? myGangIds[0] : null);
+    if (!gangId) { toast({ title: "Selecciona una gang", variant: "destructive" }); return; }
+    setBotLoading(true);
+    const { data, error } = await supabase.rpc("buy_bot", { p_gang_id: gangId, p_bot_name: botName.trim() || "Bot" } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "No se pudo comprar", description: r.message, variant: "destructive" });
+      else { toast({ title: "🤖 ¡Bot comprado!" }); setBotName("Bot"); loadData(); }
+    }
+    setBotLoading(false);
+  }
+
+  async function handleDeleteBot(botId: string) {
+    const { error } = await supabase.from("user_bots" as any).delete().eq("id", botId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: "Bot eliminado" }); loadData(); }
+  }
+
+  async function handleToggleBot(botId: string, isActive: boolean) {
+    const { error } = await supabase.from("user_bots" as any).update({ is_active: !isActive }).eq("id", botId);
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else { toast({ title: isActive ? "Bot desactivado" : "Bot activado" }); loadData(); }
+  }
+
+  async function handleTriggerBotAttacks() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "bot_attacks" },
+      });
+      if (error) throw error;
+      toast({ title: "⚔️ Bots atacaron", description: `${data?.attacks || 0} ataques realizados` });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleCheckFort() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "check_fort" },
+      });
+      if (error) throw error;
+      toast({ title: "🏰 Fort", description: data?.message || "Procesado" });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  // ─── RENDER BOTS ───
+  function renderBots() {
+    const activeBots = myBots.filter((b: any) => b.is_active);
+    return (
+      <div className="space-y-4">
+        {/* Buy bot section */}
+        <div className="liquid-glass-strong rounded-2xl p-5 text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 mx-auto flex items-center justify-center shadow-lg">
+            <Bot className="w-7 h-7 text-white" />
+          </div>
+          <h3 className="text-lg font-bold">Bots de Combate</h3>
+          <p className="text-sm text-muted-foreground">
+            Compra bots por <span className="font-bold text-foreground">🪙 50</span> cada uno. 
+            Atacan bases enemigas automáticamente. Máximo 10.
+          </p>
+        </div>
+
+        {/* Coins */}
+        <div className="liquid-glass rounded-2xl p-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">Tus monedas</span>
+          <span className="text-lg font-bold">🪙 {userCoins}</span>
+        </div>
+
+        {/* Buy form */}
+        {myBots.length < 10 && myGangIds.length > 0 && (
+          <div className="liquid-glass rounded-2xl p-4 space-y-3">
+            <h4 className="text-sm font-bold">Comprar Bot</h4>
+            <Input
+              placeholder="Nombre del bot"
+              value={botName}
+              onChange={e => setBotName(e.target.value)}
+              maxLength={20}
+              className="rounded-xl bg-muted/50 border-0 h-11"
+            />
+            {myGangs.length > 1 && (
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Gang del bot</label>
+                <div className="flex gap-1.5 overflow-x-auto">
+                  {myGangs.map(g => (
+                    <button
+                      key={g.id}
+                      onClick={() => setSelectedBotGang(g.id)}
+                      className={`shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        (selectedBotGang || myGangIds[0]) === g.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground"
+                      }`}
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <Button onClick={handleBuyBot} disabled={botLoading || userCoins < 50} variant="ios" size="ios-lg" className="w-full">
+              {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🤖 Comprar Bot · 🪙 50</>}
+            </Button>
+          </div>
+        )}
+
+        {myBots.length >= 10 && (
+          <div className="liquid-glass rounded-2xl p-3 text-center text-sm text-muted-foreground">
+            Máximo de 10 bots alcanzado
+          </div>
+        )}
+
+        {/* Bot trigger (admin) */}
+        {isAdmin && (
+          <Button onClick={handleTriggerBotAttacks} disabled={botLoading} variant="ios" size="ios-lg" className="w-full">
+            {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>⚡ Ejecutar Ataques de Bots (Admin)</>}
+          </Button>
+        )}
+
+        {/* My bots */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            Tus Bots ({myBots.length}/10) · {activeBots.length} activos
+          </h4>
+          {myBots.length === 0 ? (
+            <div className="text-center py-12">
+              <Bot className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground">No tienes bots</p>
+            </div>
+          ) : (
+            <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
+              {myBots.map((bot: any) => {
+                const gang = allGangs.find(g => g.id === bot.gang_id);
+                return (
+                  <div key={bot.id} className="flex items-center gap-3 p-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bot.is_active ? "bg-indigo-500/20" : "bg-muted/50"}`}>
+                      <Bot className={`w-5 h-5 ${bot.is_active ? "text-indigo-500" : "text-muted-foreground"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{bot.bot_name}</p>
+                      <p className="text-[11px] text-muted-foreground">{gang?.name || "Sin gang"} · {bot.is_active ? "🟢 Activo" : "🔴 Inactivo"}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="ios-sm" variant="ios-secondary" className="text-[10px] h-7 px-2" onClick={() => handleToggleBot(bot.id, bot.is_active)}>
+                        {bot.is_active ? "Pausar" : "Activar"}
+                      </Button>
+                      <button onClick={() => handleDeleteBot(bot.id)} className="w-7 h-7 bg-destructive/10 rounded-lg flex items-center justify-center">
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── RENDER FORT ───
+  function renderFort() {
+    const recentForts = fortEvents.filter((f: any) => f.status === "ended").slice(0, 5);
+
+    return (
+      <div className="space-y-4">
+        {/* Fort info */}
+        <div className="liquid-glass-strong rounded-2xl p-5 text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-500 mx-auto flex items-center justify-center shadow-lg">
+            <Castle className="w-7 h-7 text-white" />
+          </div>
+          <h3 className="text-lg font-bold">Fort</h3>
+          <p className="text-sm text-muted-foreground">
+            Cada <span className="font-bold text-foreground">2 horas</span> se activa un evento de 30 minutos. 
+            Las 3 gangs con más tiempo de control durante el Fort ganan reconocimiento.
+          </p>
+        </div>
+
+        {/* Active Fort */}
+        {activeFort ? (
+          <div className="liquid-glass-strong rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-rose-500/20 to-pink-500/20 p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-500/30 flex items-center justify-center animate-pulse">
+                <Castle className="w-5 h-5 text-rose-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-[15px]">🏰 Fort Activo</p>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Timer className="w-3 h-3" />
+                  Iniciado: {new Date(activeFort.started_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-rose-500">
+                  {Math.max(0, 30 - Math.round((Date.now() - new Date(activeFort.started_at).getTime()) / (1000 * 60)))}
+                </p>
+                <p className="text-[10px] text-muted-foreground">min restantes</p>
+              </div>
+            </div>
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              ¡Controla bases para ganar! Las 3 mejores gangs serán premiadas.
+            </div>
+          </div>
+        ) : (
+          <div className="liquid-glass rounded-2xl p-4 text-center space-y-2">
+            <Castle className="w-10 h-10 text-muted-foreground/20 mx-auto" />
+            <p className="text-sm text-muted-foreground">No hay Fort activo</p>
+            <p className="text-[11px] text-muted-foreground">Se activa automáticamente cada 2 horas</p>
+          </div>
+        )}
+
+        {/* Admin trigger */}
+        {isAdmin && (
+          <Button onClick={handleCheckFort} disabled={botLoading} variant="ios" size="ios-lg" className="w-full">
+            {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🏰 Verificar / Crear Fort (Admin)</>}
+          </Button>
+        )}
+
+        {/* Recent Fort results */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Resultados Recientes</h4>
+          {recentForts.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground">Sin resultados aún</p>
+            </div>
+          ) : (
+            recentForts.map((fort: any) => {
+              const topGangs = fort.top_gangs || [];
+              return (
+                <div key={fort.id} className="liquid-glass rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {new Date(fort.started_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {new Date(fort.started_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-muted-foreground">Finalizado</span>
+                  </div>
+                  {topGangs.length > 0 ? (
+                    <div className="divide-y divide-border/50">
+                      {topGangs.map((tg: any) => (
+                        <div key={tg.gang_id} className="flex items-center gap-3 px-4 py-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                            tg.rank === 1 ? "bg-yellow-500/20 text-yellow-600" : tg.rank === 2 ? "bg-muted text-muted-foreground" : "bg-orange-500/15 text-orange-600"
+                          }`}>
+                            {tg.rank === 1 ? "🥇" : tg.rank === 2 ? "🥈" : "🥉"}
+                          </div>
+                          <Avatar className="w-9 h-9">
+                            {tg.gang_photo && <AvatarImage src={tg.gang_photo} />}
+                            <AvatarFallback className="bg-muted text-xs">{(tg.gang_name || "?")[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{tg.gang_name}</p>
+                          </div>
+                          <span className="text-xs font-bold text-rose-500">{tg.control_minutes}min</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Sin datos</div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
