@@ -302,6 +302,16 @@ const GangWarsPage = () => {
     const { data: coinsData } = await supabase.from("user_coins").select("balance").eq("user_id", user.id).single();
     setUserCoins(coinsData?.balance || 0);
 
+    // Load bots
+    const { data: botsData } = await supabase.from("user_bots" as any).select("*").eq("user_id", user.id);
+    setMyBots(botsData as any[] || []);
+
+    // Load fort events (last 10)
+    const { data: fortData } = await supabase.from("fort_events" as any).select("*").order("created_at", { ascending: false }).limit(10);
+    setFortEvents(fortData as any[] || []);
+    const active = (fortData as any[] || []).find((f: any) => f.status === "active");
+    setActiveFort(active || null);
+
     setLoading(false);
   }, [navigate]);
 
