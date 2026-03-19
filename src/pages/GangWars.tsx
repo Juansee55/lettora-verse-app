@@ -180,6 +180,15 @@ const GangWarsPage = () => {
   const [weaponPhotoFile, setWeaponPhotoFile] = useState<File | null>(null);
   const [weaponPhotoPreview, setWeaponPhotoPreview] = useState<string | null>(null);
   const [creatingWeapon, setCreatingWeapon] = useState(false);
+  // Bots
+  const [myBots, setMyBots] = useState<any[]>([]);
+  const [botLoading, setBotLoading] = useState(false);
+  const [botName, setBotName] = useState("Bot");
+  const [selectedBotGang, setSelectedBotGang] = useState<string | null>(null);
+  // Fort
+  const [fortEvents, setFortEvents] = useState<any[]>([]);
+  const [activeFort, setActiveFort] = useState<any>(null);
+
   const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
