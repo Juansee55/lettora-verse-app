@@ -88,6 +88,12 @@ const GangWarsPage = () => {
   const [showCreateBase, setShowCreateBase] = useState(false);
   const [newBaseName, setNewBaseName] = useState("");
   const [creatingBase, setCreatingBase] = useState(false);
+  // Rewards
+  const [gangRewardClaims, setGangRewardClaims] = useState<any[]>([]);
+  const [gangTotalHours, setGangTotalHours] = useState<Record<string, number>>({});
+  const [rewardBadges, setRewardBadges] = useState<any[]>([]);
+  const [selectedRewardBadge, setSelectedRewardBadge] = useState<string | null>(null);
+  const [claimLoading, setClaimLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
