@@ -1831,7 +1831,7 @@ const GangWarsPage = () => {
     );
   }
 
-
+  function renderDialogs() {
     return (
       <>
         {/* BASE ACTION DIALOG */}
