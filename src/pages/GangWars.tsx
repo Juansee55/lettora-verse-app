@@ -163,6 +163,22 @@ const GangWarsPage = () => {
   const [rewardBadges, setRewardBadges] = useState<any[]>([]);
   const [selectedRewardBadge, setSelectedRewardBadge] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState(false);
+  // Weapons
+  const [allWeapons, setAllWeapons] = useState<any[]>([]);
+  const [myWeapons, setMyWeapons] = useState<any[]>([]);
+  const [myLoadout, setMyLoadout] = useState<any[]>([]);
+  const [userCoins, setUserCoins] = useState(0);
+  // Admin weapon creation
+  const [showCreateWeapon, setShowCreateWeapon] = useState(false);
+  const [weaponName, setWeaponName] = useState("");
+  const [weaponDesc, setWeaponDesc] = useState("");
+  const [weaponDamage, setWeaponDamage] = useState("1");
+  const [weaponPrice, setWeaponPrice] = useState("50");
+  const [weaponRarity, setWeaponRarity] = useState("common");
+  const [weaponPhotoFile, setWeaponPhotoFile] = useState<File | null>(null);
+  const [weaponPhotoPreview, setWeaponPhotoPreview] = useState<string | null>(null);
+  const [creatingWeapon, setCreatingWeapon] = useState(false);
+  const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
