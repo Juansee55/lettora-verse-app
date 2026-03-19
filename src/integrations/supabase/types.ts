@@ -2071,6 +2071,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_weapons: {
+        Row: {
+          id: string
+          purchased_at: string
+          upgrade_level: number
+          user_id: string
+          weapon_id: string
+        }
+        Insert: {
+          id?: string
+          purchased_at?: string
+          upgrade_level?: number
+          user_id: string
+          weapon_id: string
+        }
+        Update: {
+          id?: string
+          purchased_at?: string
+          upgrade_level?: number
+          user_id?: string
+          weapon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weapons_weapon_id_fkey"
+            columns: ["weapon_id"]
+            isOneToOne: false
+            referencedRelation: "weapons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       valentine_quest_completions: {
         Row: {
           completed_at: string
@@ -2100,6 +2132,74 @@ export type Database = {
           },
         ]
       }
+      weapon_loadout: {
+        Row: {
+          equipped_at: string
+          id: string
+          slot_number: number
+          user_id: string
+          user_weapon_id: string
+        }
+        Insert: {
+          equipped_at?: string
+          id?: string
+          slot_number: number
+          user_id: string
+          user_weapon_id: string
+        }
+        Update: {
+          equipped_at?: string
+          id?: string
+          slot_number?: number
+          user_id?: string
+          user_weapon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weapon_loadout_user_weapon_id_fkey"
+            columns: ["user_weapon_id"]
+            isOneToOne: false
+            referencedRelation: "user_weapons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weapons: {
+        Row: {
+          base_damage: number
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          rarity: string
+        }
+        Insert: {
+          base_damage?: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price?: number
+          rarity?: string
+        }
+        Update: {
+          base_damage?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          rarity?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -2121,6 +2221,7 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
+      buy_weapon: { Args: { p_weapon_id: string }; Returns: Json }
       calculate_level: { Args: { p_xp: number }; Returns: number }
       enter_base: { Args: { p_base_id: string }; Returns: Json }
       has_role: {
@@ -2140,6 +2241,7 @@ export type Database = {
         Args: { p_item_id: string; p_user_id: string }
         Returns: boolean
       }
+      upgrade_weapon: { Args: { p_user_weapon_id: string }; Returns: Json }
       upsert_hashtags: {
         Args: {
           p_content_id: string
