@@ -1794,6 +1794,70 @@ const GangWarsPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* CREATE WEAPON DIALOG (Admin) */}
+        <Dialog open={showCreateWeapon} onOpenChange={setShowCreateWeapon}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[340px] border-0">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Crear Arma</DialogTitle>
+              <DialogDescription className="text-[13px]">Añadir al catálogo de la tienda</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input placeholder="Nombre del arma" value={weaponName} onChange={e => setWeaponName(e.target.value)} maxLength={40} className="rounded-xl bg-muted/50 border-0 h-11" />
+              <Textarea placeholder="Descripción (opcional)" value={weaponDesc} onChange={e => setWeaponDesc(e.target.value)} maxLength={200} rows={2} className="rounded-xl bg-muted/50 border-0" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Daño base</label>
+                  <Input type="number" value={weaponDamage} onChange={e => setWeaponDamage(e.target.value)} min={1} max={10} className="rounded-xl bg-muted/50 border-0 h-10" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Precio (monedas)</label>
+                  <Input type="number" value={weaponPrice} onChange={e => setWeaponPrice(e.target.value)} min={1} className="rounded-xl bg-muted/50 border-0 h-10" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Rareza</label>
+                <div className="flex gap-1.5">
+                  {(["common", "rare", "epic", "legendary"] as const).map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setWeaponRarity(r)}
+                      className={`flex-1 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                        weaponRarity === r ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
+                      }`}
+                    >
+                      {RARITY_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground mb-2 block">Imagen del arma</label>
+                <div className="flex items-center gap-3">
+                  {weaponPhotoPreview ? (
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-primary/20">
+                        <img src={weaponPhotoPreview} alt="preview" className="w-full h-full object-cover" />
+                      </div>
+                      <button onClick={() => { setWeaponPhotoFile(null); setWeaponPhotoPreview(null); }} className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-2xl bg-muted/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleWeaponPhotoSelect} />
+                    </label>
+                  )}
+                  <p className="text-[12px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                </div>
+              </div>
+              <Button onClick={handleCreateWeapon} disabled={!weaponName.trim() || creatingWeapon} variant="ios" size="ios-lg" className="w-full">
+                {creatingWeapon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Arma"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </>
     );
   }
