@@ -823,15 +823,41 @@ const GangWarsPage = () => {
         </Button>
 
         <div className="space-y-3">
+          {/* NPC Gangs */}
+          {allGangs.filter(g => (g as any).is_npc).length > 0 && (
+            <>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">🤖 Gangs NPC (IA)</h3>
+              <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
+                {allGangs.filter(g => (g as any).is_npc).map(gang => (
+                  <div key={gang.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <Avatar className="w-11 h-11">
+                      {gang.photo_url && <AvatarImage src={gang.photo_url} />}
+                      <AvatarFallback className="bg-indigo-500/10 text-indigo-500 font-bold">
+                        <Bot className="w-5 h-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-[15px] truncate">{gang.name}</p>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-indigo-500/15 text-indigo-500 rounded-full font-bold">NPC</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{gang.member_count}/25 · Controlada por IA</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Gangs disponibles</h3>
-          {allGangs.filter(g => !myGangIds.includes(g.id)).length === 0 ? (
+          {allGangs.filter(g => !myGangIds.includes(g.id) && !(g as any).is_npc).length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
               <p className="text-muted-foreground">No hay gangs disponibles</p>
             </div>
           ) : (
             <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
-              {allGangs.filter(g => !myGangIds.includes(g.id)).map(gang => (
+              {allGangs.filter(g => !myGangIds.includes(g.id) && !(g as any).is_npc).map(gang => (
                 <div key={gang.id} className="flex items-center gap-3 px-4 py-3.5">
                   <Avatar className="w-11 h-11">
                     {gang.photo_url && <AvatarImage src={gang.photo_url} />}
