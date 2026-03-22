@@ -980,6 +980,7 @@ export type Database = {
         Row: {
           gang_id: string
           id: string
+          is_bot: boolean
           is_leader: boolean
           joined_at: string
           user_id: string
@@ -987,6 +988,7 @@ export type Database = {
         Insert: {
           gang_id: string
           id?: string
+          is_bot?: boolean
           is_leader?: boolean
           joined_at?: string
           user_id: string
@@ -994,6 +996,7 @@ export type Database = {
         Update: {
           gang_id?: string
           id?: string
+          is_bot?: boolean
           is_leader?: boolean
           joined_at?: string
           user_id?: string
@@ -1059,6 +1062,7 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          is_npc: boolean
           name: string
           photo_url: string | null
         }
@@ -1067,6 +1071,7 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          is_npc?: boolean
           name: string
           photo_url?: string | null
         }
@@ -1075,6 +1080,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          is_npc?: boolean
           name?: string
           photo_url?: string | null
         }
@@ -2306,6 +2312,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_helper_bot: {
+        Args: { p_bot_name?: string; p_gang_id: string }
+        Returns: Json
+      }
       admin_update_book_stats: {
         Args: {
           p_book_id: string
