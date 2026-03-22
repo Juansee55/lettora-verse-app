@@ -823,15 +823,41 @@ const GangWarsPage = () => {
         </Button>
 
         <div className="space-y-3">
+          {/* NPC Gangs */}
+          {allGangs.filter(g => (g as any).is_npc).length > 0 && (
+            <>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">🤖 Gangs NPC (IA)</h3>
+              <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
+                {allGangs.filter(g => (g as any).is_npc).map(gang => (
+                  <div key={gang.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <Avatar className="w-11 h-11">
+                      {gang.photo_url && <AvatarImage src={gang.photo_url} />}
+                      <AvatarFallback className="bg-indigo-500/10 text-indigo-500 font-bold">
+                        <Bot className="w-5 h-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-[15px] truncate">{gang.name}</p>
+                        <span className="text-[9px] px-1.5 py-0.5 bg-indigo-500/15 text-indigo-500 rounded-full font-bold">NPC</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{gang.member_count}/25 · Controlada por IA</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Gangs disponibles</h3>
-          {allGangs.filter(g => !myGangIds.includes(g.id)).length === 0 ? (
+          {allGangs.filter(g => !myGangIds.includes(g.id) && !(g as any).is_npc).length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
               <p className="text-muted-foreground">No hay gangs disponibles</p>
             </div>
           ) : (
             <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
-              {allGangs.filter(g => !myGangIds.includes(g.id)).map(gang => (
+              {allGangs.filter(g => !myGangIds.includes(g.id) && !(g as any).is_npc).map(gang => (
                 <div key={gang.id} className="flex items-center gap-3 px-4 py-3.5">
                   <Avatar className="w-11 h-11">
                     {gang.photo_url && <AvatarImage src={gang.photo_url} />}
@@ -1566,6 +1592,20 @@ const GangWarsPage = () => {
     setBotLoading(false);
   }
 
+  async function handleAddHelperBot() {
+    const gangId = selectedBotGang || (myGangIds.length > 0 ? myGangIds[0] : null);
+    if (!gangId) { toast({ title: "Selecciona una gang", variant: "destructive" }); return; }
+    setBotLoading(true);
+    const { data, error } = await supabase.rpc("add_helper_bot", { p_gang_id: gangId, p_bot_name: botName.trim() || "Bot Helper" } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "No se pudo añadir", description: r.message, variant: "destructive" });
+      else { toast({ title: "🤖 ¡Bot añadido a tu gang!" }); setBotName("Bot"); loadData(); }
+    }
+    setBotLoading(false);
+  }
+
   async function handleDeleteBot(botId: string) {
     const { error } = await supabase.from("user_bots" as any).delete().eq("id", botId);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -1593,6 +1633,51 @@ const GangWarsPage = () => {
     setBotLoading(false);
   }
 
+  async function handleCreateNpcGangs() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "create_npc_gangs" },
+      });
+      if (error) throw error;
+      toast({ title: "🤖 Gangs NPC", description: data?.message || "Procesado" });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleNpcAttacks() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "npc_attacks" },
+      });
+      if (error) throw error;
+      toast({ title: "🤖 NPCs atacaron", description: `${data?.attacks || 0} ataques` });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleFullCycle() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "full_cycle" },
+      });
+      if (error) throw error;
+      toast({ title: "⚡ Ciclo completo", description: "Gangs NPC + ataques + Fort procesados" });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
   async function handleCheckFort() {
     setBotLoading(true);
     try {
@@ -1611,6 +1696,7 @@ const GangWarsPage = () => {
   // ─── RENDER BOTS ───
   function renderBots() {
     const activeBots = myBots.filter((b: any) => b.is_active);
+    const npcGangs = allGangs.filter((g: any) => (g as any).is_npc);
     return (
       <div className="space-y-4">
         {/* Buy bot section */}
@@ -1620,8 +1706,8 @@ const GangWarsPage = () => {
           </div>
           <h3 className="text-lg font-bold">Bots de Combate</h3>
           <p className="text-sm text-muted-foreground">
-            Compra bots por <span className="font-bold text-foreground">🪙 50</span> cada uno. 
-            Atacan bases enemigas automáticamente. Máximo 10.
+            Compra bots por <span className="font-bold text-foreground">🪙 50</span> cada uno.
+            Atacan bases enemigas y ayudan en tu gang. Máximo 10 bots + 5 helpers por gang.
           </p>
         </div>
 
@@ -1631,8 +1717,8 @@ const GangWarsPage = () => {
           <span className="text-lg font-bold">🪙 {userCoins}</span>
         </div>
 
-        {/* Buy form */}
-        {myBots.length < 10 && myGangIds.length > 0 && (
+        {/* Buy forms */}
+        {myGangIds.length > 0 && (
           <div className="liquid-glass rounded-2xl p-4 space-y-3">
             <h4 className="text-sm font-bold">Comprar Bot</h4>
             <Input
@@ -1662,23 +1748,66 @@ const GangWarsPage = () => {
                 </div>
               </div>
             )}
-            <Button onClick={handleBuyBot} disabled={botLoading || userCoins < 50} variant="ios" size="ios-lg" className="w-full">
-              {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🤖 Comprar Bot · 🪙 50</>}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              {myBots.length < 10 && (
+                <Button onClick={handleBuyBot} disabled={botLoading || userCoins < 50} variant="ios" size="ios-md" className="w-full">
+                  {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🤖 Bot Ataque · 🪙50</>}
+                </Button>
+              )}
+              <Button onClick={handleAddHelperBot} disabled={botLoading || userCoins < 50} variant="ios-secondary" size="ios-md" className="w-full">
+                {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🛡️ Bot Helper · 🪙50</>}
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Bot Ataque: ataca bases enemigas · Bot Helper: se une a tu gang como miembro
+            </p>
           </div>
         )}
 
         {myBots.length >= 10 && (
           <div className="liquid-glass rounded-2xl p-3 text-center text-sm text-muted-foreground">
-            Máximo de 10 bots alcanzado
+            Máximo de 10 bots de ataque alcanzado
           </div>
         )}
 
-        {/* Bot trigger (admin) */}
+        {/* NPC Gangs Info */}
+        {npcGangs.length > 0 && (
+          <div className="liquid-glass rounded-2xl p-4 space-y-2">
+            <h4 className="text-sm font-bold flex items-center gap-2"><Bot className="w-4 h-4 text-indigo-500" /> Gangs NPC Activas</h4>
+            <div className="space-y-1.5">
+              {npcGangs.map((g: any) => (
+                <div key={g.id} className="flex items-center gap-2 px-2 py-1.5 bg-muted/30 rounded-xl">
+                  <Bot className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span className="text-xs font-medium truncate">{g.name}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">{g.member_count} miembros</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Las gangs NPC atacan bases automáticamente
+            </p>
+          </div>
+        )}
+
+        {/* Admin controls */}
         {isAdmin && (
-          <Button onClick={handleTriggerBotAttacks} disabled={botLoading} variant="ios" size="ios-lg" className="w-full">
-            {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>⚡ Ejecutar Ataques de Bots (Admin)</>}
-          </Button>
+          <div className="liquid-glass rounded-2xl p-4 space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Panel Admin</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={handleCreateNpcGangs} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>🤖 Crear Gangs NPC</>}
+              </Button>
+              <Button onClick={handleNpcAttacks} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>⚔️ NPC Atacar</>}
+              </Button>
+              <Button onClick={handleTriggerBotAttacks} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>🤖 Bots Atacar</>}
+              </Button>
+              <Button onClick={handleFullCycle} disabled={botLoading} variant="ios-secondary" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>⚡ Ciclo Completo</>}
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* My bots */}
