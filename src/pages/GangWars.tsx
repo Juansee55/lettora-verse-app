@@ -1696,6 +1696,7 @@ const GangWarsPage = () => {
   // ─── RENDER BOTS ───
   function renderBots() {
     const activeBots = myBots.filter((b: any) => b.is_active);
+    const npcGangs = allGangs.filter((g: any) => (g as any).is_npc);
     return (
       <div className="space-y-4">
         {/* Buy bot section */}
@@ -1705,8 +1706,8 @@ const GangWarsPage = () => {
           </div>
           <h3 className="text-lg font-bold">Bots de Combate</h3>
           <p className="text-sm text-muted-foreground">
-            Compra bots por <span className="font-bold text-foreground">🪙 50</span> cada uno. 
-            Atacan bases enemigas automáticamente. Máximo 10.
+            Compra bots por <span className="font-bold text-foreground">🪙 50</span> cada uno.
+            Atacan bases enemigas y ayudan en tu gang. Máximo 10 bots + 5 helpers por gang.
           </p>
         </div>
 
@@ -1716,8 +1717,8 @@ const GangWarsPage = () => {
           <span className="text-lg font-bold">🪙 {userCoins}</span>
         </div>
 
-        {/* Buy form */}
-        {myBots.length < 10 && myGangIds.length > 0 && (
+        {/* Buy forms */}
+        {myGangIds.length > 0 && (
           <div className="liquid-glass rounded-2xl p-4 space-y-3">
             <h4 className="text-sm font-bold">Comprar Bot</h4>
             <Input
@@ -1747,23 +1748,66 @@ const GangWarsPage = () => {
                 </div>
               </div>
             )}
-            <Button onClick={handleBuyBot} disabled={botLoading || userCoins < 50} variant="ios" size="ios-lg" className="w-full">
-              {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🤖 Comprar Bot · 🪙 50</>}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              {myBots.length < 10 && (
+                <Button onClick={handleBuyBot} disabled={botLoading || userCoins < 50} variant="ios" size="ios-md" className="w-full">
+                  {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🤖 Bot Ataque · 🪙50</>}
+                </Button>
+              )}
+              <Button onClick={handleAddHelperBot} disabled={botLoading || userCoins < 50} variant="ios-secondary" size="ios-md" className="w-full">
+                {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🛡️ Bot Helper · 🪙50</>}
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Bot Ataque: ataca bases enemigas · Bot Helper: se une a tu gang como miembro
+            </p>
           </div>
         )}
 
         {myBots.length >= 10 && (
           <div className="liquid-glass rounded-2xl p-3 text-center text-sm text-muted-foreground">
-            Máximo de 10 bots alcanzado
+            Máximo de 10 bots de ataque alcanzado
           </div>
         )}
 
-        {/* Bot trigger (admin) */}
+        {/* NPC Gangs Info */}
+        {npcGangs.length > 0 && (
+          <div className="liquid-glass rounded-2xl p-4 space-y-2">
+            <h4 className="text-sm font-bold flex items-center gap-2"><Bot className="w-4 h-4 text-indigo-500" /> Gangs NPC Activas</h4>
+            <div className="space-y-1.5">
+              {npcGangs.map((g: any) => (
+                <div key={g.id} className="flex items-center gap-2 px-2 py-1.5 bg-muted/30 rounded-xl">
+                  <Bot className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span className="text-xs font-medium truncate">{g.name}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">{g.member_count} miembros</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Las gangs NPC atacan bases automáticamente
+            </p>
+          </div>
+        )}
+
+        {/* Admin controls */}
         {isAdmin && (
-          <Button onClick={handleTriggerBotAttacks} disabled={botLoading} variant="ios" size="ios-lg" className="w-full">
-            {botLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>⚡ Ejecutar Ataques de Bots (Admin)</>}
-          </Button>
+          <div className="liquid-glass rounded-2xl p-4 space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Panel Admin</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={handleCreateNpcGangs} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>🤖 Crear Gangs NPC</>}
+              </Button>
+              <Button onClick={handleNpcAttacks} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>⚔️ NPC Atacar</>}
+              </Button>
+              <Button onClick={handleTriggerBotAttacks} disabled={botLoading} variant="ios" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>🤖 Bots Atacar</>}
+              </Button>
+              <Button onClick={handleFullCycle} disabled={botLoading} variant="ios-secondary" size="ios-sm" className="text-xs">
+                {botLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <>⚡ Ciclo Completo</>}
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* My bots */}
