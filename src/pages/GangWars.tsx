@@ -1592,6 +1592,20 @@ const GangWarsPage = () => {
     setBotLoading(false);
   }
 
+  async function handleAddHelperBot() {
+    const gangId = selectedBotGang || (myGangIds.length > 0 ? myGangIds[0] : null);
+    if (!gangId) { toast({ title: "Selecciona una gang", variant: "destructive" }); return; }
+    setBotLoading(true);
+    const { data, error } = await supabase.rpc("add_helper_bot", { p_gang_id: gangId, p_bot_name: botName.trim() || "Bot Helper" } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "No se pudo añadir", description: r.message, variant: "destructive" });
+      else { toast({ title: "🤖 ¡Bot añadido a tu gang!" }); setBotName("Bot"); loadData(); }
+    }
+    setBotLoading(false);
+  }
+
   async function handleDeleteBot(botId: string) {
     const { error } = await supabase.from("user_bots" as any).delete().eq("id", botId);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -1612,6 +1626,51 @@ const GangWarsPage = () => {
       });
       if (error) throw error;
       toast({ title: "⚔️ Bots atacaron", description: `${data?.attacks || 0} ataques realizados` });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleCreateNpcGangs() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "create_npc_gangs" },
+      });
+      if (error) throw error;
+      toast({ title: "🤖 Gangs NPC", description: data?.message || "Procesado" });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleNpcAttacks() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "npc_attacks" },
+      });
+      if (error) throw error;
+      toast({ title: "🤖 NPCs atacaron", description: `${data?.attacks || 0} ataques` });
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setBotLoading(false);
+  }
+
+  async function handleFullCycle() {
+    setBotLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-actions", {
+        body: { action: "full_cycle" },
+      });
+      if (error) throw error;
+      toast({ title: "⚡ Ciclo completo", description: "Gangs NPC + ataques + Fort procesados" });
       loadData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
