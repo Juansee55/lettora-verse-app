@@ -5,7 +5,8 @@ import {
   Swords, Shield, Users, Trophy, Map, Plus, LogOut, Heart,
   ChevronRight, Camera, X, Crown, Clock, Target, Loader2,
   Trash2, Award, Gift, Check, XCircle, ShoppingBag, Backpack,
-  ArrowUp, Crosshair, Zap, Bot, Castle, Timer,
+  ArrowUp, Crosshair, Zap, Bot, Castle, Timer, Edit, UserPlus,
+  Star, UserCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -190,6 +191,18 @@ const GangWarsPage = () => {
   const [activeFort, setActiveFort] = useState<any>(null);
 
   const [weaponActionLoading, setWeaponActionLoading] = useState(false);
+
+  // Gang editing & member management
+  const [editingGang, setEditingGang] = useState<any>(null);
+  const [editGangName, setEditGangName] = useState("");
+  const [editGangDesc, setEditGangDesc] = useState("");
+  const [editGangPhotoFile, setEditGangPhotoFile] = useState<File | null>(null);
+  const [editGangPhotoPreview, setEditGangPhotoPreview] = useState<string | null>(null);
+  const [editGangLoading, setEditGangLoading] = useState(false);
+  const [managingGang, setManagingGang] = useState<any>(null);
+  const [gangMembers, setGangMembers] = useState<any[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [newMemberRank, setNewMemberRank] = useState<Record<string, string>>({});
 
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -922,6 +935,23 @@ const GangWarsPage = () => {
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{gang.description}</p>
                   )}
                 </div>
+                {isCreator && (
+                  <Button size="ios-sm" variant="ios-ghost" onClick={() => openEditGang(gang)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Manage members button */}
+              <div className="px-4 pb-2">
+                <Button
+                  size="ios-sm"
+                  variant="ios-secondary"
+                  className="w-full text-xs"
+                  onClick={() => openManageMembers(gang)}
+                >
+                  <UserCog className="w-3.5 h-3.5 mr-1" /> Gestionar Miembros
+                </Button>
               </div>
 
               {/* Allies */}
@@ -958,6 +988,172 @@ const GangWarsPage = () => {
         })}
       </div>
     );
+  }
+
+  // ─── GANG EDIT HANDLERS ───
+  function openEditGang(gang: any) {
+    setEditingGang(gang);
+    setEditGangName(gang.name);
+    setEditGangDesc(gang.description || "");
+    setEditGangPhotoPreview(gang.photo_url || null);
+    setEditGangPhotoFile(null);
+  }
+
+  function handleEditPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Archivo muy grande", description: "Máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setEditGangPhotoFile(file);
+    setEditGangPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleSaveGangEdit() {
+    if (!editingGang || !userId) return;
+    setEditGangLoading(true);
+
+    let photoUrl = editingGang.photo_url;
+    if (editGangPhotoFile) {
+      const ext = editGangPhotoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("gang-photos").upload(path, editGangPhotoFile);
+      if (uploadError) {
+        toast({ title: "Error subiendo foto", description: uploadError.message, variant: "destructive" });
+        setEditGangLoading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("gang-photos").getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
+
+    const { error } = await supabase
+      .from("gangs" as any)
+      .update({
+        name: editGangName.trim(),
+        description: editGangDesc.trim() || null,
+        photo_url: photoUrl,
+      })
+      .eq("id", editingGang.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Gang actualizada" });
+      setEditingGang(null);
+      loadData();
+    }
+    setEditGangLoading(false);
+  }
+
+  async function openManageMembers(gang: any) {
+    setManagingGang(gang);
+    setMembersLoading(true);
+    const { data: members } = await supabase
+      .from("gang_members" as any)
+      .select("*")
+      .eq("gang_id", gang.id);
+
+    const memberList = members as any[] || [];
+    // Fetch profiles for non-bot members
+    const userIds = memberList.filter(m => !m.is_bot).map(m => m.user_id);
+    let profiles: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", userIds);
+      (profilesData || []).forEach((p: any) => { profiles[p.id] = p; });
+    }
+
+    const enriched = memberList.map(m => ({
+      ...m,
+      profile: m.is_bot ? null : profiles[m.user_id] || null,
+    }));
+    setGangMembers(enriched);
+
+    // Initialize rank map
+    const rankMap: Record<string, string> = {};
+    enriched.forEach(m => { rankMap[m.id] = m.rank || "member"; });
+    setNewMemberRank(rankMap);
+
+    setMembersLoading(false);
+  }
+
+  async function handleTransferLeader(memberId: string, newLeaderUserId: string) {
+    if (!managingGang || !userId) return;
+    setMembersLoading(true);
+
+    // Remove current leader
+    await supabase
+      .from("gang_members" as any)
+      .update({ is_leader: false })
+      .eq("gang_id", managingGang.id)
+      .eq("user_id", userId);
+
+    // Set new leader
+    await supabase
+      .from("gang_members" as any)
+      .update({ is_leader: true })
+      .eq("id", memberId);
+
+    // Transfer gang ownership
+    await supabase
+      .from("gangs" as any)
+      .update({ created_by: newLeaderUserId })
+      .eq("id", managingGang.id);
+
+    toast({ title: "👑 Líder transferido" });
+    setManagingGang(null);
+    loadData();
+  }
+
+  async function handleUpdateMemberRank(memberId: string, rank: string) {
+    const { error } = await supabase
+      .from("gang_members" as any)
+      .update({ rank })
+      .eq("id", memberId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Rango actualizado" });
+      setNewMemberRank(prev => ({ ...prev, [memberId]: rank }));
+    }
+  }
+
+  async function handleKickMember(memberId: string) {
+    const { error } = await supabase.from("gang_members" as any).delete().eq("id", memberId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Miembro expulsado" });
+      setGangMembers(prev => prev.filter(m => m.id !== memberId));
+    }
+  }
+
+  async function handleCreateBotMember(gangId: string) {
+    if (!userId) return;
+    setMembersLoading(true);
+    const memberCount = gangMembers.length;
+    if (memberCount >= 25) {
+      toast({ title: "Gang llena", description: "Máximo 25 miembros", variant: "destructive" });
+      setMembersLoading(false);
+      return;
+    }
+
+    const botNumber = gangMembers.filter(m => m.is_bot).length + 1;
+    const { error } = await supabase
+      .from("gang_members" as any)
+      .insert({ gang_id: gangId, user_id: userId, is_bot: true, is_leader: false, rank: "bot" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `🤖 Bot #${botNumber} creado` });
+      if (managingGang) openManageMembers(managingGang);
+      loadData();
+    }
+    setMembersLoading(false);
   }
 
   function renderLeaderboard() {
@@ -2287,6 +2483,191 @@ const GangWarsPage = () => {
                 {creatingWeapon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Arma"}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* EDIT GANG DIALOG */}
+        <Dialog open={!!editingGang} onOpenChange={() => setEditingGang(null)}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[340px] border-0">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Editar Gang</DialogTitle>
+              <DialogDescription className="text-[13px]">Cambia nombre, descripción o foto</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Nombre de la gang"
+                value={editGangName}
+                onChange={e => setEditGangName(e.target.value)}
+                maxLength={30}
+                className="rounded-xl bg-muted/50 border-0 h-11"
+              />
+              <Textarea
+                placeholder="Descripción (opcional)"
+                value={editGangDesc}
+                onChange={e => setEditGangDesc(e.target.value)}
+                maxLength={200}
+                rows={3}
+                className="rounded-xl bg-muted/50 border-0"
+              />
+              <div>
+                <label className="block text-[13px] font-medium text-muted-foreground mb-2">Foto de la gang</label>
+                <div className="flex items-center gap-3">
+                  {editGangPhotoPreview ? (
+                    <div className="relative">
+                      <Avatar className="w-16 h-16 ring-2 ring-primary/20">
+                        <AvatarImage src={editGangPhotoPreview} />
+                        <AvatarFallback>G</AvatarFallback>
+                      </Avatar>
+                      <button
+                        onClick={() => { setEditGangPhotoFile(null); setEditGangPhotoPreview(editingGang?.photo_url || null); }}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-2xl bg-muted/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleEditPhotoSelect} />
+                    </label>
+                  )}
+                  <p className="text-[12px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                </div>
+              </div>
+              <Button
+                onClick={handleSaveGangEdit}
+                disabled={!editGangName.trim() || editGangLoading}
+                variant="ios"
+                size="ios-lg"
+                className="w-full"
+              >
+                {editGangLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar Cambios"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MANAGE MEMBERS DIALOG */}
+        <Dialog open={!!managingGang} onOpenChange={() => setManagingGang(null)}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[380px] border-0 max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Gestionar Miembros</DialogTitle>
+              <DialogDescription className="text-[13px]">
+                {managingGang?.name} · {gangMembers.length}/25 miembros
+              </DialogDescription>
+            </DialogHeader>
+
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Add bot member */}
+                {managingGang && managingGang.created_by === userId && gangMembers.length < 25 && (
+                  <Button
+                    size="ios-sm"
+                    variant="ios-secondary"
+                    className="w-full text-xs"
+                    onClick={() => handleCreateBotMember(managingGang.id)}
+                    disabled={membersLoading}
+                  >
+                    <UserPlus className="w-3.5 h-3.5 mr-1" /> Crear Usuario Bot
+                  </Button>
+                )}
+
+                {/* Members list */}
+                <div className="space-y-2">
+                  {gangMembers.map((member: any) => {
+                    const isLeader = member.is_leader;
+                    const isBot = member.is_bot;
+                    const profile = member.profile;
+                    const isGangCreator = managingGang?.created_by === userId;
+                    const currentRank = newMemberRank[member.id] || member.rank || "member";
+
+                    return (
+                      <div key={member.id} className="liquid-glass rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            {!isBot && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                            <AvatarFallback className={`font-bold text-xs ${isBot ? "bg-indigo-500/10 text-indigo-500" : "bg-primary/10 text-primary"}`}>
+                              {isBot ? <Bot className="w-4 h-4" /> : (profile?.display_name || profile?.username || "U")[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-semibold truncate">
+                                {isBot ? `🤖 Bot #${gangMembers.filter(m => m.is_bot).indexOf(member) + 1}` : (profile?.display_name || profile?.username || "Usuario")}
+                              </p>
+                              {isLeader && <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" />}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {isLeader ? "👑 Líder" : currentRank === "bot" ? "🤖 Bot" : `⭐ ${currentRank}`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Rank & actions for non-leaders (only gang creator can manage) */}
+                        {isGangCreator && !isLeader && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Rank selector */}
+                            {!isBot && (
+                              <>
+                                {["member", "officer", "captain", "co-leader"].map(rank => (
+                                  <button
+                                    key={rank}
+                                    onClick={() => handleUpdateMemberRank(member.id, rank)}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+                                      currentRank === rank
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted/50 text-muted-foreground"
+                                    }`}
+                                  >
+                                    {rank === "member" ? "Miembro" : rank === "officer" ? "Oficial" : rank === "captain" ? "Capitán" : "Co-Líder"}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+
+                            <div className="flex gap-1 ml-auto">
+                              {/* Transfer leader (only for non-bot members) */}
+                              {!isBot && (
+                                <Button
+                                  size="ios-sm"
+                                  variant="ios-ghost"
+                                  className="text-[10px] h-6 px-2"
+                                  onClick={() => {
+                                    if (window.confirm("¿Transferir liderazgo a este miembro? Perderás el control de la gang.")) {
+                                      handleTransferLeader(member.id, member.user_id);
+                                    }
+                                  }}
+                                >
+                                  <Crown className="w-3 h-3 mr-0.5" /> Líder
+                                </Button>
+                              )}
+                              {/* Kick */}
+                              <button
+                                onClick={() => handleKickMember(member.id)}
+                                className="w-6 h-6 bg-destructive/10 rounded-lg flex items-center justify-center"
+                              >
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {gangMembers.length === 0 && (
+                  <div className="text-center py-8">
+                    <Users className="w-10 h-10 text-muted-foreground/20 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Sin miembros</p>
+                  </div>
+                )}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </>
