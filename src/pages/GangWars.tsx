@@ -1271,12 +1271,12 @@ const GangWarsPage = () => {
     );
   }
 
-  const handleClaimReward = async (gangId: string) => {
+  const handleClaimReward = async (gangId: string, milestoneHours: number = 2000) => {
     if (!userId) return;
     setClaimLoading(true);
     const { error } = await supabase
       .from("gang_reward_claims" as any)
-      .insert({ gang_id: gangId, user_id: userId, status: "pending" });
+      .insert({ gang_id: gangId, user_id: userId, status: "pending", milestone_hours: milestoneHours });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
