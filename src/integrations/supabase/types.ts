@@ -1014,6 +1014,35 @@ export type Database = {
           },
         ]
       }
+      gang_milestones: {
+        Row: {
+          gang_id: string
+          id: string
+          milestone_hours: number
+          unlocked_at: string
+        }
+        Insert: {
+          gang_id: string
+          id?: string
+          milestone_hours: number
+          unlocked_at?: string
+        }
+        Update: {
+          gang_id?: string
+          id?: string
+          milestone_hours?: number
+          unlocked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gang_milestones_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gang_reward_claims: {
         Row: {
           badge_id: string | null
@@ -1052,6 +1081,47 @@ export type Database = {
           },
           {
             foreignKeyName: "gang_reward_claims_gang_id_fkey"
+            columns: ["gang_id"]
+            isOneToOne: false
+            referencedRelation: "gangs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gang_rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          gang_id: string
+          id: string
+          milestone_hours: number
+          name: string
+          room_number: number
+          theme_css: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gang_id: string
+          id?: string
+          milestone_hours: number
+          name?: string
+          room_number?: number
+          theme_css?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gang_id?: string
+          id?: string
+          milestone_hours?: number
+          name?: string
+          room_number?: number
+          theme_css?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gang_rooms_gang_id_fkey"
             columns: ["gang_id"]
             isOneToOne: false
             referencedRelation: "gangs"
