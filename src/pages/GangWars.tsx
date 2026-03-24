@@ -639,6 +639,7 @@ const GangWarsPage = () => {
               {activeSection === "arsenal" && renderArsenal()}
               {activeSection === "bots" && renderBots()}
               {activeSection === "fort" && renderFort()}
+              {activeSection === "gangadmin" && isAdmin && renderGangAdmin()}
             </motion.div>
           </AnimatePresence>
         </div>
