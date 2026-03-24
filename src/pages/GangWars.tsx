@@ -310,6 +310,12 @@ const GangWarsPage = () => {
       const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
       hoursMap[h.gang_id] = (hoursMap[h.gang_id] || 0) + hours;
     });
+    // Add bonus_hours from gangs
+    (gangsData as any[] || []).forEach((g: any) => {
+      if (g.bonus_hours && g.bonus_hours > 0) {
+        hoursMap[g.id] = (hoursMap[g.id] || 0) + Number(g.bonus_hours);
+      }
+    });
     setGangTotalHours(hoursMap);
 
     // Load weapons
