@@ -935,6 +935,23 @@ const GangWarsPage = () => {
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{gang.description}</p>
                   )}
                 </div>
+                {isCreator && (
+                  <Button size="ios-sm" variant="ios-ghost" onClick={() => openEditGang(gang)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Manage members button */}
+              <div className="px-4 pb-2">
+                <Button
+                  size="ios-sm"
+                  variant="ios-secondary"
+                  className="w-full text-xs"
+                  onClick={() => openManageMembers(gang)}
+                >
+                  <UserCog className="w-3.5 h-3.5 mr-1" /> Gestionar Miembros
+                </Button>
               </div>
 
               {/* Allies */}
@@ -971,6 +988,172 @@ const GangWarsPage = () => {
         })}
       </div>
     );
+  }
+
+  // ─── GANG EDIT HANDLERS ───
+  function openEditGang(gang: any) {
+    setEditingGang(gang);
+    setEditGangName(gang.name);
+    setEditGangDesc(gang.description || "");
+    setEditGangPhotoPreview(gang.photo_url || null);
+    setEditGangPhotoFile(null);
+  }
+
+  function handleEditPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Archivo muy grande", description: "Máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setEditGangPhotoFile(file);
+    setEditGangPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleSaveGangEdit() {
+    if (!editingGang || !userId) return;
+    setEditGangLoading(true);
+
+    let photoUrl = editingGang.photo_url;
+    if (editGangPhotoFile) {
+      const ext = editGangPhotoFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("gang-photos").upload(path, editGangPhotoFile);
+      if (uploadError) {
+        toast({ title: "Error subiendo foto", description: uploadError.message, variant: "destructive" });
+        setEditGangLoading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("gang-photos").getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
+
+    const { error } = await supabase
+      .from("gangs" as any)
+      .update({
+        name: editGangName.trim(),
+        description: editGangDesc.trim() || null,
+        photo_url: photoUrl,
+      })
+      .eq("id", editingGang.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Gang actualizada" });
+      setEditingGang(null);
+      loadData();
+    }
+    setEditGangLoading(false);
+  }
+
+  async function openManageMembers(gang: any) {
+    setManagingGang(gang);
+    setMembersLoading(true);
+    const { data: members } = await supabase
+      .from("gang_members" as any)
+      .select("*")
+      .eq("gang_id", gang.id);
+
+    const memberList = members as any[] || [];
+    // Fetch profiles for non-bot members
+    const userIds = memberList.filter(m => !m.is_bot).map(m => m.user_id);
+    let profiles: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", userIds);
+      (profilesData || []).forEach((p: any) => { profiles[p.id] = p; });
+    }
+
+    const enriched = memberList.map(m => ({
+      ...m,
+      profile: m.is_bot ? null : profiles[m.user_id] || null,
+    }));
+    setGangMembers(enriched);
+
+    // Initialize rank map
+    const rankMap: Record<string, string> = {};
+    enriched.forEach(m => { rankMap[m.id] = m.rank || "member"; });
+    setNewMemberRank(rankMap);
+
+    setMembersLoading(false);
+  }
+
+  async function handleTransferLeader(memberId: string, newLeaderUserId: string) {
+    if (!managingGang || !userId) return;
+    setMembersLoading(true);
+
+    // Remove current leader
+    await supabase
+      .from("gang_members" as any)
+      .update({ is_leader: false })
+      .eq("gang_id", managingGang.id)
+      .eq("user_id", userId);
+
+    // Set new leader
+    await supabase
+      .from("gang_members" as any)
+      .update({ is_leader: true })
+      .eq("id", memberId);
+
+    // Transfer gang ownership
+    await supabase
+      .from("gangs" as any)
+      .update({ created_by: newLeaderUserId })
+      .eq("id", managingGang.id);
+
+    toast({ title: "👑 Líder transferido" });
+    setManagingGang(null);
+    loadData();
+  }
+
+  async function handleUpdateMemberRank(memberId: string, rank: string) {
+    const { error } = await supabase
+      .from("gang_members" as any)
+      .update({ rank })
+      .eq("id", memberId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Rango actualizado" });
+      setNewMemberRank(prev => ({ ...prev, [memberId]: rank }));
+    }
+  }
+
+  async function handleKickMember(memberId: string) {
+    const { error } = await supabase.from("gang_members" as any).delete().eq("id", memberId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Miembro expulsado" });
+      setGangMembers(prev => prev.filter(m => m.id !== memberId));
+    }
+  }
+
+  async function handleCreateBotMember(gangId: string) {
+    if (!userId) return;
+    setMembersLoading(true);
+    const memberCount = gangMembers.length;
+    if (memberCount >= 25) {
+      toast({ title: "Gang llena", description: "Máximo 25 miembros", variant: "destructive" });
+      setMembersLoading(false);
+      return;
+    }
+
+    const botNumber = gangMembers.filter(m => m.is_bot).length + 1;
+    const { error } = await supabase
+      .from("gang_members" as any)
+      .insert({ gang_id: gangId, user_id: userId, is_bot: true, is_leader: false, rank: "bot" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `🤖 Bot #${botNumber} creado` });
+      if (managingGang) openManageMembers(managingGang);
+      loadData();
+    }
+    setMembersLoading(false);
   }
 
   function renderLeaderboard() {
