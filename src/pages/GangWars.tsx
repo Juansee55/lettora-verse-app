@@ -1330,26 +1330,103 @@ const GangWarsPage = () => {
   };
 
   function renderRewards() {
-    const MILESTONE_HOURS = 2000;
-    const MAX_CLAIMS = 13;
+    const MILESTONES = [
+      { hours: 2000, maxClaims: 13, emoji: "🏆", label: "Medalla Especial", desc: "13 miembros conseguirán una medalla especial.", color: "from-amber-500 to-yellow-500", type: "badge" },
+      { hours: 4000, maxClaims: 0, emoji: "🏠", label: "Página de Gang (1 Habitación)", desc: "Desbloquea una página especial con la temática de tu gang.", color: "from-blue-500 to-cyan-500", type: "room" },
+      { hours: 6000, maxClaims: 0, emoji: "🎖️", label: "Insignia de Habitación", desc: "Una insignia agarrable en la habitación, solo para miembros con el tag.", color: "from-purple-500 to-pink-500", type: "room_badge" },
+      { hours: 10000, maxClaims: 0, emoji: "🏰", label: "Habitación Especial (2 Habitaciones)", desc: "Desbloquea una habitación adicional especial para tu gang.", color: "from-emerald-500 to-green-500", type: "room" },
+      { hours: 15000, maxClaims: 23, emoji: "⭐", label: "Nueva Insignia Exclusiva", desc: "23 miembros recibirán una nueva insignia exclusiva.", color: "from-rose-500 to-red-500", type: "badge" },
+      { hours: 22500, maxClaims: 0, emoji: "👑", label: "2 Habitaciones + Color Animado", desc: "2 habitaciones adicionales y un color de nombre personalizado animado para todos los miembros.", color: "from-yellow-500 to-orange-500", type: "ultimate" },
+    ];
 
     return (
       <div className="space-y-4">
-        {/* Milestone info */}
+        {/* Header */}
         <div className="liquid-glass-strong rounded-2xl p-5 text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-500 mx-auto flex items-center justify-center shadow-lg">
             <Award className="w-7 h-7 text-white" />
           </div>
-          <h3 className="text-lg font-bold">Recompensa de Gang</h3>
+          <h3 className="text-lg font-bold">Recompensas de Gang</h3>
           <p className="text-sm text-muted-foreground">
-            Al alcanzar <span className="font-bold text-foreground">{MILESTONE_HOURS}h</span> de control total, 
-            <span className="font-bold text-foreground"> 13 miembros</span> conseguirán una medalla especial.
+            Acumula horas de control territorial para desbloquear recompensas épicas para tu gang.
           </p>
         </div>
 
-        {/* Gangs progress */}
+        {/* Milestone roadmap */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Hitos de Recompensas</h4>
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-border/50" />
+            
+            <div className="space-y-3">
+              {MILESTONES.map((ms, i) => {
+                // Check if any of user's gangs reached this milestone
+                const bestGang = myGangs.reduce<{ gang: typeof myGangs[0] | null; hours: number }>((best, g) => {
+                  const h = gangTotalHours[g.id] || 0;
+                  return h > best.hours ? { gang: g, hours: h } : best;
+                }, { gang: null, hours: 0 });
+                
+                const reached = bestGang.hours >= ms.hours;
+                const progressPercent = Math.min(100, (bestGang.hours / ms.hours) * 100);
+                
+                return (
+                  <div key={ms.hours} className={`relative pl-14 ${!reached ? "opacity-60" : ""}`}>
+                    {/* Circle on timeline */}
+                    <div className={`absolute left-3.5 top-3 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] ${
+                      reached 
+                        ? `bg-gradient-to-br ${ms.color} border-transparent text-white shadow-md` 
+                        : "bg-background border-border"
+                    }`}>
+                      {reached ? "✓" : i + 1}
+                    </div>
+
+                    <div className={`liquid-glass rounded-2xl overflow-hidden ${reached ? "ring-1 ring-primary/20" : ""}`}>
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{ms.emoji}</span>
+                              <h5 className="font-bold text-[14px]">{ms.label}</h5>
+                            </div>
+                            <p className="text-[12px] text-muted-foreground mt-0.5">{ms.desc}</p>
+                          </div>
+                          <div className={`px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                            reached ? "bg-green-500/20 text-green-600" : "bg-muted text-muted-foreground"
+                          }`}>
+                            {ms.hours.toLocaleString()}h
+                          </div>
+                        </div>
+
+                        {/* Progress bar for best gang */}
+                        {bestGang.gang && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-muted-foreground truncate">{bestGang.gang.name}</span>
+                              <span className="text-muted-foreground">{bestGang.hours.toFixed(1)}h / {ms.hours.toLocaleString()}h</span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full bg-gradient-to-r ${ms.color} transition-all`}
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {reached && <div className="text-[11px] font-semibold text-green-600">✅ ¡Desbloqueado!</div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Per-gang detailed progress with claims */}
         <div className="space-y-3">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Progreso de tus Gangs</h4>
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Progreso por Gang</h4>
           
           {myGangs.length === 0 ? (
             <div className="text-center py-12">
@@ -1359,12 +1436,12 @@ const GangWarsPage = () => {
           ) : (
             myGangs.map(gang => {
               const totalHours = Math.round((gangTotalHours[gang.id] || 0) * 100) / 100;
-              const reachedMilestone = totalHours >= MILESTONE_HOURS;
-              const progressPercent = Math.min(100, (totalHours / MILESTONE_HOURS) * 100);
               const gangClaims = gangRewardClaims.filter((c: any) => c.gang_id === gang.id);
-              const myClaim = gangClaims.find((c: any) => c.user_id === userId);
-              const approvedClaims = gangClaims.filter((c: any) => c.status === "approved").length;
-              const canClaim = reachedMilestone && !myClaim && approvedClaims < MAX_CLAIMS;
+
+              // Find all claimable milestones for this gang
+              const claimableMilestones = MILESTONES.filter(ms => ms.maxClaims > 0 && totalHours >= ms.hours);
+              const nextMilestone = MILESTONES.find(ms => totalHours < ms.hours) || MILESTONES[MILESTONES.length - 1];
+              const overallProgress = Math.min(100, (totalHours / nextMilestone.hours) * 100);
 
               return (
                 <div key={gang.id} className="liquid-glass rounded-2xl overflow-hidden">
@@ -1377,62 +1454,90 @@ const GangWarsPage = () => {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-[15px] truncate">{gang.name}</p>
-                      <p className="text-xs text-muted-foreground">{totalHours.toFixed(1)}h / {MILESTONE_HOURS}h</p>
+                      <p className="text-xs text-muted-foreground">
+                        {totalHours.toFixed(1)}h — Siguiente: {nextMilestone.hours.toLocaleString()}h
+                      </p>
                     </div>
-                    {reachedMilestone && (
-                      <div className="px-2.5 py-1 bg-amber-500/20 rounded-full">
-                        <span className="text-[11px] font-bold text-amber-600">🏆 ¡Logrado!</span>
-                      </div>
-                    )}
+                    <div className="text-right">
+                      <span className="text-lg">{nextMilestone.emoji}</span>
+                    </div>
                   </div>
 
-                  {/* Progress bar */}
+                  {/* Overall progress */}
                   <div className="px-4 pb-2">
                     <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all"
-                        style={{ width: `${progressPercent}%` }}
+                        style={{ width: `${overallProgress}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Claim section */}
-                  {reachedMilestone && (
+                  {/* Claimable milestones */}
+                  {claimableMilestones.length > 0 && (
                     <div className="border-t border-border/50 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground font-medium">
-                          <Gift className="w-3.5 h-3.5 inline mr-1" />
-                          Medallas reclamadas: {approvedClaims}/{MAX_CLAIMS}
-                        </span>
-                      </div>
+                      {claimableMilestones.map(ms => {
+                        const msClaims = gangClaims.filter((c: any) => (c.milestone_hours || 2000) === ms.hours);
+                        const myClaim = msClaims.find((c: any) => c.user_id === userId);
+                        const approvedClaims = msClaims.filter((c: any) => c.status === "approved").length;
+                        const canClaim = !myClaim && approvedClaims < ms.maxClaims;
 
-                      {myClaim ? (
-                        <div className={`rounded-xl px-3 py-2 text-center text-sm font-medium ${
-                          myClaim.status === "approved" 
-                            ? "bg-green-500/10 text-green-600" 
-                            : myClaim.status === "rejected"
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-amber-500/10 text-amber-600"
-                        }`}>
-                          {myClaim.status === "approved" && "✅ Medalla recibida"}
-                          {myClaim.status === "pending" && "⏳ Solicitud pendiente"}
-                          {myClaim.status === "rejected" && "❌ Solicitud rechazada"}
-                        </div>
-                      ) : canClaim ? (
-                        <Button
-                          onClick={() => handleClaimReward(gang.id)}
-                          disabled={claimLoading}
-                          variant="ios"
-                          size="ios-md"
-                          className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:opacity-90"
-                        >
-                          {claimLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Award className="w-4 h-4 mr-1.5" /> Reclamar Medalla</>}
-                        </Button>
-                      ) : approvedClaims >= MAX_CLAIMS ? (
-                        <div className="rounded-xl px-3 py-2 text-center text-sm font-medium bg-muted text-muted-foreground">
-                          Ya se reclamaron las 13 medallas
-                        </div>
-                      ) : null}
+                        return (
+                          <div key={ms.hours} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium flex items-center gap-1.5">
+                                <span>{ms.emoji}</span> {ms.label}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                <Gift className="w-3 h-3 inline mr-0.5" />
+                                {approvedClaims}/{ms.maxClaims}
+                              </span>
+                            </div>
+
+                            {myClaim ? (
+                              <div className={`rounded-xl px-3 py-2 text-center text-[12px] font-medium ${
+                                myClaim.status === "approved" 
+                                  ? "bg-green-500/10 text-green-600" 
+                                  : myClaim.status === "rejected"
+                                  ? "bg-destructive/10 text-destructive"
+                                  : "bg-amber-500/10 text-amber-600"
+                              }`}>
+                                {myClaim.status === "approved" && "✅ Recompensa recibida"}
+                                {myClaim.status === "pending" && "⏳ Solicitud pendiente"}
+                                {myClaim.status === "rejected" && "❌ Solicitud rechazada"}
+                              </div>
+                            ) : canClaim ? (
+                              <Button
+                                onClick={() => handleClaimReward(gang.id, ms.hours)}
+                                disabled={claimLoading}
+                                variant="ios"
+                                size="ios-sm"
+                                className={`w-full bg-gradient-to-r ${ms.color} text-white hover:opacity-90`}
+                              >
+                                {claimLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Award className="w-3.5 h-3.5 mr-1" /> Reclamar</>}
+                              </Button>
+                            ) : approvedClaims >= ms.maxClaims ? (
+                              <div className="rounded-xl px-3 py-1.5 text-center text-[11px] font-medium bg-muted text-muted-foreground">
+                                Ya se reclamaron las {ms.maxClaims} recompensas
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Non-claimable unlocked milestones (rooms, etc.) */}
+                  {MILESTONES.filter(ms => ms.maxClaims === 0 && totalHours >= ms.hours).length > 0 && (
+                    <div className="border-t border-border/50 p-4">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-2">Desbloqueados</p>
+                      <div className="flex flex-wrap gap-2">
+                        {MILESTONES.filter(ms => ms.maxClaims === 0 && totalHours >= ms.hours).map(ms => (
+                          <div key={ms.hours} className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${ms.color} text-white text-[11px] font-bold flex items-center gap-1`}>
+                            <span>{ms.emoji}</span> {ms.label}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1459,11 +1564,12 @@ const GangWarsPage = () => {
                   .filter((c: any) => c.status === "pending")
                   .map((claim: any) => {
                     const gang = allGangs.find(g => g.id === claim.gang_id);
+                    const milestone = MILESTONES.find(ms => ms.hours === (claim.milestone_hours || 2000));
                     return (
                       <AdminClaimRow
                         key={claim.id}
                         claim={claim}
-                        gangName={gang?.name || "Desconocida"}
+                        gangName={`${gang?.name || "Desconocida"} — ${milestone?.emoji || "🏆"} ${(claim.milestone_hours || 2000).toLocaleString()}h`}
                         badges={rewardBadges}
                         selectedBadge={selectedRewardBadge}
                         onSelectBadge={setSelectedRewardBadge}
