@@ -2282,6 +2282,218 @@ const GangWarsPage = () => {
     );
   }
 
+  // ─── ADMIN GANG MANAGEMENT ───
+  async function handleAdminAddHours(gangId: string, positive: boolean) {
+    const hoursStr = adminHoursInput[gangId] || "0";
+    const hours = parseFloat(hoursStr);
+    if (!hours || hours <= 0) { toast({ title: "Ingresa un número válido", variant: "destructive" }); return; }
+    setAdminLoading(true);
+    const { error } = await supabase.rpc("admin_adjust_gang_hours", {
+      p_gang_id: gangId,
+      p_hours: positive ? hours : -hours,
+    } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else { toast({ title: positive ? `+${hours}h añadidas` : `-${hours}h quitadas` }); loadData(); }
+    setAdminLoading(false);
+    setAdminHoursInput(prev => ({ ...prev, [gangId]: "" }));
+  }
+
+  async function handleAdminCaptureBase(baseId: string) {
+    if (!adminAttackGangId) { toast({ title: "Selecciona una gang", variant: "destructive" }); return; }
+    setAdminLoading(true);
+    const { data, error } = await supabase.rpc("admin_capture_base", {
+      p_base_id: baseId,
+      p_gang_id: adminAttackGangId,
+    } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      const r = data as any;
+      if (!r.success) toast({ title: "Error", description: r.message, variant: "destructive" });
+      else toast({ title: "🏴 Base capturada (Admin)" });
+      loadData();
+    }
+    setAdminLoading(false);
+  }
+
+  async function handleAdminCreateGang() {
+    if (!adminCreateGangName.trim() || !userId) return;
+    setAdminLoading(true);
+    let photoUrl: string | null = null;
+    if (adminCreateGangPhotoFile) {
+      const ext = adminCreateGangPhotoFile.name.split(".").pop();
+      const path = `admin/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("gang-photos").upload(path, adminCreateGangPhotoFile);
+      if (uploadError) { toast({ title: "Error subiendo foto", variant: "destructive" }); setAdminLoading(false); return; }
+      const { data: urlData } = supabase.storage.from("gang-photos").getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
+    const { data, error } = await supabase
+      .from("gangs" as any)
+      .insert({ name: adminCreateGangName.trim(), description: adminCreateGangDesc.trim() || null, photo_url: photoUrl, created_by: userId })
+      .select()
+      .single();
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
+    else {
+      await supabase.from("gang_members" as any).insert({ gang_id: (data as any).id, user_id: userId, is_leader: true });
+      toast({ title: "✅ Gang creada (Admin)" });
+      setAdminCreateGangName(""); setAdminCreateGangDesc(""); setAdminCreateGangPhotoFile(null); setAdminCreateGangPhotoPreview(null);
+      loadData();
+    }
+    setAdminLoading(false);
+  }
+
+  function handleAdminPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "Archivo muy grande", variant: "destructive" }); return; }
+    setAdminCreateGangPhotoFile(file);
+    setAdminCreateGangPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function renderGangAdmin() {
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="liquid-glass-strong rounded-2xl p-5 text-center space-y-2">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 mx-auto flex items-center justify-center shadow-lg">
+            <Crown className="w-7 h-7 text-white" />
+          </div>
+          <h3 className="text-lg font-bold">Admin Panel de Gangs</h3>
+          <p className="text-sm text-muted-foreground">Gestiona horas, crea gangs y captura bases.</p>
+        </div>
+
+        {/* Create gang */}
+        <div className="liquid-glass rounded-2xl p-4 space-y-3">
+          <h4 className="text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4 text-primary" /> Crear Gang (Admin)</h4>
+          <Input placeholder="Nombre de la gang" value={adminCreateGangName} onChange={e => setAdminCreateGangName(e.target.value)} maxLength={30} className="rounded-xl bg-muted/50 border-0 h-11" />
+          <Textarea placeholder="Descripción (opcional)" value={adminCreateGangDesc} onChange={e => setAdminCreateGangDesc(e.target.value)} maxLength={200} rows={2} className="rounded-xl bg-muted/50 border-0" />
+          <div className="flex items-center gap-3">
+            {adminCreateGangPhotoPreview ? (
+              <div className="relative">
+                <Avatar className="w-14 h-14 ring-2 ring-primary/20">
+                  <AvatarImage src={adminCreateGangPhotoPreview} />
+                  <AvatarFallback>G</AvatarFallback>
+                </Avatar>
+                <button onClick={() => { setAdminCreateGangPhotoFile(null); setAdminCreateGangPhotoPreview(null); }} className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                  <X className="w-3 h-3 text-white" />
+                </button>
+              </div>
+            ) : (
+              <label className="w-14 h-14 rounded-2xl bg-muted/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                <Camera className="w-5 h-5 text-muted-foreground" />
+                <input type="file" accept="image/*" className="hidden" onChange={handleAdminPhotoSelect} />
+              </label>
+            )}
+            <Button onClick={handleAdminCreateGang} disabled={!adminCreateGangName.trim() || adminLoading} variant="ios" size="ios-md" className="flex-1">
+              {adminLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear Gang"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Capture base as any gang */}
+        <div className="liquid-glass rounded-2xl p-4 space-y-3">
+          <h4 className="text-sm font-bold flex items-center gap-2"><Target className="w-4 h-4 text-destructive" /> Capturar Base (Admin)</h4>
+          <div>
+            <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Gang atacante</label>
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {allGangs.map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => setAdminAttackGangId(g.id)}
+                  className={`shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    adminAttackGangId === g.id ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"
+                  }`}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          {adminAttackGangId && (
+            <div className="space-y-2">
+              <label className="text-[11px] font-medium text-muted-foreground block">Selecciona base a capturar</label>
+              <div className="grid grid-cols-3 gap-2">
+                {bases.map(base => (
+                  <Button
+                    key={base.id}
+                    size="ios-sm"
+                    variant={base.controlling_gang_id === adminAttackGangId ? "ios-secondary" : "ios"}
+                    className="text-[10px]"
+                    disabled={adminLoading || base.controlling_gang_id === adminAttackGangId}
+                    onClick={() => handleAdminCaptureBase(base.id)}
+                  >
+                    #{base.base_number} {base.name.substring(0, 8)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Hours management per gang */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Horas por Gang</h4>
+          <p className="text-[11px] text-muted-foreground px-1">Las horas se acumulan permanentemente hacia los hitos, incluso si pierden bases.</p>
+          <div className="space-y-3">
+            {allGangs.map(gang => {
+              const calcHours = gangTotalHours[gang.id] || 0;
+              const bonusHours = (gang as any).bonus_hours || 0;
+
+              return (
+                <div key={gang.id} className="liquid-glass rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-11 h-11">
+                      {gang.photo_url && <AvatarImage src={gang.photo_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold">{gang.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[15px] truncate">{gang.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {calcHours.toFixed(1)}h total · {bonusHours}h bonus
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold">{calcHours.toFixed(1)}</p>
+                      <p className="text-[10px] text-muted-foreground">horas</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Horas"
+                      value={adminHoursInput[gang.id] || ""}
+                      onChange={e => setAdminHoursInput(prev => ({ ...prev, [gang.id]: e.target.value }))}
+                      className="rounded-xl bg-muted/50 border-0 h-9 text-sm flex-1"
+                      min={0}
+                    />
+                    <Button
+                      size="ios-sm"
+                      variant="ios"
+                      className="text-xs shrink-0"
+                      onClick={() => handleAdminAddHours(gang.id, true)}
+                      disabled={adminLoading}
+                    >
+                      {adminLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "+Añadir"}
+                    </Button>
+                    <Button
+                      size="ios-sm"
+                      variant="ios-destructive"
+                      className="text-xs shrink-0"
+                      onClick={() => handleAdminAddHours(gang.id, false)}
+                      disabled={adminLoading}
+                    >
+                      {adminLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "-Quitar"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderDialogs() {
     return (
       <>
