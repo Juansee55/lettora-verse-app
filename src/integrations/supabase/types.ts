@@ -1134,6 +1134,7 @@ export type Database = {
       }
       gangs: {
         Row: {
+          bonus_hours: number
           created_at: string
           created_by: string
           description: string | null
@@ -1143,6 +1144,7 @@ export type Database = {
           photo_url: string | null
         }
         Insert: {
+          bonus_hours?: number
           created_at?: string
           created_by: string
           description?: string | null
@@ -1152,6 +1154,7 @@ export type Database = {
           photo_url?: string | null
         }
         Update: {
+          bonus_hours?: number
           created_at?: string
           created_by?: string
           description?: string | null
@@ -2390,6 +2393,14 @@ export type Database = {
     Functions: {
       add_helper_bot: {
         Args: { p_bot_name?: string; p_gang_id: string }
+        Returns: Json
+      }
+      admin_adjust_gang_hours: {
+        Args: { p_gang_id: string; p_hours: number }
+        Returns: undefined
+      }
+      admin_capture_base: {
+        Args: { p_base_id: string; p_gang_id: string }
         Returns: Json
       }
       admin_update_book_stats: {
