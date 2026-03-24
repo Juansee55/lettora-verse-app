@@ -5,7 +5,8 @@ import {
   Swords, Shield, Users, Trophy, Map, Plus, LogOut, Heart,
   ChevronRight, Camera, X, Crown, Clock, Target, Loader2,
   Trash2, Award, Gift, Check, XCircle, ShoppingBag, Backpack,
-  ArrowUp, Crosshair, Zap, Bot, Castle, Timer,
+  ArrowUp, Crosshair, Zap, Bot, Castle, Timer, Edit, UserPlus,
+  Star, UserCog,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
