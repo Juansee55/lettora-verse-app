@@ -1050,6 +1050,7 @@ export type Database = {
           gang_id: string
           granted_by: string | null
           id: string
+          milestone_hours: number
           status: string
           user_id: string
         }
@@ -1059,6 +1060,7 @@ export type Database = {
           gang_id: string
           granted_by?: string | null
           id?: string
+          milestone_hours?: number
           status?: string
           user_id: string
         }
@@ -1068,6 +1070,7 @@ export type Database = {
           gang_id?: string
           granted_by?: string | null
           id?: string
+          milestone_hours?: number
           status?: string
           user_id?: string
         }
