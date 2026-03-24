@@ -193,6 +193,15 @@ const GangWarsPage = () => {
 
   const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
+  // Admin gang panel
+  const [adminHoursInput, setAdminHoursInput] = useState<Record<string, string>>({});
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminAttackGangId, setAdminAttackGangId] = useState<string | null>(null);
+  const [adminCreateGangName, setAdminCreateGangName] = useState("");
+  const [adminCreateGangDesc, setAdminCreateGangDesc] = useState("");
+  const [adminCreateGangPhotoFile, setAdminCreateGangPhotoFile] = useState<File | null>(null);
+  const [adminCreateGangPhotoPreview, setAdminCreateGangPhotoPreview] = useState<string | null>(null);
+
   // Gang editing & member management
   const [editingGang, setEditingGang] = useState<any>(null);
   const [editGangName, setEditGangName] = useState("");
