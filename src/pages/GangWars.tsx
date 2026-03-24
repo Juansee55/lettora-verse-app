@@ -191,6 +191,18 @@ const GangWarsPage = () => {
 
   const [weaponActionLoading, setWeaponActionLoading] = useState(false);
 
+  // Gang editing & member management
+  const [editingGang, setEditingGang] = useState<any>(null);
+  const [editGangName, setEditGangName] = useState("");
+  const [editGangDesc, setEditGangDesc] = useState("");
+  const [editGangPhotoFile, setEditGangPhotoFile] = useState<File | null>(null);
+  const [editGangPhotoPreview, setEditGangPhotoPreview] = useState<string | null>(null);
+  const [editGangLoading, setEditGangLoading] = useState(false);
+  const [managingGang, setManagingGang] = useState<any>(null);
+  const [gangMembers, setGangMembers] = useState<any[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [newMemberRank, setNewMemberRank] = useState<Record<string, string>>({});
+
   const loadData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
