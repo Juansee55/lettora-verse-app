@@ -64,7 +64,8 @@ const SECTION_ITEMS = [
   { id: "arsenal", icon: Backpack, label: "Arsenal / Loadout", color: "text-cyan-500" },
   { id: "bots", icon: Bot, label: "Bots", color: "text-indigo-500" },
   { id: "fort", icon: Castle, label: "Fort", color: "text-rose-500" },
-];
+  { id: "gangadmin", icon: Crown, label: "Admin Gangs", color: "text-orange-500", adminOnly: true },
+] as const;
 
 const RARITY_COLORS: Record<string, string> = {
   common: "text-muted-foreground",
