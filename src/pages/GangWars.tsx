@@ -2485,6 +2485,191 @@ const GangWarsPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* EDIT GANG DIALOG */}
+        <Dialog open={!!editingGang} onOpenChange={() => setEditingGang(null)}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[340px] border-0">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Editar Gang</DialogTitle>
+              <DialogDescription className="text-[13px]">Cambia nombre, descripción o foto</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Nombre de la gang"
+                value={editGangName}
+                onChange={e => setEditGangName(e.target.value)}
+                maxLength={30}
+                className="rounded-xl bg-muted/50 border-0 h-11"
+              />
+              <Textarea
+                placeholder="Descripción (opcional)"
+                value={editGangDesc}
+                onChange={e => setEditGangDesc(e.target.value)}
+                maxLength={200}
+                rows={3}
+                className="rounded-xl bg-muted/50 border-0"
+              />
+              <div>
+                <label className="block text-[13px] font-medium text-muted-foreground mb-2">Foto de la gang</label>
+                <div className="flex items-center gap-3">
+                  {editGangPhotoPreview ? (
+                    <div className="relative">
+                      <Avatar className="w-16 h-16 ring-2 ring-primary/20">
+                        <AvatarImage src={editGangPhotoPreview} />
+                        <AvatarFallback>G</AvatarFallback>
+                      </Avatar>
+                      <button
+                        onClick={() => { setEditGangPhotoFile(null); setEditGangPhotoPreview(editingGang?.photo_url || null); }}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-2xl bg-muted/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
+                      <Camera className="w-5 h-5 text-muted-foreground" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleEditPhotoSelect} />
+                    </label>
+                  )}
+                  <p className="text-[12px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                </div>
+              </div>
+              <Button
+                onClick={handleSaveGangEdit}
+                disabled={!editGangName.trim() || editGangLoading}
+                variant="ios"
+                size="ios-lg"
+                className="w-full"
+              >
+                {editGangLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar Cambios"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MANAGE MEMBERS DIALOG */}
+        <Dialog open={!!managingGang} onOpenChange={() => setManagingGang(null)}>
+          <DialogContent className="liquid-glass-strong rounded-3xl max-w-[380px] border-0 max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-[17px]">Gestionar Miembros</DialogTitle>
+              <DialogDescription className="text-[13px]">
+                {managingGang?.name} · {gangMembers.length}/25 miembros
+              </DialogDescription>
+            </DialogHeader>
+
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Add bot member */}
+                {managingGang && managingGang.created_by === userId && gangMembers.length < 25 && (
+                  <Button
+                    size="ios-sm"
+                    variant="ios-secondary"
+                    className="w-full text-xs"
+                    onClick={() => handleCreateBotMember(managingGang.id)}
+                    disabled={membersLoading}
+                  >
+                    <UserPlus className="w-3.5 h-3.5 mr-1" /> Crear Usuario Bot
+                  </Button>
+                )}
+
+                {/* Members list */}
+                <div className="space-y-2">
+                  {gangMembers.map((member: any) => {
+                    const isLeader = member.is_leader;
+                    const isBot = member.is_bot;
+                    const profile = member.profile;
+                    const isGangCreator = managingGang?.created_by === userId;
+                    const currentRank = newMemberRank[member.id] || member.rank || "member";
+
+                    return (
+                      <div key={member.id} className="liquid-glass rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            {!isBot && profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                            <AvatarFallback className={`font-bold text-xs ${isBot ? "bg-indigo-500/10 text-indigo-500" : "bg-primary/10 text-primary"}`}>
+                              {isBot ? <Bot className="w-4 h-4" /> : (profile?.display_name || profile?.username || "U")[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-semibold truncate">
+                                {isBot ? `🤖 Bot #${gangMembers.filter(m => m.is_bot).indexOf(member) + 1}` : (profile?.display_name || profile?.username || "Usuario")}
+                              </p>
+                              {isLeader && <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" />}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {isLeader ? "👑 Líder" : currentRank === "bot" ? "🤖 Bot" : `⭐ ${currentRank}`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Rank & actions for non-leaders (only gang creator can manage) */}
+                        {isGangCreator && !isLeader && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Rank selector */}
+                            {!isBot && (
+                              <>
+                                {["member", "officer", "captain", "co-leader"].map(rank => (
+                                  <button
+                                    key={rank}
+                                    onClick={() => handleUpdateMemberRank(member.id, rank)}
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+                                      currentRank === rank
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted/50 text-muted-foreground"
+                                    }`}
+                                  >
+                                    {rank === "member" ? "Miembro" : rank === "officer" ? "Oficial" : rank === "captain" ? "Capitán" : "Co-Líder"}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+
+                            <div className="flex gap-1 ml-auto">
+                              {/* Transfer leader (only for non-bot members) */}
+                              {!isBot && (
+                                <Button
+                                  size="ios-sm"
+                                  variant="ios-ghost"
+                                  className="text-[10px] h-6 px-2"
+                                  onClick={() => {
+                                    if (window.confirm("¿Transferir liderazgo a este miembro? Perderás el control de la gang.")) {
+                                      handleTransferLeader(member.id, member.user_id);
+                                    }
+                                  }}
+                                >
+                                  <Crown className="w-3 h-3 mr-0.5" /> Líder
+                                </Button>
+                              )}
+                              {/* Kick */}
+                              <button
+                                onClick={() => handleKickMember(member.id)}
+                                className="w-6 h-6 bg-destructive/10 rounded-lg flex items-center justify-center"
+                              >
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {gangMembers.length === 0 && (
+                  <div className="text-center py-8">
+                    <Users className="w-10 h-10 text-muted-foreground/20 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Sin miembros</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </>
     );
   }
