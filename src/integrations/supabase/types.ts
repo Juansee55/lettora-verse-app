@@ -983,6 +983,7 @@ export type Database = {
           is_bot: boolean
           is_leader: boolean
           joined_at: string
+          rank: string
           user_id: string
         }
         Insert: {
@@ -991,6 +992,7 @@ export type Database = {
           is_bot?: boolean
           is_leader?: boolean
           joined_at?: string
+          rank?: string
           user_id: string
         }
         Update: {
@@ -999,6 +1001,7 @@ export type Database = {
           is_bot?: boolean
           is_leader?: boolean
           joined_at?: string
+          rank?: string
           user_id?: string
         }
         Relationships: [
