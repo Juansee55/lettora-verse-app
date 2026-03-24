@@ -672,7 +672,7 @@ const GangWarsPage = () => {
 
         {/* Menu items */}
         <div className="liquid-glass rounded-2xl overflow-hidden divide-y divide-border/50">
-          {SECTION_ITEMS.map((item, i) => {
+          {SECTION_ITEMS.filter(item => !(item as any).adminOnly || isAdmin).map((item, i) => {
             const Icon = item.icon;
             return (
               <motion.button
@@ -687,6 +687,9 @@ const GangWarsPage = () => {
                   <Icon className="w-4.5 h-4.5" />
                 </div>
                 <span className="flex-1 text-left text-[15px] font-medium">{item.label}</span>
+                {(item as any).adminOnly && (
+                  <span className="text-[9px] px-1.5 py-0.5 bg-orange-500/15 text-orange-500 rounded-full font-bold">ADMIN</span>
+                )}
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
               </motion.button>
             );
