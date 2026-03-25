@@ -31,7 +31,7 @@ interface FeedCommentsProps {
   onCommentsCountChange?: (count: number) => void;
 }
 
-const FeedComments = ({ isOpen, onClose, postId, onCommentsCountChange }: FeedCommentsProps) => {
+const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCommentsCountChange }: FeedCommentsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
