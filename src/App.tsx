@@ -43,6 +43,7 @@ const NewsPage = lazy(() => import("./pages/News"));
 const AdminChatPage = lazy(() => import("./pages/AdminChat"));
 const EventRoomPage = lazy(() => import("./pages/EventRoom"));
 const GangWarsPage = lazy(() => import("./pages/GangWars"));
+const CommunityPage = lazy(() => import("./pages/Community"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
