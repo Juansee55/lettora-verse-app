@@ -273,6 +273,7 @@ const CommunityPage = () => {
         isOpen={!!openCommentsPostId}
         onClose={() => setOpenCommentsPostId(null)}
         postId={openCommentsPostId || ""}
+        commentableType="literary_post"
         onCommentsCountChange={(count) => {
           if (openCommentsPostId) {
             setPosts(prev => prev.map(p =>
