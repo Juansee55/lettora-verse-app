@@ -27,6 +27,7 @@ interface FeedCommentsProps {
   isOpen: boolean;
   onClose: () => void;
   postId: string;
+  commentableType?: string;
   onCommentsCountChange?: (count: number) => void;
 }
 
