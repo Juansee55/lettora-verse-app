@@ -57,7 +57,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
         id, content, created_at, user_id, likes_count,
         user:profiles!user_id (id, display_name, username, avatar_url)
       `)
-      .eq("commentable_type", "post")
+      .eq("commentable_type", commentableType)
       .eq("commentable_id", postId)
       .order("created_at", { ascending: true });
 
