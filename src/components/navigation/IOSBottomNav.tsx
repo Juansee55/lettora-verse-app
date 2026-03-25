@@ -1,13 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, BookOpen, MessageCircle, User } from "lucide-react";
+import { Home, Search, BookOpen, MessageCircle, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const navItems = [
   { path: "/home", icon: Home, label: "Inicio" },
   { path: "/explore", icon: Search, label: "Explorar" },
+  { path: "/community", icon: Users, label: "Comunidad" },
   { path: "/library", icon: BookOpen, label: "Biblioteca" },
-  { path: "/chats", icon: MessageCircle, label: "Mensajes" },
   { path: "/profile", icon: User, label: "Perfil" },
 ];
 

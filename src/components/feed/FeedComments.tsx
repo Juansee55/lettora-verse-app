@@ -27,10 +27,11 @@ interface FeedCommentsProps {
   isOpen: boolean;
   onClose: () => void;
   postId: string;
+  commentableType?: string;
   onCommentsCountChange?: (count: number) => void;
 }
 
-const FeedComments = ({ isOpen, onClose, postId, onCommentsCountChange }: FeedCommentsProps) => {
+const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCommentsCountChange }: FeedCommentsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,7 +57,7 @@ const FeedComments = ({ isOpen, onClose, postId, onCommentsCountChange }: FeedCo
         id, content, created_at, user_id, likes_count,
         user:profiles!user_id (id, display_name, username, avatar_url)
       `)
-      .eq("commentable_type", "post")
+      .eq("commentable_type", commentableType)
       .eq("commentable_id", postId)
       .order("created_at", { ascending: true });
 
@@ -83,7 +84,7 @@ const FeedComments = ({ isOpen, onClose, postId, onCommentsCountChange }: FeedCo
 
     const { error } = await supabase.from("comments").insert({
       user_id: user.id,
-      commentable_type: "post",
+      commentable_type: commentableType,
       commentable_id: postId,
       content,
     });

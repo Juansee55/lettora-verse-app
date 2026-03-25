@@ -43,6 +43,7 @@ const NewsPage = lazy(() => import("./pages/News"));
 const AdminChatPage = lazy(() => import("./pages/AdminChat"));
 const EventRoomPage = lazy(() => import("./pages/EventRoom"));
 const GangWarsPage = lazy(() => import("./pages/GangWars"));
+const CommunityPage = lazy(() => import("./pages/Community"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -122,6 +123,7 @@ const AppContent = () => {
       <Route path="/admin-chat" element={user ? <AdminChatPage /> : <Navigate to="/auth" replace />} />
       <Route path="/event/:eventId" element={user ? <EventRoomPage /> : <Navigate to="/auth" replace />} />
       <Route path="/gang-wars" element={user ? <GangWarsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/community" element={user ? <CommunityPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>

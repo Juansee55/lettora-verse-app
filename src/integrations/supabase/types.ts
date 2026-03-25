@@ -1259,6 +1259,62 @@ export type Database = {
           },
         ]
       }
+      literary_posts: {
+        Row: {
+          comments_count: number
+          content: string
+          created_at: string
+          id: string
+          likes_count: number
+          linked_book_id: string | null
+          post_type: string
+          quote_text: string | null
+          think_count: number
+          touched_count: number
+          updated_at: string
+          user_id: string
+          want_read_count: number
+        }
+        Insert: {
+          comments_count?: number
+          content: string
+          created_at?: string
+          id?: string
+          likes_count?: number
+          linked_book_id?: string | null
+          post_type?: string
+          quote_text?: string | null
+          think_count?: number
+          touched_count?: number
+          updated_at?: string
+          user_id: string
+          want_read_count?: number
+        }
+        Update: {
+          comments_count?: number
+          content?: string
+          created_at?: string
+          id?: string
+          likes_count?: number
+          linked_book_id?: string | null
+          post_type?: string
+          quote_text?: string | null
+          think_count?: number
+          touched_count?: number
+          updated_at?: string
+          user_id?: string
+          want_read_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "literary_posts_linked_book_id_fkey"
+            columns: ["linked_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentions: {
         Row: {
           content_id: string
@@ -1512,6 +1568,38 @@ export type Database = {
         }
         Relationships: []
       }
+      post_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "literary_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           comments_count: number | null
@@ -1633,6 +1721,7 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           display_name: string | null
+          favorite_genres: string[] | null
           followers_visibility: string
           id: string
           is_banned: boolean | null
@@ -1651,6 +1740,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_genres?: string[] | null
           followers_visibility?: string
           id: string
           is_banned?: boolean | null
@@ -1669,6 +1759,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_genres?: string[] | null
           followers_visibility?: string
           id?: string
           is_banned?: boolean | null
