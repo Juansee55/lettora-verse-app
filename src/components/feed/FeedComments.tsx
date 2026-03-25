@@ -84,7 +84,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
 
     const { error } = await supabase.from("comments").insert({
       user_id: user.id,
-      commentable_type: "post",
+      commentable_type: commentableType,
       commentable_id: postId,
       content,
     });
