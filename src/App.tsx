@@ -123,6 +123,7 @@ const AppContent = () => {
       <Route path="/admin-chat" element={user ? <AdminChatPage /> : <Navigate to="/auth" replace />} />
       <Route path="/event/:eventId" element={user ? <EventRoomPage /> : <Navigate to="/auth" replace />} />
       <Route path="/gang-wars" element={user ? <GangWarsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/community" element={user ? <CommunityPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
