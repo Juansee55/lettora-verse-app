@@ -24,6 +24,7 @@ import {
   Check,
   Library,
   QrCode,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import BookReviewsSection from "@/components/reviews/BookReviewsSection";
+import { useTopRanking } from "@/hooks/useTopRanking";
 
 interface BookData {
   id: string;
@@ -105,6 +107,8 @@ const BookDetailPage = () => {
   const [showShare, setShowShare] = useState(false);
   const [showCollaborators, setShowCollaborators] = useState(false);
   const [isAuthor, setIsAuthor] = useState(false);
+  const [isCollaborator, setIsCollaborator] = useState(false);
+  const [collaboratorProfiles, setCollaboratorProfiles] = useState<{ display_name: string | null; username: string | null; id: string }[]>([]);
   const [newComment, setNewComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
@@ -116,6 +120,7 @@ const BookDetailPage = () => {
   const [showQR, setShowQR] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
+  const topPosition = useTopRanking(id);
 
   useEffect(() => {
     const fetchBook = async () => {
