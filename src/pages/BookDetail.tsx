@@ -24,6 +24,7 @@ import {
   Check,
   Library,
   QrCode,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import BookReviewsSection from "@/components/reviews/BookReviewsSection";
+import { useTopRanking } from "@/hooks/useTopRanking";
 
 interface BookData {
   id: string;
@@ -105,6 +107,8 @@ const BookDetailPage = () => {
   const [showShare, setShowShare] = useState(false);
   const [showCollaborators, setShowCollaborators] = useState(false);
   const [isAuthor, setIsAuthor] = useState(false);
+  const [isCollaborator, setIsCollaborator] = useState(false);
+  const [collaboratorProfiles, setCollaboratorProfiles] = useState<{ display_name: string | null; username: string | null; id: string }[]>([]);
   const [newComment, setNewComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
@@ -116,6 +120,7 @@ const BookDetailPage = () => {
   const [showQR, setShowQR] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
+  const topPosition = useTopRanking(id);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -207,6 +212,31 @@ const BookDetailPage = () => {
 
         setSaved(!!savedData);
         setIsAuthor(user.id === bookData.author_id);
+
+        // Check if user is a collaborator
+        const { data: collabData } = await supabase
+          .from("book_collaborators")
+          .select("id")
+          .eq("book_id", id)
+          .eq("user_id", user.id)
+          .not("accepted_at", "is", null)
+          .maybeSingle();
+        setIsCollaborator(!!collabData);
+      }
+
+      // Fetch collaborator profiles
+      const { data: collabs } = await supabase
+        .from("book_collaborators")
+        .select("user_id")
+        .eq("book_id", id)
+        .not("accepted_at", "is", null);
+      if (collabs && collabs.length > 0) {
+        const collabIds = collabs.map(c => c.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", collabIds);
+        if (profiles) setCollaboratorProfiles(profiles);
       }
 
       setLoading(false);
@@ -352,12 +382,29 @@ const BookDetailPage = () => {
           {/* Info */}
           <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
             <div>
+              {topPosition && topPosition <= 100 && (
+                <button
+                  onClick={() => navigate("/top-rankings")}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] font-bold rounded-full mb-1.5"
+                >
+                  <Trophy className="w-3 h-3" />
+                  TOP #{topPosition}
+                </button>
+              )}
               <h1 className="text-[22px] font-bold leading-tight mb-1 font-display">
                 {book.title}
               </h1>
-              <p className="text-[15px] text-primary font-medium mb-1">
+              <p
+                className="text-[15px] text-primary font-medium mb-0.5 cursor-pointer"
+                onClick={() => book.profiles?.id && navigate(`/user/${book.profiles.id}`)}
+              >
                 {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
               </p>
+              {collaboratorProfiles.length > 0 && (
+                <p className="text-[12px] text-muted-foreground mb-1">
+                  con {collaboratorProfiles.map(c => c.display_name || c.username || "Usuario").join(", ")}
+                </p>
+              )}
               <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                 <span className="text-[13px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full">
                   {book.genre || "General"}
@@ -447,7 +494,7 @@ const BookDetailPage = () => {
         >
           {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : bookIsDownloaded ? <Check className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5" />}
         </button>
-        {isAuthor && (
+        {(isAuthor || isCollaborator) && (
           <button
             onClick={() => navigate(`/write/advanced/${id}`)}
             className="h-[50px] px-5 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"

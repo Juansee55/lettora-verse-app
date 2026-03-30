@@ -315,8 +315,8 @@ const ExplorePage = () => {
                   <TrendingUp className="w-4.5 h-4.5 text-rose-500" />
                   Tendencia
                 </h2>
-                <button className="text-[13px] text-primary font-medium flex items-center gap-0.5">
-                  Ver más <ChevronRight className="w-3.5 h-3.5" />
+                <button onClick={() => navigate("/top-rankings")} className="text-[13px] text-primary font-medium flex items-center gap-0.5">
+                  TOP Rankings <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
               <div className="flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-none">
