@@ -6,7 +6,7 @@ import {
   LogOut, Shield, Info, Mail, Eye, EyeOff, Loader2, Palette, Book,
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
-  MessageCircleHeart, BookHeart, UserPlus2, Swords,
+  MessageCircleHeart, BookHeart, UserPlus2, Swords, Trophy, Type, Zap,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -474,6 +474,13 @@ const SettingsPage = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <IOSSettingSection title={t("content")}>
             <IOSSettingItem
+              icon={<Trophy className="w-4 h-4" />}
+              iconBg="bg-amber-500"
+              title="TOP Rankings"
+              subtitle="Los mejores libros y poemas"
+              onClick={() => navigate("/top-rankings")}
+            />
+            <IOSSettingItem
               icon={<Book className="w-4 h-4" />}
               iconBg="bg-orange-500"
               title={t("favoriteGenres")}
@@ -485,6 +492,27 @@ const SettingsPage = () => {
               iconBg="bg-rose-500"
               title={t("favoriteAuthors")}
               onClick={() => toast({ title: t("comingSoon") })}
+            />
+            <IOSSettingItem
+              icon={<Type className="w-4 h-4" />}
+              iconBg="bg-indigo-500"
+              title="Tamaño de fuente"
+              subtitle="Ajusta el tamaño del texto en lectura"
+              onClick={() => toast({ title: t("comingSoon") })}
+            />
+            <IOSSettingItem
+              icon={<Zap className="w-4 h-4" />}
+              iconBg="bg-yellow-500"
+              title="Lectura rápida"
+              subtitle="Desplazamiento automático al leer"
+              action={
+                <Switch
+                  defaultChecked={false}
+                  onCheckedChange={(v) => saveSettings("autoScroll", v)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+              showChevron={false}
             />
           </IOSSettingSection>
         </motion.div>
