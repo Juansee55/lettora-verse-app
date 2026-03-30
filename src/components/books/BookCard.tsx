@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, Eye, Library, BookOpen } from "lucide-react";
+import { Heart, Eye, Library, BookOpen, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Book {
@@ -11,6 +11,7 @@ interface Book {
   likes: number;
   category: string;
   isSaga?: boolean;
+  topPosition?: number | null;
 }
 
 interface BookCardProps {
@@ -128,6 +129,12 @@ const BookCard = ({ book, variant = "default" }: BookCardProps) => {
         {/* Top badges */}
         <div className="absolute top-2 left-2 right-2 flex items-start justify-between">
           <div className="flex flex-col gap-1">
+            {book.topPosition && book.topPosition <= 100 && (
+              <span className="px-1.5 py-0.5 bg-amber-500/90 text-white text-[9px] font-bold rounded-md flex items-center gap-0.5 backdrop-blur-sm w-fit">
+                <Trophy className="w-2.5 h-2.5" />
+                TOP #{book.topPosition}
+              </span>
+            )}
             {book.isSaga && (
               <span className="px-1.5 py-0.5 bg-primary/90 text-primary-foreground text-[9px] font-bold rounded-md flex items-center gap-0.5 backdrop-blur-sm w-fit">
                 <Library className="w-2.5 h-2.5" />
