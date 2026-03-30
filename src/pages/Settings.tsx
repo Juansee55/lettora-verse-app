@@ -598,7 +598,7 @@ const SettingsPage = () => {
               icon={<Info className="w-4 h-4" />}
               iconBg="bg-gray-400"
               title={t("version")}
-              value="1.0.0"
+              value="1.8.1"
               showChevron={false}
             />
           </IOSSettingSection>
