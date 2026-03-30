@@ -212,6 +212,31 @@ const BookDetailPage = () => {
 
         setSaved(!!savedData);
         setIsAuthor(user.id === bookData.author_id);
+
+        // Check if user is a collaborator
+        const { data: collabData } = await supabase
+          .from("book_collaborators")
+          .select("id")
+          .eq("book_id", id)
+          .eq("user_id", user.id)
+          .not("accepted_at", "is", null)
+          .maybeSingle();
+        setIsCollaborator(!!collabData);
+      }
+
+      // Fetch collaborator profiles
+      const { data: collabs } = await supabase
+        .from("book_collaborators")
+        .select("user_id")
+        .eq("book_id", id)
+        .not("accepted_at", "is", null);
+      if (collabs && collabs.length > 0) {
+        const collabIds = collabs.map(c => c.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", collabIds);
+        if (profiles) setCollaboratorProfiles(profiles);
       }
 
       setLoading(false);
