@@ -382,12 +382,29 @@ const BookDetailPage = () => {
           {/* Info */}
           <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
             <div>
+              {topPosition && topPosition <= 100 && (
+                <button
+                  onClick={() => navigate("/top-rankings")}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] font-bold rounded-full mb-1.5"
+                >
+                  <Trophy className="w-3 h-3" />
+                  TOP #{topPosition}
+                </button>
+              )}
               <h1 className="text-[22px] font-bold leading-tight mb-1 font-display">
                 {book.title}
               </h1>
-              <p className="text-[15px] text-primary font-medium mb-1">
+              <p
+                className="text-[15px] text-primary font-medium mb-0.5 cursor-pointer"
+                onClick={() => book.profiles?.id && navigate(`/user/${book.profiles.id}`)}
+              >
                 {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
               </p>
+              {collaboratorProfiles.length > 0 && (
+                <p className="text-[12px] text-muted-foreground mb-1">
+                  con {collaboratorProfiles.map(c => c.display_name || c.username || "Usuario").join(", ")}
+                </p>
+              )}
               <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                 <span className="text-[13px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full">
                   {book.genre || "General"}
