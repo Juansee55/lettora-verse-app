@@ -494,7 +494,7 @@ const BookDetailPage = () => {
         >
           {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : bookIsDownloaded ? <Check className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5" />}
         </button>
-        {isAuthor && (
+        {(isAuthor || isCollaborator) && (
           <button
             onClick={() => navigate(`/write/advanced/${id}`)}
             className="h-[50px] px-5 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"

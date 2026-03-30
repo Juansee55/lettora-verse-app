@@ -85,9 +85,10 @@ const ProfilePage = () => {
     if (!user) { navigate("/auth"); return; }
     setCurrentUserId(user.id);
 
-    const [profileRes, booksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
+    const [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").eq("author_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("book_collaborators").select("book_id").eq("user_id", user.id).not("accepted_at", "is", null),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
       supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
       supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
@@ -95,11 +96,27 @@ const ProfilePage = () => {
     ]);
 
     if (profileRes.data) setProfile(profileRes.data);
-    if (booksRes.data) {
-      setBooks(booksRes.data);
-      const totalReads = booksRes.data.reduce((acc, b) => acc + (b.reads_count || 0), 0);
-      const totalLikes = booksRes.data.reduce((acc, b) => acc + (b.likes_count || 0), 0);
-      setStats(prev => ({ ...prev, books: booksRes.data!.length, totalReads, totalLikes }));
+
+    // Merge authored + collaborated books
+    let allBooks = booksRes.data || [];
+    if (collabBooksRes.data && collabBooksRes.data.length > 0) {
+      const collabBookIds = collabBooksRes.data.map(c => c.book_id).filter(bid => !allBooks.some(b => b.id === bid));
+      if (collabBookIds.length > 0) {
+        const { data: collabBooks } = await supabase
+          .from("books")
+          .select("id, title, cover_url, reads_count, likes_count, status")
+          .in("id", collabBookIds);
+        if (collabBooks) allBooks = [...allBooks, ...collabBooks];
+      }
+    }
+
+    if (allBooks.length > 0) {
+      setBooks(allBooks);
+      const totalReads = allBooks.reduce((acc, b) => acc + (b.reads_count || 0), 0);
+      const totalLikes = allBooks.reduce((acc, b) => acc + (b.likes_count || 0), 0);
+      setStats(prev => ({ ...prev, books: allBooks.length, totalReads, totalLikes }));
+    } else {
+      setBooks([]);
     }
     setStats(prev => ({
       ...prev,
