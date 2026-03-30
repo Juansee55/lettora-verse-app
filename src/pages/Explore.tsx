@@ -21,6 +21,18 @@ const categories = [
   { name: "Drama", icon: Users, color: "from-fuchsia-400 to-purple-600" },
   { name: "Ciencia Ficción", icon: Flame, color: "from-cyan-400 to-indigo-600" },
   { name: "Terror", icon: Flame, color: "from-red-500 to-rose-800" },
+  { name: "Ficción Literaria", icon: BookOpen, color: "from-emerald-500 to-green-700" },
+  { name: "Ficción Contemporánea", icon: BookOpen, color: "from-slate-400 to-gray-600" },
+  { name: "Ficción Histórica", icon: Clock, color: "from-amber-500 to-yellow-700" },
+  { name: "Distopía", icon: Flame, color: "from-gray-500 to-zinc-700" },
+  { name: "Thriller", icon: Flame, color: "from-red-400 to-orange-700" },
+  { name: "Humor", icon: Sparkles, color: "from-yellow-400 to-amber-600" },
+  { name: "Infantil", icon: Star, color: "from-pink-300 to-rose-500" },
+  { name: "Juvenil", icon: Star, color: "from-blue-400 to-indigo-600" },
+  { name: "No Ficción", icon: BookOpen, color: "from-teal-400 to-cyan-600" },
+  { name: "Biografía", icon: Users, color: "from-stone-400 to-stone-600" },
+  { name: "Autoayuda", icon: Heart, color: "from-green-400 to-emerald-600" },
+  { name: "Historia", icon: Clock, color: "from-orange-400 to-amber-700" },
 ];
 
 interface Book {

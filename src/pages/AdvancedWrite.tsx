@@ -48,6 +48,10 @@ interface Chapter {
 const genres = [
   "Romance", "Fantasía", "Misterio", "Poesía",
   "Drama", "Aventura", "Ciencia Ficción", "Terror",
+  "No Ficción", "Biografía", "Autoayuda", "Historia",
+  "Ficción Literaria", "Ficción Contemporánea", "Ficción Histórica",
+  "Distopía", "Thriller", "Humor", "Infantil", "Juvenil",
+  "Erótica", "Paranormal", "Cyberpunk", "Steampunk",
 ];
 
 const AdvancedWritePage = () => {
