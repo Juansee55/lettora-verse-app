@@ -104,7 +104,8 @@ const AppContent = () => {
       <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/book/:id" element={user ? <BookDetailPage /> : <Navigate to="/auth" replace />} />
       <Route path="/book/:bookId/chapter/:chapterNumber" element={user ? <ChapterReaderPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/write" element={user ? <WritePage /> : <Navigate to="/auth" replace />} />
+      <Route path="/write" element={user ? <WriteSelectorPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/write/new" element={user ? <WritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced/:bookId" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/microstories" element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} />
