@@ -59,6 +59,12 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showGenrePicker, setShowGenrePicker] = useState(false);
+  const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
+  const [showFontSizePicker, setShowFontSizePicker] = useState(false);
+  const [fontSize, setFontSize] = useState(18);
+  const [showReadingThemePicker, setShowReadingThemePicker] = useState(false);
+  const [readingTheme, setReadingTheme] = useState("dark");
 
   useEffect(() => {
     const loadSettings = async () => {
