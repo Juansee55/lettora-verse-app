@@ -1902,6 +1902,42 @@ export type Database = {
           },
         ]
       }
+      social_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          display_order: number
+          icon: string
+          id: string
+          is_active: boolean
+          platform: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          platform: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          platform?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       staff_bday_messages: {
         Row: {
           bday_id: string

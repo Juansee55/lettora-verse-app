@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -44,6 +44,8 @@ interface UserSaga {
 
 const WritePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const writeType = searchParams.get("type") || "novel";
   const { toast } = useToast();
   const [showImportModal, setShowImportModal] = useState(false);
   const [title, setTitle] = useState("");
@@ -58,7 +60,7 @@ const WritePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Saga state
-  const [isSaga, setIsSaga] = useState(false);
+  const [isSaga, setIsSaga] = useState(writeType === "saga");
   const [parentSagaId, setParentSagaId] = useState<string | null>(null);
   const [showSagaPicker, setShowSagaPicker] = useState(false);
   const [userSagas, setUserSagas] = useState<UserSaga[]>([]);

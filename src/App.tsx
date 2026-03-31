@@ -23,6 +23,7 @@ const ChatConversationPage = lazy(() => import("./pages/ChatConversation"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const BookDetailPage = lazy(() => import("./pages/BookDetail"));
 const WritePage = lazy(() => import("./pages/Write"));
+const WriteSelectorPage = lazy(() => import("./pages/WriteSelector"));
 const AdvancedWritePage = lazy(() => import("./pages/AdvancedWrite"));
 const MicrostoriesPage = lazy(() => import("./pages/Microstories"));
 const UserProfilePage = lazy(() => import("./pages/UserProfile"));
@@ -46,6 +47,7 @@ const GangWarsPage = lazy(() => import("./pages/GangWars"));
 const CommunityPage = lazy(() => import("./pages/Community"));
 const TopRankingsPage = lazy(() => import("./pages/TopRankings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const SocialLinksPage = lazy(() => import("./pages/SocialLinks"));
 
 const queryClient = new QueryClient();
 
@@ -102,7 +104,8 @@ const AppContent = () => {
       <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/book/:id" element={user ? <BookDetailPage /> : <Navigate to="/auth" replace />} />
       <Route path="/book/:bookId/chapter/:chapterNumber" element={user ? <ChapterReaderPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/write" element={user ? <WritePage /> : <Navigate to="/auth" replace />} />
+      <Route path="/write" element={user ? <WriteSelectorPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/write/new" element={user ? <WritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced/:bookId" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/microstories" element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} />
@@ -126,6 +129,7 @@ const AppContent = () => {
       <Route path="/gang-wars" element={user ? <GangWarsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/community" element={user ? <CommunityPage /> : <Navigate to="/auth" replace />} />
       <Route path="/top-rankings" element={user ? <TopRankingsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/social-links" element={user ? <SocialLinksPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
