@@ -637,9 +637,16 @@ const SettingsPage = () => {
           </IOSSettingSection>
         </motion.div>
 
-        {/* About */}
+        {/* Social & About */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <IOSSettingSection>
+          <IOSSettingSection title="Comunidad">
+            <IOSSettingItem
+              icon={<Globe className="w-4 h-4" />}
+              iconBg="bg-gradient-to-r from-pink-500 to-violet-500"
+              title="Redes Sociales"
+              subtitle="Síguenos en redes"
+              onClick={() => navigate("/social-links")}
+            />
             <IOSSettingItem
               icon={<Users className="w-4 h-4" />}
               iconBg="bg-amber-500"
