@@ -484,21 +484,22 @@ const SettingsPage = () => {
               icon={<Book className="w-4 h-4" />}
               iconBg="bg-orange-500"
               title={t("favoriteGenres")}
-              subtitle={t("personalizeRecs")}
-              onClick={() => toast({ title: t("comingSoon") })}
+              subtitle={favoriteGenres.length > 0 ? favoriteGenres.slice(0, 3).join(", ") : t("personalizeRecs")}
+              onClick={() => setShowGenrePicker(true)}
             />
             <IOSSettingItem
               icon={<Heart className="w-4 h-4" />}
               iconBg="bg-rose-500"
               title={t("favoriteAuthors")}
-              onClick={() => toast({ title: t("comingSoon") })}
+              subtitle="Descubre escritores que te gustan"
+              onClick={() => navigate("/explore")}
             />
             <IOSSettingItem
               icon={<Type className="w-4 h-4" />}
               iconBg="bg-indigo-500"
               title="Tamaño de fuente"
-              subtitle="Ajusta el tamaño del texto en lectura"
-              onClick={() => toast({ title: t("comingSoon") })}
+              subtitle={`${fontSize}px`}
+              onClick={() => setShowFontSizePicker(true)}
             />
             <IOSSettingItem
               icon={<Zap className="w-4 h-4" />}
