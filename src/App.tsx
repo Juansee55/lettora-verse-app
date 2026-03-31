@@ -47,6 +47,7 @@ const GangWarsPage = lazy(() => import("./pages/GangWars"));
 const CommunityPage = lazy(() => import("./pages/Community"));
 const TopRankingsPage = lazy(() => import("./pages/TopRankings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const SocialLinksPage = lazy(() => import("./pages/SocialLinks"));
 
 const queryClient = new QueryClient();
 
