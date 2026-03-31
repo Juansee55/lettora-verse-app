@@ -10,7 +10,7 @@ const writeOptions = [
     title: "Escribir Novela",
     description: "Historia con capítulos, personajes y arcos narrativos",
     gradient: "from-violet-500 to-purple-600",
-    path: "/write?type=novel",
+    path: "/write/new?type=novel",
   },
   {
     id: "book",
@@ -18,7 +18,7 @@ const writeOptions = [
     title: "Escribir Libro",
     description: "Obra sin capítulos — poesía, ensayo o texto libre",
     gradient: "from-blue-500 to-cyan-500",
-    path: "/write?type=book",
+    path: "/write/new?type=book",
   },
   {
     id: "saga",
@@ -26,7 +26,7 @@ const writeOptions = [
     title: "Crear Saga",
     description: "Serie de libros conectados bajo un mismo universo",
     gradient: "from-amber-500 to-orange-500",
-    path: "/write?type=saga",
+    path: "/write/new?type=saga",
   },
 ];
 
