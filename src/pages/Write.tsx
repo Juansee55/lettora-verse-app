@@ -44,6 +44,8 @@ interface UserSaga {
 
 const WritePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const writeType = searchParams.get("type") || "novel";
   const { toast } = useToast();
   const [showImportModal, setShowImportModal] = useState(false);
   const [title, setTitle] = useState("");
