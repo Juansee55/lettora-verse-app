@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
-  Grid3X3, List, Crown, ChevronRight, Trash2, QrCode,
+  Grid3X3, List, Crown, ChevronRight, Trash2, QrCode, MapPin,
+  Calendar, Link as LinkIcon, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
