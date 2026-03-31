@@ -84,6 +84,24 @@ const SettingsPage = () => {
         setFollowersVisibility((profile as any).followers_visibility || "all");
       }
 
+      // Load favorite genres
+      const { data: genreProfile } = await supabase
+        .from("profiles")
+        .select("favorite_genres")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (genreProfile?.favorite_genres) setFavoriteGenres(genreProfile.favorite_genres);
+
+      // Load reading settings
+      const readingSettings = localStorage.getItem("lettora_reading_settings");
+      if (readingSettings) {
+        try {
+          const parsed = JSON.parse(readingSettings);
+          setFontSize(parsed.fontSize || 18);
+          setReadingTheme(parsed.theme || "dark");
+        } catch {}
+      }
+
       // Check admin role
       const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
       const adminStatus = !!roleData;
