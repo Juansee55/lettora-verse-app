@@ -60,7 +60,7 @@ const WritePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Saga state
-  const [isSaga, setIsSaga] = useState(false);
+  const [isSaga, setIsSaga] = useState(writeType === "saga");
   const [parentSagaId, setParentSagaId] = useState<string | null>(null);
   const [showSagaPicker, setShowSagaPicker] = useState(false);
   const [userSagas, setUserSagas] = useState<UserSaga[]>([]);
