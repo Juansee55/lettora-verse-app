@@ -275,6 +275,36 @@ const ProfilePage = () => {
           {profile?.bio && (
             <p className="text-[15px] text-muted-foreground mt-1 leading-snug">{profile.bio}</p>
           )}
+
+          {/* Info pills */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {profile?.location && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted/60 rounded-full text-[12px] text-muted-foreground">
+                <MapPin className="w-3 h-3" /> {profile.location}
+              </span>
+            )}
+            {profile?.created_at && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted/60 rounded-full text-[12px] text-muted-foreground">
+                <Calendar className="w-3 h-3" /> Desde {new Date(profile.created_at).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}
+              </span>
+            )}
+            {profile?.website && (
+              <a href={profile.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 rounded-full text-[12px] text-primary font-medium">
+                <LinkIcon className="w-3 h-3" /> {profile.website.replace(/^https?:\/\//, "").slice(0, 20)}
+              </a>
+            )}
+          </div>
+
+          {/* Favorite genres */}
+          {profile?.favorite_genres && profile.favorite_genres.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {profile.favorite_genres.map(genre => (
+                <span key={genre} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 rounded-full text-[11px] text-primary font-medium">
+                  <Sparkles className="w-2.5 h-2.5" /> {genre}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Level + Inventory badges */}
