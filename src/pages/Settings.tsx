@@ -308,8 +308,8 @@ const SettingsPage = () => {
               icon={<Palette className="w-4 h-4" />}
               iconBg="bg-pink-500"
               title={t("readingTheme")}
-              subtitle={t("customizeExperience")}
-              onClick={() => toast({ title: t("comingSoon") })}
+              subtitle={readingTheme.charAt(0).toUpperCase() + readingTheme.slice(1)}
+              onClick={() => setShowReadingThemePicker(true)}
             />
             <IOSSettingItem
               icon={<Globe className="w-4 h-4" />}
