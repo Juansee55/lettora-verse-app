@@ -1027,6 +1027,177 @@ const SettingsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Genre Picker */}
+      <AnimatePresence>
+        {showGenrePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowGenrePicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden max-h-[70vh]"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Géneros favoritos</h2>
+                <button onClick={() => setShowGenrePicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-4 pb-8">
+                <p className="text-[13px] text-muted-foreground mb-3">Selecciona hasta 5 géneros para personalizar tus recomendaciones</p>
+                <div className="flex flex-wrap gap-2">
+                  {["Romance","Fantasía","Misterio","Poesía","Drama","Aventura","Ciencia Ficción","Terror","No Ficción","Biografía","Autoayuda","Thriller","Humor","Juvenil","Ficción Histórica","Distopía","Cyberpunk","Erótica"].map((genre) => (
+                    <button
+                      key={genre}
+                      onClick={async () => {
+                        let updated: string[];
+                        if (favoriteGenres.includes(genre)) {
+                          updated = favoriteGenres.filter(g => g !== genre);
+                        } else if (favoriteGenres.length < 5) {
+                          updated = [...favoriteGenres, genre];
+                        } else {
+                          toast({ title: "Máximo 5 géneros" });
+                          return;
+                        }
+                        setFavoriteGenres(updated);
+                        if (user) {
+                          await supabase.from("profiles").update({ favorite_genres: updated } as any).eq("id", user.id);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
+                        favoriteGenres.includes(genre) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {genre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Font Size Picker */}
+      <AnimatePresence>
+        {showFontSizePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowFontSizePicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Tamaño de fuente</h2>
+                <button onClick={() => setShowFontSizePicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-6 pb-8">
+                <p className="text-center text-muted-foreground text-[13px] mb-4">Vista previa del texto</p>
+                <div className="bg-muted/30 rounded-xl p-4 mb-6">
+                  <p style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}>
+                    En un lugar de la Mancha, de cuyo nombre no quiero acordarme...
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-[13px] text-muted-foreground">A</span>
+                  <input
+                    type="range"
+                    min={12}
+                    max={28}
+                    value={fontSize}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      setFontSize(val);
+                      const saved = JSON.parse(localStorage.getItem("lettora_reading_settings") || "{}");
+                      localStorage.setItem("lettora_reading_settings", JSON.stringify({ ...saved, fontSize: val }));
+                    }}
+                    className="flex-1 accent-primary"
+                  />
+                  <span className="text-[17px] font-medium">A</span>
+                </div>
+                <p className="text-center text-[13px] text-muted-foreground mt-2">{fontSize}px</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reading Theme Picker */}
+      <AnimatePresence>
+        {showReadingThemePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowReadingThemePicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Tema de lectura</h2>
+                <button onClick={() => setShowReadingThemePicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-4 pb-8 space-y-2">
+                {([
+                  { value: "light", label: "Claro", desc: "Fondo blanco", preview: "bg-white text-gray-900" },
+                  { value: "dark", label: "Oscuro", desc: "Fondo oscuro", preview: "bg-gray-900 text-gray-100" },
+                  { value: "sepia", label: "Sepia", desc: "Tono cálido", preview: "bg-amber-50 text-amber-900" },
+                  { value: "midnight", label: "Medianoche", desc: "Negro profundo", preview: "bg-slate-950 text-slate-200" },
+                ] as const).map((t) => (
+                  <button
+                    key={t.value}
+                    onClick={() => {
+                      setReadingTheme(t.value);
+                      const saved = JSON.parse(localStorage.getItem("lettora_reading_settings") || "{}");
+                      localStorage.setItem("lettora_reading_settings", JSON.stringify({ ...saved, theme: t.value }));
+                      setShowReadingThemePicker(false);
+                      toast({ title: `Tema: ${t.label}` });
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                      readingTheme === t.value ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg ${t.preview} flex items-center justify-center text-[11px] font-mono border border-border/20`}>
+                      Aa
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="text-[15px] font-medium">{t.label}</p>
+                      <p className="text-[12px] text-muted-foreground">{t.desc}</p>
+                    </div>
+                    {readingTheme === t.value && <Check className="w-5 h-5 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
