@@ -23,6 +23,7 @@ const ChatConversationPage = lazy(() => import("./pages/ChatConversation"));
 const ProfilePage = lazy(() => import("./pages/Profile"));
 const BookDetailPage = lazy(() => import("./pages/BookDetail"));
 const WritePage = lazy(() => import("./pages/Write"));
+const WriteSelectorPage = lazy(() => import("./pages/WriteSelector"));
 const AdvancedWritePage = lazy(() => import("./pages/AdvancedWrite"));
 const MicrostoriesPage = lazy(() => import("./pages/Microstories"));
 const UserProfilePage = lazy(() => import("./pages/UserProfile"));
