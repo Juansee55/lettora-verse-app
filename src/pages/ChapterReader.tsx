@@ -518,17 +518,13 @@ const ChapterReaderPage = () => {
                 url={chapter.content.match(/^\[PDF:\s*(https?:\/\/[^\]]+)\]/)![1]}
               />
             ) : (
-              <div
-                className="prose max-w-none leading-relaxed"
-                style={{
-                  fontSize: `${settings.fontSize}px`,
-                  lineHeight: settings.lineHeight,
-                  fontFamily: getFontFamily(),
-                  textAlign: settings.textAlign,
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: chapter.content?.replace(/\n/g, '<br>') || ''
-                }}
+              <InteractiveContent
+                content={chapter.content || ""}
+                chapterId={chapter.id}
+                fontSize={settings.fontSize}
+                lineHeight={settings.lineHeight}
+                fontFamily={getFontFamily()}
+                textAlign={settings.textAlign}
               />
             )}
           </motion.article>

@@ -648,6 +648,13 @@ const SettingsPage = () => {
               onClick={() => navigate("/social-links")}
             />
             <IOSSettingItem
+              icon={<MessageSquare className="w-4 h-4" />}
+              iconBg="bg-teal-500"
+              title="Propuestas"
+              subtitle="Envía ideas y sugerencias"
+              onClick={() => navigate("/proposals")}
+            />
+            <IOSSettingItem
               icon={<Users className="w-4 h-4" />}
               iconBg="bg-amber-500"
               title={t("team")}

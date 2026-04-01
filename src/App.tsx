@@ -131,6 +131,7 @@ const AppContent = () => {
       <Route path="/community" element={user ? <CommunityPage /> : <Navigate to="/auth" replace />} />
       <Route path="/top-rankings" element={user ? <TopRankingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/social-links" element={user ? <SocialLinksPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/proposals" element={user ? <ProposalsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
