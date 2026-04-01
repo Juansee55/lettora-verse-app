@@ -26,6 +26,7 @@ import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { ReadingSettingsSheet } from "@/components/reader/ReadingSettingsSheet";
 import { PageTransition } from "@/components/reader/PageTransition";
 import PDFViewer from "@/components/reader/PDFViewer";
+import InteractiveContent from "@/components/reader/InteractiveContent";
 
 interface ChapterData {
   id: string;
