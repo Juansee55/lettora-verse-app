@@ -1568,6 +1568,41 @@ export type Database = {
         }
         Relationships: []
       }
+      paragraph_comments: {
+        Row: {
+          chapter_id: string
+          content: string
+          created_at: string
+          id: string
+          paragraph_index: number
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          content: string
+          created_at?: string
+          id?: string
+          paragraph_index: number
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          paragraph_index?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paragraph_comments_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reactions: {
         Row: {
           created_at: string
@@ -1791,6 +1826,33 @@ export type Database = {
           promotion_id?: string
           user_id?: string | null
           viewed_at?: string
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          admin_response: string | null
+          content: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
