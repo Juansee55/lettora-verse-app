@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowLeft, ArrowRight, RotateCw, Share2, ExternalLink, Globe, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCw, Share2, ExternalLink, Globe, Lock } from "lucide-react";
 
 interface InAppBrowserProps {
   isOpen: boolean;
@@ -10,11 +10,10 @@ interface InAppBrowserProps {
 
 const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
   const [loading, setLoading] = useState(true);
-  const [currentUrl, setCurrentUrl] = useState(url);
-  const isSecure = currentUrl.startsWith("https");
+  const isSecure = url.startsWith("https");
 
   const hostname = (() => {
-    try { return new URL(currentUrl).hostname; } catch { return currentUrl; }
+    try { return new URL(url).hostname; } catch { return url; }
   })();
 
   return (
@@ -28,7 +27,7 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
           className="fixed inset-0 z-[70] flex flex-col bg-background"
         >
           {/* Top gradient bar */}
-          <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-primary to-fuchsia-500" />
+          <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary" />
 
           {/* Header */}
           <div className="relative">
@@ -41,11 +40,10 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
                 Listo
               </button>
 
-              {/* URL bar */}
               <div className="flex-1 mx-3">
                 <div className="flex items-center gap-1.5 justify-center bg-muted/60 rounded-full px-3 py-1.5">
                   {isSecure ? (
-                    <Lock className="w-3 h-3 text-green-500 shrink-0" />
+                    <Lock className="w-3 h-3 text-emerald-500 shrink-0" />
                   ) : (
                     <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
                   )}
@@ -56,7 +54,7 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
               </div>
 
               <button
-                onClick={() => window.open(currentUrl, "_blank")}
+                onClick={() => window.open(url, "_blank")}
                 className="p-2 text-primary active:opacity-60 transition-opacity"
               >
                 <ExternalLink className="w-5 h-5" />
@@ -70,14 +68,14 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
               initial={{ width: "0%" }}
               animate={{ width: "80%" }}
               transition={{ duration: 2, ease: "easeOut" }}
-              className="h-[2px] bg-gradient-to-r from-primary via-violet-400 to-fuchsia-400"
+              className="h-[2px] bg-gradient-to-r from-primary to-accent"
             />
           )}
 
           {/* iframe */}
           <div className="flex-1 relative">
             <iframe
-              src={currentUrl}
+              src={url}
               className="w-full h-full border-0"
               onLoad={() => setLoading(false)}
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
@@ -88,18 +86,14 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
           {/* Bottom toolbar */}
           <div className="liquid-glass border-t border-white/10">
             <div className="flex items-center justify-around px-6 py-3 pb-safe">
-              <button className="p-2 text-muted-foreground active:text-primary transition-colors" disabled>
+              <button className="p-2 text-muted-foreground" disabled>
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <button className="p-2 text-muted-foreground active:text-primary transition-colors" disabled>
+              <button className="p-2 text-muted-foreground" disabled>
                 <ArrowRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => {
-                  setLoading(true);
-                  setCurrentUrl(url + "?r=" + Date.now());
-                  setTimeout(() => setCurrentUrl(url), 50);
-                }}
+                onClick={() => setLoading(true)}
                 className="p-2 text-muted-foreground active:text-primary transition-colors"
               >
                 <RotateCw className="w-5 h-5" />
@@ -107,9 +101,9 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
               <button
                 onClick={() => {
                   if (navigator.share) {
-                    navigator.share({ url: currentUrl });
+                    navigator.share({ url });
                   } else {
-                    navigator.clipboard.writeText(currentUrl);
+                    navigator.clipboard.writeText(url);
                   }
                 }}
                 className="p-2 text-muted-foreground active:text-primary transition-colors"
@@ -125,14 +119,3 @@ const InAppBrowser = ({ isOpen, url, onClose }: InAppBrowserProps) => {
 };
 
 export default InAppBrowser;
-
-// Hook to use the in-app browser
-import { createContext, useContext, useCallback } from "react";
-
-interface BrowserContextType {
-  openUrl: (url: string) => void;
-}
-
-const BrowserContext = createContext<BrowserContextType>({ openUrl: () => {} });
-export const useBrowser = () => useContext(BrowserContext);
-export { BrowserContext };
