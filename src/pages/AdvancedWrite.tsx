@@ -219,6 +219,22 @@ const AdvancedWritePage = () => {
     if (activeChapterId === id) setActiveChapterId(remaining[0].id);
   };
 
+  const duplicateChapter = (id: string) => {
+    const source = chapters.find(c => c.id === id);
+    if (!source) return;
+    const newChapter: Chapter = {
+      id: Date.now().toString(),
+      title: `${source.title} (copia)`,
+      content: source.content,
+      chapter_number: chapters.length + 1,
+      word_count: source.word_count,
+      notes: source.notes,
+    };
+    setChapters(prev => [...prev, newChapter]);
+    setActiveChapterId(newChapter.id);
+    toast({ title: "Capítulo duplicado" });
+  };
+
   const moveChapter = (id: string, direction: "up" | "down") => {
     const index = chapters.findIndex(c => c.id === id);
     if ((direction === "up" && index === 0) || (direction === "down" && index === chapters.length - 1)) return;
