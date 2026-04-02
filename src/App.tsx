@@ -147,8 +147,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ScrollToTop />
-            <AppContent />
+            <BrowserProvider>
+              <ScrollToTop />
+              <AppContent />
+            </BrowserProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>

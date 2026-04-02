@@ -852,6 +852,18 @@ const BookDetailPage = () => {
         contentId={book.id}
         contentTitle={book.title}
       />
+
+      {/* Share in Chat */}
+      <ShareBookInChat
+        isOpen={showShareInChat}
+        onClose={() => setShowShareInChat(false)}
+        book={{
+          id: book.id,
+          title: book.title,
+          cover_url: book.cover_url,
+          author_name: book.profiles?.display_name || book.profiles?.username || "Anónimo",
+        }}
+      />
     </div>
   );
 };
