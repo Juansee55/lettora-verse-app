@@ -119,6 +119,7 @@ const BookDetailPage = () => {
   const [sagaEntries, setSagaEntries] = useState<SagaEntry[]>([]);
   const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [showShareInChat, setShowShareInChat] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
   const topPosition = useTopRanking(id);
