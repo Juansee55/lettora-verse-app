@@ -660,7 +660,7 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
             >
               <div className="p-4">
                 <div className="ios-pull-indicator" />
-                <h3 className="text-[17px] font-semibold text-center mb-4">Capítulos</h3>
+                <h3 className="text-[17px] font-semibold text-center mb-4">Gestionar capítulos</h3>
                 <div className="space-y-1">
                   {chapters.map((chapter, index) => (
                     <div
@@ -683,6 +683,20 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                           className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30"
                         >
                           <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveChapter(chapter.id, "down")}
+                          disabled={index === chapters.length - 1}
+                          className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => duplicateChapter(chapter.id)}
+                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
+                          title="Duplicar capítulo"
+                        >
+                          <Plus className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => deleteChapter(chapter.id)}
