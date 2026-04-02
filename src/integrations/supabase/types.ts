@@ -45,6 +45,7 @@ export type Database = {
       }
       announcements: {
         Row: {
+          animation_type: string | null
           created_at: string
           created_by: string
           description: string
@@ -54,6 +55,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          animation_type?: string | null
           created_at?: string
           created_by: string
           description: string
@@ -63,6 +65,7 @@ export type Database = {
           title: string
         }
         Update: {
+          animation_type?: string | null
           created_at?: string
           created_by?: string
           description?: string
