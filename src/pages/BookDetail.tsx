@@ -535,6 +535,13 @@ const BookDetailPage = () => {
             <Share2 className="w-[22px] h-[22px] text-primary" />
             <span className="text-[11px] font-medium text-primary">Compartir</span>
           </button>
+          <button
+            onClick={() => setShowShareInChat(true)}
+            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
+          >
+            <Send className="w-[22px] h-[22px] text-primary" />
+            <span className="text-[11px] font-medium text-primary">Enviar</span>
+          </button>
           {isAuthor && (
             <button
               onClick={() => setShowCollaborators(true)}
