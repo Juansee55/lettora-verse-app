@@ -12,6 +12,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import PageLoader from "@/components/PageLoader";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
+import { BrowserProvider } from "@/components/browser/BrowserProvider";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -146,8 +147,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ScrollToTop />
-            <AppContent />
+            <BrowserProvider>
+              <ScrollToTop />
+              <AppContent />
+            </BrowserProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>

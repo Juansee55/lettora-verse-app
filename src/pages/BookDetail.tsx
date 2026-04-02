@@ -36,6 +36,7 @@ import ReportContentModal from "@/components/reports/ReportContentModal";
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import BookReviewsSection from "@/components/reviews/BookReviewsSection";
 import { useTopRanking } from "@/hooks/useTopRanking";
+import ShareBookInChat from "@/components/share/ShareBookInChat";
 
 interface BookData {
   id: string;
@@ -118,6 +119,7 @@ const BookDetailPage = () => {
   const [sagaEntries, setSagaEntries] = useState<SagaEntry[]>([]);
   const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [showShareInChat, setShowShareInChat] = useState(false);
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
   const topPosition = useTopRanking(id);
@@ -533,6 +535,13 @@ const BookDetailPage = () => {
             <Share2 className="w-[22px] h-[22px] text-primary" />
             <span className="text-[11px] font-medium text-primary">Compartir</span>
           </button>
+          <button
+            onClick={() => setShowShareInChat(true)}
+            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
+          >
+            <Send className="w-[22px] h-[22px] text-primary" />
+            <span className="text-[11px] font-medium text-primary">Enviar</span>
+          </button>
           {isAuthor && (
             <button
               onClick={() => setShowCollaborators(true)}
@@ -842,6 +851,18 @@ const BookDetailPage = () => {
         contentType="book"
         contentId={book.id}
         contentTitle={book.title}
+      />
+
+      {/* Share in Chat */}
+      <ShareBookInChat
+        isOpen={showShareInChat}
+        onClose={() => setShowShareInChat(false)}
+        book={{
+          id: book.id,
+          title: book.title,
+          cover_url: book.cover_url,
+          author_name: book.profiles?.display_name || book.profiles?.username || "Anónimo",
+        }}
       />
     </div>
   );

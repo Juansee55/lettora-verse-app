@@ -1,0 +1,1 @@
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS animation_type TEXT DEFAULT 'slide';
