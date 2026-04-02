@@ -14,30 +14,27 @@ interface Announcement {
 }
 
 const animationVariants = {
-  // Type 1: Slide up with bounce
   slide: {
     overlay: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
     card: {
       initial: { opacity: 0, y: 300, scale: 0.8 },
-      animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", damping: 18, stiffness: 200 } },
+      animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, damping: 18, stiffness: 200 } },
       exit: { opacity: 0, y: 300, scale: 0.8 },
     },
   },
-  // Type 2: Scale from center with rotation
   scale: {
     overlay: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
     card: {
       initial: { opacity: 0, scale: 0, rotate: -10 },
-      animate: { opacity: 1, scale: 1, rotate: 0, transition: { type: "spring", damping: 15, stiffness: 250, delay: 0.1 } },
+      animate: { opacity: 1, scale: 1, rotate: 0, transition: { type: "spring" as const, damping: 15, stiffness: 250, delay: 0.1 } },
       exit: { opacity: 0, scale: 0, rotate: 10 },
     },
   },
-  // Type 3: Cinematic fade with parallax
   cinematic: {
     overlay: { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.6 } }, exit: { opacity: 0 } },
     card: {
       initial: { opacity: 0, y: 60, scale: 1.05 },
-      animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+      animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as number[] } },
       exit: { opacity: 0, y: -40, scale: 0.95, transition: { duration: 0.4 } },
     },
   },
