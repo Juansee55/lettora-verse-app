@@ -34,7 +34,7 @@ const animationVariants = {
     overlay: { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.6 } }, exit: { opacity: 0 } },
     card: {
       initial: { opacity: 0, y: 60, scale: 1.05 },
-      animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as number[] } },
+      animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
       exit: { opacity: 0, y: -40, scale: 0.95, transition: { duration: 0.4 } },
     },
   },
