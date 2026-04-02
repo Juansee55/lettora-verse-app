@@ -36,6 +36,7 @@ import ReportContentModal from "@/components/reports/ReportContentModal";
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import BookReviewsSection from "@/components/reviews/BookReviewsSection";
 import { useTopRanking } from "@/hooks/useTopRanking";
+import ShareBookInChat from "@/components/share/ShareBookInChat";
 
 interface BookData {
   id: string;
