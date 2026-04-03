@@ -493,6 +493,13 @@ const SettingsPage = () => {
               onClick={() => setShowPasswordDialog(true)}
             />
             <IOSSettingItem
+              icon={<Shield className="w-4 h-4" />}
+              iconBg="bg-emerald-600"
+              title="Autenticación en dos pasos"
+              subtitle={mfaEnrolled ? "Activada ✓" : "Protege tu cuenta"}
+              onClick={() => setShow2FASetup(true)}
+            />
+            <IOSSettingItem
               icon={<Ban className="w-4 h-4" />}
               iconBg="bg-amber-500"
               title="Usuarios bloqueados"
