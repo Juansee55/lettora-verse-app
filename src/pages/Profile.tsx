@@ -78,6 +78,9 @@ const ProfilePage = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [adminTitle, setAdminTitle] = useState<AdminTitle>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<{ email: string; addedAt: string }[]>([]);
+  const [currentEmail, setCurrentEmail] = useState<string>("");
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
 
