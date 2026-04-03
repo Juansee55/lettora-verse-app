@@ -92,6 +92,17 @@ const ProfilePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
     setCurrentUserId(user.id);
+    setCurrentEmail(user.email || "");
+    
+    // Load saved accounts
+    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]");
+    setSavedAccounts(accounts);
+    // Ensure current account is saved
+    if (user.email && !accounts.find((a: any) => a.email === user.email)) {
+      const updated = [...accounts, { email: user.email, addedAt: new Date().toISOString() }];
+      localStorage.setItem("lettora_accounts", JSON.stringify(updated));
+      setSavedAccounts(updated);
+    }
 
     const [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
