@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
   Grid3X3, List, Crown, ChevronRight, Trash2, QrCode, MapPin,
-  Calendar, Link as LinkIcon, Sparkles,
+  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +78,9 @@ const ProfilePage = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [adminTitle, setAdminTitle] = useState<AdminTitle>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<{ email: string; addedAt: string }[]>([]);
+  const [currentEmail, setCurrentEmail] = useState<string>("");
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
 
@@ -89,6 +92,17 @@ const ProfilePage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
     setCurrentUserId(user.id);
+    setCurrentEmail(user.email || "");
+    
+    // Load saved accounts
+    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]");
+    setSavedAccounts(accounts);
+    // Ensure current account is saved
+    if (user.email && !accounts.find((a: any) => a.email === user.email)) {
+      const updated = [...accounts, { email: user.email, addedAt: new Date().toISOString() }];
+      localStorage.setItem("lettora_accounts", JSON.stringify(updated));
+      setSavedAccounts(updated);
+    }
 
     const [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
@@ -182,9 +196,17 @@ const ProfilePage = () => {
       {/* iOS 26 Header */}
       <header className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
-          <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            @{profile?.username || "usuario"}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              @{profile?.username || "usuario"}
+            </h1>
+            <button
+              onClick={() => setShowAccountSwitcher(true)}
+              className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <Plus className="w-3.5 h-3.5 text-primary" />
+            </button>
+          </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowQR(true)}>
               <QrCode className="w-5 h-5" />
@@ -552,6 +574,107 @@ const ProfilePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Account Switcher Modal */}
+      <AnimatePresence>
+        {showAccountSwitcher && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowAccountSwitcher(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Cuentas</h2>
+                <button onClick={() => setShowAccountSwitcher(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-4">
+                {savedAccounts.map((account) => (
+                  <button
+                    key={account.email}
+                    onClick={async () => {
+                      if (account.email === currentEmail) {
+                        setShowAccountSwitcher(false);
+                        return;
+                      }
+                      // Sign out and redirect to auth with pre-filled email
+                      await supabase.auth.signOut();
+                      setShowAccountSwitcher(false);
+                      navigate("/auth");
+                      toast({ title: "Inicia sesión", description: `Ingresa la contraseña para ${account.email}` });
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors ${
+                      account.email === currentEmail ? "bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                      {account.email[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-[15px] font-medium truncate">{account.email}</p>
+                      {account.email === currentEmail && (
+                        <p className="text-[12px] text-primary">Cuenta activa</p>
+                      )}
+                    </div>
+                    {account.email === currentEmail && <Check className="w-5 h-5 text-primary" />}
+                    {account.email !== currentEmail && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const updated = savedAccounts.filter(a => a.email !== account.email);
+                          setSavedAccounts(updated);
+                          localStorage.setItem("lettora_accounts", JSON.stringify(updated));
+                          toast({ title: "Cuenta removida" });
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10"
+                      >
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="p-2 pt-0 pb-8 space-y-1">
+                <button
+                  onClick={() => {
+                    setShowAccountSwitcher(false);
+                    navigate("/auth");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-[15px] font-medium">Añadir cuenta</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setShowAccountSwitcher(false);
+                    navigate("/auth");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-destructive/5 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <LogOut className="w-5 h-5 text-destructive" />
+                  </div>
+                  <span className="text-[15px] font-medium text-destructive">Cerrar sesión</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <IOSBottomNav />
     </div>
