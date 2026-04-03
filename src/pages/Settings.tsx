@@ -1227,6 +1227,143 @@ const SettingsPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 2FA Setup Modal */}
+      <AnimatePresence>
+        {show2FASetup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => { setShow2FASetup(false); setMfaQrCode(null); setMfaVerifyCode(""); }}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Autenticación en dos pasos</h2>
+                <button onClick={() => { setShow2FASetup(false); setMfaQrCode(null); setMfaVerifyCode(""); }}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-4 pb-8 space-y-4">
+                {mfaEnrolled ? (
+                  <>
+                    <div className="text-center py-4">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                        <Shield className="w-8 h-8 text-emerald-500" />
+                      </div>
+                      <p className="text-[17px] font-semibold">2FA Activada</p>
+                      <p className="text-[13px] text-muted-foreground mt-1">Tu cuenta está protegida con autenticación de dos pasos</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setMfaLoading(true);
+                        const verifiedFactor = mfaFactors.find((f: any) => f.status === "verified");
+                        if (verifiedFactor) {
+                          await supabase.auth.mfa.unenroll({ factorId: verifiedFactor.id });
+                          setMfaEnrolled(false);
+                          setMfaFactors([]);
+                          toast({ title: "2FA desactivada" });
+                        }
+                        setMfaLoading(false);
+                      }}
+                      disabled={mfaLoading}
+                      className="w-full h-11 bg-destructive/10 text-destructive rounded-xl font-semibold text-[15px] disabled:opacity-50"
+                    >
+                      {mfaLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Desactivar 2FA"}
+                    </button>
+                  </>
+                ) : mfaQrCode ? (
+                  <>
+                    <p className="text-[13px] text-muted-foreground text-center">Escanea este código QR con tu aplicación de autenticación (Google Authenticator, Authy, etc.)</p>
+                    <div className="flex justify-center">
+                      <img src={mfaQrCode} alt="QR Code" className="w-48 h-48 rounded-xl" />
+                    </div>
+                    {mfaSecret && (
+                      <div className="bg-muted/50 rounded-xl p-3 text-center">
+                        <p className="text-[11px] text-muted-foreground mb-1">O ingresa este código manualmente:</p>
+                        <p className="text-[13px] font-mono font-semibold tracking-wider select-all">{mfaSecret}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Código de verificación</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={mfaVerifyCode}
+                        onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\D/g, ""))}
+                        placeholder="000000"
+                        className="w-full h-11 px-4 rounded-xl border border-input bg-background text-sm text-center tracking-[0.5em] font-mono"
+                      />
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (mfaVerifyCode.length !== 6 || !mfaFactorId) return;
+                        setMfaLoading(true);
+                        try {
+                          const challenge = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+                          if (challenge.error) throw challenge.error;
+                          const verify = await supabase.auth.mfa.verify({
+                            factorId: mfaFactorId,
+                            challengeId: challenge.data.id,
+                            code: mfaVerifyCode,
+                          });
+                          if (verify.error) throw verify.error;
+                          setMfaEnrolled(true);
+                          setMfaQrCode(null);
+                          setMfaVerifyCode("");
+                          toast({ title: "2FA activada ✅", description: "Tu cuenta está protegida." });
+                        } catch (error: any) {
+                          toast({ title: "Código incorrecto", description: error.message, variant: "destructive" });
+                        }
+                        setMfaLoading(false);
+                      }}
+                      disabled={mfaLoading || mfaVerifyCode.length !== 6}
+                      className="w-full h-11 bg-primary text-primary-foreground rounded-xl font-semibold text-[15px] disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {mfaLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Activar 2FA"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center py-4">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Shield className="w-8 h-8 text-primary" />
+                      </div>
+                      <p className="text-[15px] text-muted-foreground">Añade una capa extra de seguridad a tu cuenta usando una app de autenticación</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setMfaLoading(true);
+                        try {
+                          const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Lettora 2FA" });
+                          if (error) throw error;
+                          setMfaQrCode(data.totp.qr_code);
+                          setMfaSecret(data.totp.secret);
+                          setMfaFactorId(data.id);
+                        } catch (error: any) {
+                          toast({ title: "Error", description: error.message, variant: "destructive" });
+                        }
+                        setMfaLoading(false);
+                      }}
+                      disabled={mfaLoading}
+                      className="w-full h-11 bg-primary text-primary-foreground rounded-xl font-semibold text-[15px] disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {mfaLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Configurar 2FA"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
