@@ -196,9 +196,17 @@ const ProfilePage = () => {
       {/* iOS 26 Header */}
       <header className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
-          <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            @{profile?.username || "usuario"}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              @{profile?.username || "usuario"}
+            </h1>
+            <button
+              onClick={() => setShowAccountSwitcher(true)}
+              className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <Plus className="w-3.5 h-3.5 text-primary" />
+            </button>
+          </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowQR(true)}>
               <QrCode className="w-5 h-5" />
