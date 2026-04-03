@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,14 +9,20 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { AnimatedLettoraIcon } from "@/components/AnimatedLettoraIcon";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 type AuthMethod = "email" | "phone";
+type AuthStep = "form" | "verify" | "mfa";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<AuthStep>("form");
+  const [otpCode, setOtpCode] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -31,7 +37,6 @@ const Auth = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Auto-limit date fields
     if (name === "birthDay" && (parseInt(value) > 31 || value.length > 2)) return;
     if (name === "birthMonth" && (parseInt(value) > 12 || value.length > 2)) return;
     if (name === "birthYear" && value.length > 4) return;
@@ -45,29 +50,65 @@ const Auth = () => {
     return `${year}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
   };
 
+  const saveAccountToStorage = (email: string) => {
+    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]");
+    if (!accounts.find((a: any) => a.email === email)) {
+      accounts.push({ email, addedAt: new Date().toISOString() });
+      localStorage.setItem("lettora_accounts", JSON.stringify(accounts));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isLogin) {
+        let result;
         if (authMethod === "email") {
-          const { error } = await supabase.auth.signInWithPassword({
+          result = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
           });
-          if (error) throw error;
         } else {
-          const { error } = await supabase.auth.signInWithPassword({
+          result = await supabase.auth.signInWithPassword({
             phone: formData.phone,
             password: formData.password,
           });
-          if (error) throw error;
         }
-        toast({
-          title: "¡Bienvenido de vuelta!",
-          description: "Has iniciado sesión correctamente.",
-        });
+
+        if (result.error) {
+          // Check if it's an email not confirmed error
+          if (result.error.message?.includes("Email not confirmed")) {
+            setStep("verify");
+            // Resend confirmation
+            await supabase.auth.resend({ type: "signup", email: formData.email });
+            toast({ title: "Verifica tu correo", description: "Te hemos enviado un código de verificación." });
+            setLoading(false);
+            return;
+          }
+          throw result.error;
+        }
+
+        // Check if MFA is required
+        if (result.data?.session === null && (result.data as any)?.user === null) {
+          // MFA might be required - check factors
+          const factors = await supabase.auth.mfa.listFactors();
+          if (factors.data && factors.data.totp && factors.data.totp.length > 0) {
+            const factor = factors.data.totp[0];
+            setMfaFactorId(factor.id);
+            const challenge = await supabase.auth.mfa.challenge({ factorId: factor.id });
+            if (challenge.data) {
+              setMfaChallengeId(challenge.data.id);
+              setStep("mfa");
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        saveAccountToStorage(formData.email || formData.phone);
+        toast({ title: "¡Bienvenido de vuelta!", description: "Has iniciado sesión correctamente." });
         navigate("/home");
       } else {
         const birthDate = getBirthDate();
@@ -88,30 +129,157 @@ const Auth = () => {
           signUpData.phone = formData.phone;
         }
 
-        const { error } = await supabase.auth.signUp(signUpData);
+        const { data, error } = await supabase.auth.signUp(signUpData);
         if (error) throw error;
 
-        // Update birth_date in profiles if provided
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && birthDate) {
-          await supabase.from("profiles").update({ birth_date: birthDate } as any).eq("id", user.id);
+        // If email needs confirmation, show verification step
+        if (data?.user && !data.session) {
+          setStep("verify");
+          toast({ title: "¡Código enviado!", description: "Revisa tu correo electrónico para el código de verificación." });
+        } else if (data?.session) {
+          saveAccountToStorage(formData.email || formData.phone);
+          if (data.user && birthDate) {
+            await supabase.from("profiles").update({ birth_date: birthDate } as any).eq("id", data.user.id);
+          }
+          toast({ title: "¡Cuenta creada!" });
+          navigate("/home");
         }
-
-        toast({
-          title: "¡Cuenta creada!",
-          description: "Revisa tu correo para verificar tu cuenta.",
-        });
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Ha ocurrido un error",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Ha ocurrido un error", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  const handleVerifyOTP = async () => {
+    if (otpCode.length !== 6) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: otpCode,
+        type: "email",
+      });
+      if (error) throw error;
+      if (data?.session) {
+        saveAccountToStorage(formData.email);
+        const birthDate = getBirthDate();
+        if (data.user && birthDate) {
+          await supabase.from("profiles").update({ birth_date: birthDate } as any).eq("id", data.user.id);
+        }
+        toast({ title: "¡Verificado!", description: "Tu cuenta ha sido verificada correctamente." });
+        navigate("/home");
+      }
+    } catch (error: any) {
+      toast({ title: "Código inválido", description: error.message || "El código no es correcto", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyMFA = async () => {
+    if (otpCode.length !== 6 || !mfaFactorId || !mfaChallengeId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: mfaChallengeId,
+        code: otpCode,
+      });
+      if (error) throw error;
+      saveAccountToStorage(formData.email || formData.phone);
+      toast({ title: "¡Bienvenido!", description: "Autenticación de dos pasos completada." });
+      navigate("/home");
+    } catch (error: any) {
+      toast({ title: "Código incorrecto", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    try {
+      await supabase.auth.resend({ type: "signup", email: formData.email });
+      toast({ title: "Código reenviado", description: "Revisa tu correo electrónico." });
+    } catch {
+      toast({ title: "Error al reenviar", variant: "destructive" });
+    }
+  };
+
+  // Verification / MFA step
+  if (step === "verify" || step === "mfa") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-sm text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+            className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-primary/10 flex items-center justify-center"
+          >
+            <ShieldCheck className="w-10 h-10 text-primary" />
+          </motion.div>
+
+          <h1 className="text-2xl font-bold mb-2">
+            {step === "mfa" ? "Autenticación en dos pasos" : "Verifica tu correo"}
+          </h1>
+          <p className="text-muted-foreground text-[15px] mb-8">
+            {step === "mfa"
+              ? "Ingresa el código de tu aplicación de autenticación"
+              : `Enviamos un código de 6 dígitos a ${formData.email}`}
+          </p>
+
+          <div className="flex justify-center mb-6">
+            <InputOTP
+              maxLength={6}
+              value={otpCode}
+              onChange={setOtpCode}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          <Button
+            variant="hero"
+            size="xl"
+            className="w-full mb-4"
+            disabled={loading || otpCode.length !== 6}
+            onClick={step === "mfa" ? handleVerifyMFA : handleVerifyOTP}
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verificar"}
+          </Button>
+
+          {step === "verify" && (
+            <button
+              onClick={handleResendCode}
+              className="text-sm text-primary hover:underline"
+            >
+              ¿No recibiste el código? Reenviar
+            </button>
+          )}
+
+          <button
+            onClick={() => { setStep("form"); setOtpCode(""); }}
+            className="block mx-auto mt-4 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Volver al inicio
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -132,95 +300,54 @@ const Auth = () => {
           >
             <BookOpen className="w-12 h-12" />
           </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-5xl font-display font-bold mb-4"
-          >
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-5xl font-display font-bold mb-4">
             Lettora
           </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-xl text-primary-foreground/80 text-center max-w-md"
-          >
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="text-xl text-primary-foreground/80 text-center max-w-md">
             Donde las historias cobran vida y los escritores se conectan
           </motion.p>
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="absolute top-20 right-20 w-16 h-16 bg-primary-foreground/10 rounded-2xl backdrop-blur-sm"
-          />
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute bottom-32 left-16 w-12 h-12 bg-primary-foreground/10 rounded-xl backdrop-blur-sm"
-          />
+          <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-20 right-20 w-16 h-16 bg-primary-foreground/10 rounded-2xl backdrop-blur-sm" />
+          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 4, repeat: Infinity }} className="absolute bottom-32 left-16 w-12 h-12 bg-primary-foreground/10 rounded-xl backdrop-blur-sm" />
         </div>
       </motion.div>
 
       {/* Right side - Form */}
       <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          {/* Mobile logo */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
           <div className="lg:hidden flex justify-center mb-6">
             <AnimatedLettoraIcon size="lg" />
           </div>
 
-          {/* Login / Register toggle */}
           <div className="flex bg-muted rounded-xl p-1 mb-6">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
             >
               Iniciar sesión
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
-                !isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${!isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
             >
               Registrarse
             </button>
           </div>
 
-          {/* Auth method toggle */}
           <div className="flex gap-2 mb-5">
             <button
               onClick={() => setAuthMethod("email")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all border ${
-                authMethod === "email"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all border ${authMethod === "email" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
             >
-              <Mail className="w-4 h-4" />
-              Correo
+              <Mail className="w-4 h-4" /> Correo
             </button>
             <button
               onClick={() => setAuthMethod("phone")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all border ${
-                authMethod === "phone"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all border ${authMethod === "phone" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
             >
-              <Phone className="w-4 h-4" />
-              Teléfono
+              <Phone className="w-4 h-4" /> Teléfono
             </button>
           </div>
 
-          {/* Form */}
           <AnimatePresence mode="wait">
             <motion.form
               key={`${isLogin}-${authMethod}`}
@@ -231,47 +358,22 @@ const Auth = () => {
               onSubmit={handleSubmit}
               className="space-y-4"
             >
-              {/* Username (register only) */}
               {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5"
-                >
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
                   <Label htmlFor="username" className="text-sm font-medium">Nombre de usuario</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="username"
-                      name="username"
-                      type="text"
-                      placeholder="tu_nombre"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className="pl-10 h-11 rounded-xl"
-                      required={!isLogin}
-                    />
+                    <Input id="username" name="username" type="text" placeholder="tu_nombre" value={formData.username} onChange={handleInputChange} className="pl-10 h-11 rounded-xl" required={!isLogin} />
                   </div>
                 </motion.div>
               )}
 
-              {/* Email or Phone */}
               {authMethod === "email" ? (
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="tu@email.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="pl-10 h-11 rounded-xl"
-                      required
-                    />
+                    <Input id="email" name="email" type="email" placeholder="tu@email.com" value={formData.email} onChange={handleInputChange} className="pl-10 h-11 rounded-xl" required />
                   </div>
                 </div>
               ) : (
@@ -279,86 +381,31 @@ const Auth = () => {
                   <Label htmlFor="phone" className="text-sm font-medium">Número de teléfono</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="+52 123 456 7890"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="pl-10 h-11 rounded-xl"
-                      required
-                    />
+                    <Input id="phone" name="phone" type="tel" placeholder="+52 123 456 7890" value={formData.phone} onChange={handleInputChange} className="pl-10 h-11 rounded-xl" required />
                   </div>
                 </div>
               )}
 
-              {/* Password */}
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10 pr-10 h-11 rounded-xl"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={formData.password} onChange={handleInputChange} className="pl-10 pr-10 h-11 rounded-xl" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Birth date (register only) */}
               {!isLogin && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5"
-                >
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
                   <Label className="text-sm font-medium flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    Fecha de nacimiento
+                    <Calendar className="w-4 h-4 text-muted-foreground" /> Fecha de nacimiento
                   </Label>
                   <div className="flex gap-2">
-                    <Input
-                      name="birthDay"
-                      type="number"
-                      placeholder="DD"
-                      value={formData.birthDay}
-                      onChange={handleInputChange}
-                      className="h-11 rounded-xl text-center"
-                      min={1}
-                      max={31}
-                    />
-                    <Input
-                      name="birthMonth"
-                      type="number"
-                      placeholder="MM"
-                      value={formData.birthMonth}
-                      onChange={handleInputChange}
-                      className="h-11 rounded-xl text-center"
-                      min={1}
-                      max={12}
-                    />
-                    <Input
-                      name="birthYear"
-                      type="number"
-                      placeholder="AAAA"
-                      value={formData.birthYear}
-                      onChange={handleInputChange}
-                      className="h-11 rounded-xl text-center"
-                    />
+                    <Input name="birthDay" type="number" placeholder="DD" value={formData.birthDay} onChange={handleInputChange} className="h-11 rounded-xl text-center" min={1} max={31} />
+                    <Input name="birthMonth" type="number" placeholder="MM" value={formData.birthMonth} onChange={handleInputChange} className="h-11 rounded-xl text-center" min={1} max={12} />
+                    <Input name="birthYear" type="number" placeholder="AAAA" value={formData.birthYear} onChange={handleInputChange} className="h-11 rounded-xl text-center" />
                   </div>
                   <p className="text-xs text-muted-foreground">Formato: DD / MM / AAAA</p>
                 </motion.div>
@@ -366,22 +413,12 @@ const Auth = () => {
 
               {isLogin && (
                 <div className="flex justify-end">
-                  <button type="button" className="text-sm text-primary hover:underline">
-                    ¿Olvidaste tu contraseña?
-                  </button>
+                  <button type="button" className="text-sm text-primary hover:underline">¿Olvidaste tu contraseña?</button>
                 </div>
               )}
 
-              <Button
-                type="submit"
-                variant="hero"
-                size="xl"
-                className="w-full group"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
+              <Button type="submit" variant="hero" size="xl" className="w-full group" disabled={loading}>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                   <>
                     {isLogin ? "Entrar" : "Crear cuenta"}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -391,15 +428,10 @@ const Auth = () => {
             </motion.form>
           </AnimatePresence>
 
-          {/* Social login */}
           <div className="mt-6">
             <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-muted-foreground">o continúa con</span>
-              </div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+              <div className="relative flex justify-center text-sm"><span className="bg-background px-4 text-muted-foreground">o continúa con</span></div>
             </div>
             <div className="mt-4">
               <Button
@@ -407,12 +439,8 @@ const Auth = () => {
                 size="lg"
                 className="w-full rounded-xl"
                 onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    toast({ title: "Error", description: error.message, variant: "destructive" });
-                  }
+                  const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+                  if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
                 }}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
