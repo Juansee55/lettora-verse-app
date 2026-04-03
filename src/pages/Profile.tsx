@@ -575,6 +575,107 @@ const ProfilePage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Account Switcher Modal */}
+      <AnimatePresence>
+        {showAccountSwitcher && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowAccountSwitcher(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">Cuentas</h2>
+                <button onClick={() => setShowAccountSwitcher(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-4">
+                {savedAccounts.map((account) => (
+                  <button
+                    key={account.email}
+                    onClick={async () => {
+                      if (account.email === currentEmail) {
+                        setShowAccountSwitcher(false);
+                        return;
+                      }
+                      // Sign out and redirect to auth with pre-filled email
+                      await supabase.auth.signOut();
+                      setShowAccountSwitcher(false);
+                      navigate("/auth");
+                      toast({ title: "Inicia sesión", description: `Ingresa la contraseña para ${account.email}` });
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors ${
+                      account.email === currentEmail ? "bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                      {account.email[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-[15px] font-medium truncate">{account.email}</p>
+                      {account.email === currentEmail && (
+                        <p className="text-[12px] text-primary">Cuenta activa</p>
+                      )}
+                    </div>
+                    {account.email === currentEmail && <Check className="w-5 h-5 text-primary" />}
+                    {account.email !== currentEmail && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const updated = savedAccounts.filter(a => a.email !== account.email);
+                          setSavedAccounts(updated);
+                          localStorage.setItem("lettora_accounts", JSON.stringify(updated));
+                          toast({ title: "Cuenta removida" });
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-destructive/10"
+                      >
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="p-2 pt-0 pb-8 space-y-1">
+                <button
+                  onClick={() => {
+                    setShowAccountSwitcher(false);
+                    navigate("/auth");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-[15px] font-medium">Añadir cuenta</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setShowAccountSwitcher(false);
+                    navigate("/auth");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-destructive/5 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <LogOut className="w-5 h-5 text-destructive" />
+                  </div>
+                  <span className="text-[15px] font-medium text-destructive">Cerrar sesión</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <IOSBottomNav />
     </div>
   );
