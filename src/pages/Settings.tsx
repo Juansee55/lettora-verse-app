@@ -65,6 +65,14 @@ const SettingsPage = () => {
   const [fontSize, setFontSize] = useState(18);
   const [showReadingThemePicker, setShowReadingThemePicker] = useState(false);
   const [readingTheme, setReadingTheme] = useState("dark");
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<any[]>([]);
+  const [mfaQrCode, setMfaQrCode] = useState<string | null>(null);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaVerifyCode, setMfaVerifyCode] = useState("");
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
