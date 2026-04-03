@@ -135,6 +135,13 @@ const SettingsPage = () => {
         }
       }
 
+      // Load MFA status
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      if (factors?.totp) {
+        setMfaFactors(factors.totp);
+        setMfaEnrolled(factors.totp.some((f: any) => f.status === "verified"));
+      }
+
       const usage = await getStorageUsage();
       setStorageUsed(usage.used);
 
