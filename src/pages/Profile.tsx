@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
   Grid3X3, List, Crown, ChevronRight, Trash2, QrCode, MapPin,
-  Calendar, Link as LinkIcon, Sparkles,
+  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
