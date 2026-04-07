@@ -2,31 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  Eye,
-  Clock,
-  ChevronRight,
-  Play,
-  MoreHorizontal,
-  Loader2,
-  Users,
-  Star,
-  BookOpen,
-  Send,
-  Edit3,
-  Flag,
-  Download,
-  Loader2 as DownloadLoader,
-  Check,
-  Library,
-  QrCode,
-  Trophy,
+  ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Clock, ChevronRight,
+  Play, Loader2, Users, Star, BookOpen, Send, Edit3, Flag, Download,
+  Check, Library, QrCode, Trophy, MoreHorizontal,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
@@ -63,30 +42,11 @@ interface BookData {
   } | null;
 }
 
-interface SagaEntry {
-  id: string;
-  title: string;
-  cover_url: string | null;
-  saga_order: number | null;
-  status: string | null;
-}
-
-interface Chapter {
-  id: string;
-  title: string;
-  chapter_number: number;
-  word_count: number | null;
-}
-
+interface SagaEntry { id: string; title: string; cover_url: string | null; saga_order: number | null; status: string | null; }
+interface Chapter { id: string; title: string; chapter_number: number; word_count: number | null; }
 interface Comment {
-  id: string;
-  content: string;
-  created_at: string | null;
-  profiles: {
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  } | null;
+  id: string; content: string; created_at: string | null;
+  profiles: { display_name: string | null; username: string | null; avatar_url: string | null; } | null;
 }
 
 const formatNumber = (num: number): string => {
@@ -94,6 +54,20 @@ const formatNumber = (num: number): string => {
   if (num >= 1000) return (num / 1000).toFixed(1) + "K";
   return num.toString();
 };
+
+const RatingBar = ({ stars, count, total }: { stars: number; count: number; total: number }) => (
+  <div className="flex items-center gap-2">
+    <span className="text-[12px] text-muted-foreground w-3 text-right">{stars}</span>
+    <div className="flex-1 h-[6px] bg-muted rounded-full overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: total > 0 ? `${(count / total) * 100}%` : "0%" }}
+        transition={{ duration: 0.6, delay: (5 - stars) * 0.1 }}
+        className="h-full bg-primary rounded-full"
+      />
+    </div>
+  </div>
+);
 
 const BookDetailPage = () => {
   const { id } = useParams();
@@ -120,6 +94,7 @@ const BookDetailPage = () => {
   const [parentSagaTitle, setParentSagaTitle] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
   const [showShareInChat, setShowShareInChat] = useState(false);
+  const [reviewStats, setReviewStats] = useState<{ avg: number; total: number; distribution: number[] }>({ avg: 0, total: 0, distribution: [0, 0, 0, 0, 0] });
   const { saveBookOffline, isBookDownloaded } = useOfflineStorage();
   const bookIsDownloaded = id ? isBookDownloaded(id) : false;
   const topPosition = useTopRanking(id);
@@ -127,133 +102,67 @@ const BookDetailPage = () => {
   useEffect(() => {
     const fetchBook = async () => {
       if (!id) return;
-
       const { data: bookData, error } = await supabase
         .from("books")
-        .select(`
-          id, title, description, cover_url, genre, reads_count, likes_count,
-          comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order,
-          age_rating, ai_generated, verification_status,
-          profiles:author_id (id, display_name, username, avatar_url)
-        `)
-        .eq("id", id)
-        .single();
-
-      if (error || !bookData) {
-        navigate("/home");
-        return;
-      }
-
+        .select(`id, title, description, cover_url, genre, reads_count, likes_count, comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order, age_rating, ai_generated, verification_status, profiles:author_id (id, display_name, username, avatar_url)`)
+        .eq("id", id).single();
+      if (error || !bookData) { navigate("/home"); return; }
       setBook(bookData as unknown as BookData);
 
-      // Load saga entries if this is a saga or part of one
       if (bookData.is_saga) {
-        const { data: entries } = await supabase
-          .from("books")
-          .select("id, title, cover_url, saga_order, status")
-          .eq("parent_saga_id", id)
-          .order("saga_order", { ascending: true });
+        const { data: entries } = await supabase.from("books").select("id, title, cover_url, saga_order, status").eq("parent_saga_id", id).order("saga_order", { ascending: true });
         if (entries) setSagaEntries(entries);
       } else if (bookData.parent_saga_id) {
-        const { data: parentSaga } = await supabase
-          .from("books")
-          .select("id, title")
-          .eq("id", bookData.parent_saga_id)
-          .single();
+        const { data: parentSaga } = await supabase.from("books").select("id, title").eq("id", bookData.parent_saga_id).single();
         if (parentSaga) {
           setParentSagaTitle(parentSaga.title);
-          const { data: siblings } = await supabase
-            .from("books")
-            .select("id, title, cover_url, saga_order, status")
-            .eq("parent_saga_id", bookData.parent_saga_id)
-            .order("saga_order", { ascending: true });
+          const { data: siblings } = await supabase.from("books").select("id, title, cover_url, saga_order, status").eq("parent_saga_id", bookData.parent_saga_id).order("saga_order", { ascending: true });
           if (siblings) setSagaEntries(siblings);
         }
       }
 
-      const { data: chaptersData } = await supabase
-        .from("chapters")
-        .select("id, title, chapter_number, word_count")
-        .eq("book_id", id)
-        .eq("is_published", true)
-        .order("chapter_number", { ascending: true });
-
+      const { data: chaptersData } = await supabase.from("chapters").select("id, title, chapter_number, word_count").eq("book_id", id).eq("is_published", true).order("chapter_number", { ascending: true });
       if (chaptersData) setChapters(chaptersData);
 
-      const { data: commentsData } = await supabase
-        .from("comments")
-        .select(`
-          id, content, created_at,
-          profiles:user_id (display_name, username, avatar_url)
-        `)
-        .eq("commentable_id", id)
-        .eq("commentable_type", "book")
-        .order("created_at", { ascending: false })
-        .limit(10);
-
+      const { data: commentsData } = await supabase.from("comments").select(`id, content, created_at, profiles:user_id (display_name, username, avatar_url)`).eq("commentable_id", id).eq("commentable_type", "book").order("created_at", { ascending: false }).limit(10);
       if (commentsData) setComments(commentsData as unknown as Comment[]);
+
+      // Reviews stats
+      const { data: reviewsData } = await supabase.from("book_reviews" as any).select("rating").eq("book_id", id) as any;
+      if (reviewsData && reviewsData.length > 0) {
+        const dist = [0, 0, 0, 0, 0];
+        reviewsData.forEach((r: any) => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
+        const avg = reviewsData.reduce((a: number, r: any) => a + r.rating, 0) / reviewsData.length;
+        setReviewStats({ avg: Math.round(avg * 10) / 10, total: reviewsData.length, distribution: dist });
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: likeData } = await supabase
-          .from("likes")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("likeable_id", id)
-          .eq("likeable_type", "book")
-          .maybeSingle();
-
+        const { data: likeData } = await supabase.from("likes").select("id").eq("user_id", user.id).eq("likeable_id", id).eq("likeable_type", "book").maybeSingle();
         setLiked(!!likeData);
-
-        const { data: savedData } = await supabase
-          .from("saved_books")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("book_id", id)
-          .maybeSingle();
-
+        const { data: savedData } = await supabase.from("saved_books").select("id").eq("user_id", user.id).eq("book_id", id).maybeSingle();
         setSaved(!!savedData);
         setIsAuthor(user.id === bookData.author_id);
-
-        // Check if user is a collaborator
-        const { data: collabData } = await supabase
-          .from("book_collaborators")
-          .select("id")
-          .eq("book_id", id)
-          .eq("user_id", user.id)
-          .not("accepted_at", "is", null)
-          .maybeSingle();
+        const { data: collabData } = await supabase.from("book_collaborators").select("id").eq("book_id", id).eq("user_id", user.id).not("accepted_at", "is", null).maybeSingle();
         setIsCollaborator(!!collabData);
       }
 
-      // Fetch collaborator profiles
-      const { data: collabs } = await supabase
-        .from("book_collaborators")
-        .select("user_id")
-        .eq("book_id", id)
-        .not("accepted_at", "is", null);
+      const { data: collabs } = await supabase.from("book_collaborators").select("user_id").eq("book_id", id).not("accepted_at", "is", null);
       if (collabs && collabs.length > 0) {
         const collabIds = collabs.map(c => c.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, username")
-          .in("id", collabIds);
+        const { data: profiles } = await supabase.from("profiles").select("id, display_name, username").in("id", collabIds);
         if (profiles) setCollaboratorProfiles(profiles);
       }
-
       setLoading(false);
     };
-
     fetchBook();
   }, [id, navigate]);
 
   const handleLike = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
-
     if (liked) {
-      await supabase.from("likes").delete()
-        .eq("user_id", user.id).eq("likeable_id", id).eq("likeable_type", "book");
+      await supabase.from("likes").delete().eq("user_id", user.id).eq("likeable_id", id).eq("likeable_type", "book");
       setLiked(false);
     } else {
       await supabase.from("likes").insert({ user_id: user.id, likeable_id: id!, likeable_type: "book" });
@@ -264,7 +173,6 @@ const BookDetailPage = () => {
   const handleSave = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
-
     if (saved) {
       await supabase.from("saved_books").delete().eq("user_id", user.id).eq("book_id", id);
       setSaved(false);
@@ -280,34 +188,19 @@ const BookDetailPage = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
     if (!book?.profiles?.id) return;
-
-    await supabase.from("followers").insert({
-      follower_id: user.id,
-      following_id: book.profiles.id,
-    });
-    toast({
-      title: "¡Siguiendo!",
-      description: `Ahora sigues a ${book.profiles.display_name || book.profiles.username}`,
-    });
+    await supabase.from("followers").insert({ follower_id: user.id, following_id: book.profiles.id });
+    toast({ title: "¡Siguiendo!", description: `Ahora sigues a ${book.profiles.display_name || book.profiles.username}` });
   };
 
   const handleSendComment = async () => {
     if (!newComment.trim()) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
-
     setSendingComment(true);
     const { data, error } = await supabase.from("comments").insert({
-      user_id: user.id,
-      commentable_id: id!,
-      commentable_type: "book",
-      content: newComment.trim(),
+      user_id: user.id, commentable_id: id!, commentable_type: "book", content: newComment.trim(),
     }).select(`id, content, created_at, profiles:user_id (display_name, username, avatar_url)`).single();
-
-    if (!error && data) {
-      setComments(prev => [data as unknown as Comment, ...prev]);
-      setNewComment("");
-    }
+    if (!error && data) { setComments(prev => [data as unknown as Comment, ...prev]); setNewComment(""); }
     setSendingComment(false);
   };
 
@@ -335,240 +228,198 @@ const BookDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      {/* iOS Sticky Header */}
+      {/* Header */}
       <div className="ios-header">
         <div className="flex items-center justify-between px-4 h-11">
-          <button onClick={() => navigate("/home")} className="flex items-center gap-1 text-primary active:opacity-60">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary active:opacity-60">
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-[17px]">Atrás</span>
           </button>
-          <button className="text-primary active:opacity-60" onClick={() => setShowQR(true)}>
-            <QrCode className="w-5 h-5" />
-          </button>
-          <button className="text-primary active:opacity-60" onClick={() => setShowShare(true)}>
-            <Share2 className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="text-primary active:opacity-60" onClick={() => setShowQR(true)}>
+              <QrCode className="w-5 h-5" />
+            </button>
+            <button className="text-primary active:opacity-60" onClick={() => setShowShare(true)}>
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Book Cover & Info - App Store Style */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="px-5 pt-4 pb-2"
-      >
+      {/* Hero: Cover + Info side by side */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-5 pt-4 pb-3">
         <div className="flex gap-5">
           {/* Cover */}
           <div className="relative flex-shrink-0">
-            <div className="w-[130px] h-[195px] rounded-2xl overflow-hidden shadow-lg">
+            <div className="w-[130px] h-[195px] rounded-2xl overflow-hidden shadow-lg ring-1 ring-border/30">
               <img
                 src={book.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop"}
                 alt={book.title}
                 className="w-full h-full object-cover"
               />
             </div>
-            {/* Status badge */}
             {book.status === "completed" && (
-              <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                Completo
-              </div>
+              <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">Completo</div>
             )}
             {book.is_saga && (
               <div className="absolute -bottom-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                <Library className="w-3 h-3" />
-                Saga
+                <Library className="w-3 h-3" /> Saga
               </div>
             )}
           </div>
 
           {/* Info */}
-          <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+          <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
             <div>
               {topPosition && topPosition <= 100 && (
-                <button
-                  onClick={() => navigate("/top-rankings")}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] font-bold rounded-full mb-1.5"
-                >
-                  <Trophy className="w-3 h-3" />
-                  TOP #{topPosition}
+                <button onClick={() => navigate("/top-rankings")} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-full mb-1.5">
+                  <Trophy className="w-3 h-3" /> TOP #{topPosition}
                 </button>
               )}
-              <h1 className="text-[22px] font-bold leading-tight mb-1 font-display">
-                {book.title}
-              </h1>
-              <p
-                className="text-[15px] text-primary font-medium mb-0.5 cursor-pointer"
-                onClick={() => book.profiles?.id && navigate(`/user/${book.profiles.id}`)}
-              >
+              <h1 className="text-[22px] font-bold leading-tight mb-1 font-display">{book.title}</h1>
+              <p className="text-[15px] text-primary font-medium mb-0.5 cursor-pointer" onClick={() => book.profiles?.id && navigate(`/user/${book.profiles.id}`)}>
                 {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
               </p>
               {collaboratorProfiles.length > 0 && (
-                <p className="text-[12px] text-muted-foreground mb-1">
+                <p className="text-[12px] text-muted-foreground mb-1.5">
                   con {collaboratorProfiles.map(c => c.display_name || c.username || "Usuario").join(", ")}
                 </p>
               )}
-              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                <span className="text-[13px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full">
-                  {book.genre || "General"}
-                </span>
-                {book.age_rating && book.age_rating !== "all" && (
-                  <span className="text-[13px] font-semibold bg-destructive/10 text-destructive px-2.5 py-0.5 rounded-full">
-                    {book.age_rating}
-                  </span>
-                )}
-                {book.ai_generated && (
-                  <span className="text-[13px] bg-accent/20 text-accent-foreground px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    🤖 IA
-                  </span>
-                )}
-                {book.verification_status === "approved" && (
-                  <span className="text-[13px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    ✓ Verificado
-                  </span>
-                )}
-                {book.verification_status === "pending" && (
-                  <span className="text-[13px] bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
-                    ⏳ En revisión
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Stats - iOS style */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center">
-                <div className="text-[15px] font-bold text-foreground">{formatNumber(book.reads_count || 0)}</div>
-                <div className="text-[11px] text-muted-foreground">Lecturas</div>
-              </div>
-              <div className="text-center border-x border-border">
-                <div className="text-[15px] font-bold text-foreground">{formatNumber(book.likes_count || 0)}</div>
-                <div className="text-[11px] text-muted-foreground">Me gusta</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[15px] font-bold text-foreground">{chapters.length}</div>
-                <div className="text-[11px] text-muted-foreground">Capítulos</div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[book.genre || "General", ...(book.tags?.slice(0, 3) || [])].map((tag, i) => (
+                  <span key={i} className="text-[12px] text-muted-foreground bg-secondary px-2.5 py-0.5 rounded-full">{i > 0 ? `#${tag}` : tag}</span>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* CTA Buttons */}
-      <div className="px-5 py-3 flex gap-2">
-        <button
+      {/* Quick Stats Row */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="px-5 pb-3">
+        <div className="flex items-center justify-around py-3 ios-section">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-0.5">
+              <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+              <span className="text-[16px] font-bold">{reviewStats.avg || "—"}</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">{formatNumber(reviewStats.total)} reseñas</span>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div className="text-center">
+            <div className="text-[16px] font-bold">{formatNumber(book.reads_count || 0)}</div>
+            <span className="text-[11px] text-muted-foreground">lecturas</span>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div className="text-center">
+            <div className="text-[16px] font-bold">{chapters.length}</div>
+            <span className="text-[11px] text-muted-foreground">capítulos</span>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div className="text-center">
+            <div className="text-[16px] font-bold">{formatNumber(totalWords)}</div>
+            <span className="text-[11px] text-muted-foreground">palabras</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* CTA Button */}
+      <div className="px-5 pb-3">
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
           onClick={() => navigate(`/book/${id}/chapter/1`)}
           disabled={chapters.length === 0}
-          className="flex-1 h-[50px] bg-primary text-primary-foreground rounded-2xl font-semibold text-[17px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+          className="w-full h-[52px] bg-primary text-primary-foreground rounded-2xl font-semibold text-[17px] flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform disabled:opacity-50 shadow-glow"
         >
           <Play className="w-5 h-5 fill-current" />
           Empezar a leer
+        </motion.button>
+      </div>
+
+      {/* Action Buttons Row */}
+      <div className="px-5 pb-4 flex gap-2">
+        <button onClick={handleLike} className={`flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium transition-all active:scale-95 ${liked ? "bg-destructive/10 text-destructive" : "bg-secondary text-secondary-foreground"}`}>
+          <Heart className={`w-4 h-4 ${liked ? "fill-destructive" : ""}`} />
+          {liked ? "Te gusta" : "Me gusta"}
         </button>
-        <button
-          onClick={async () => {
-            if (bookIsDownloaded || downloading || !id || !book) return;
-            setDownloading(true);
-            try {
-              const { data: allChapters } = await supabase
-                .from("chapters")
-                .select("id, title, content, chapter_number, word_count")
-                .eq("book_id", id)
-                .eq("is_published", true)
-                .order("chapter_number");
-              if (!allChapters) throw new Error("No chapters");
-              await saveBookOffline({
-                id,
-                title: book.title,
-                author: book.profiles?.display_name || "Desconocido",
-                coverUrl: book.cover_url,
-                downloadedAt: new Date().toISOString(),
-                chapters: allChapters.map(c => ({
-                  id: c.id, bookId: id, title: c.title,
-                  content: c.content || "", chapterNumber: c.chapter_number,
-                  wordCount: c.word_count || 0,
-                })),
-              });
-              toast({ title: "📥 Libro descargado para leer offline" });
-            } catch { toast({ title: "Error al descargar", variant: "destructive" }); }
-            setDownloading(false);
-          }}
-          disabled={downloading || bookIsDownloaded || chapters.length === 0}
-          className="h-[50px] px-4 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
-        >
-          {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : bookIsDownloaded ? <Check className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5" />}
+        <button onClick={handleSave} className={`flex-1 h-11 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium transition-all active:scale-95 ${saved ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"}`}>
+          <Bookmark className={`w-4 h-4 ${saved ? "fill-primary" : ""}`} />
+          {saved ? "Guardado" : "Guardar"}
+        </button>
+        <button onClick={async () => {
+          if (bookIsDownloaded || downloading || !id || !book) return;
+          setDownloading(true);
+          try {
+            const { data: allChapters } = await supabase.from("chapters").select("id, title, content, chapter_number, word_count").eq("book_id", id).eq("is_published", true).order("chapter_number");
+            if (!allChapters) throw new Error("No chapters");
+            await saveBookOffline({ id, title: book.title, author: book.profiles?.display_name || "Desconocido", coverUrl: book.cover_url, downloadedAt: new Date().toISOString(), chapters: allChapters.map(c => ({ id: c.id, bookId: id, title: c.title, content: c.content || "", chapterNumber: c.chapter_number, wordCount: c.word_count || 0 })) });
+            toast({ title: "📥 Libro descargado para leer offline" });
+          } catch { toast({ title: "Error al descargar", variant: "destructive" }); }
+          setDownloading(false);
+        }} disabled={downloading || bookIsDownloaded || chapters.length === 0} className="h-11 w-11 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50">
+          {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : bookIsDownloaded ? <Check className="w-4 h-4 text-green-500" /> : <Download className="w-4 h-4" />}
+        </button>
+        <button onClick={() => setShowShareInChat(true)} className="h-11 w-11 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-95 transition-transform">
+          <Send className="w-4 h-4" />
         </button>
         {(isAuthor || isCollaborator) && (
-          <button
-            onClick={() => navigate(`/write/advanced/${id}`)}
-            className="h-[50px] px-5 bg-secondary text-secondary-foreground rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-          >
-            <Edit3 className="w-5 h-5" />
-            Editar
+          <button onClick={() => navigate(`/write/advanced/${id}`)} className="h-11 w-11 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center active:scale-95 transition-transform">
+            <Edit3 className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Action Bar - iOS style */}
-      <div className="px-5 pb-4">
-        <div className="flex items-center justify-around py-2 ios-section">
-          <button
-            onClick={handleLike}
-            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-          >
-            <Heart className={`w-[22px] h-[22px] ${liked ? "fill-destructive text-destructive" : "text-primary"}`} />
-            <span className={`text-[11px] font-medium ${liked ? "text-destructive" : "text-primary"}`}>
-              {liked ? "Te gusta" : "Me gusta"}
-            </span>
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-          >
-            <Bookmark className={`w-[22px] h-[22px] ${saved ? "fill-primary text-primary" : "text-primary"}`} />
-            <span className="text-[11px] font-medium text-primary">
-              {saved ? "Guardado" : "Guardar"}
-            </span>
-          </button>
-          <button
-            onClick={() => setShowShare(true)}
-            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-          >
-            <Share2 className="w-[22px] h-[22px] text-primary" />
-            <span className="text-[11px] font-medium text-primary">Compartir</span>
-          </button>
-          <button
-            onClick={() => setShowShareInChat(true)}
-            className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-          >
-            <Send className="w-[22px] h-[22px] text-primary" />
-            <span className="text-[11px] font-medium text-primary">Enviar</span>
-          </button>
-          {isAuthor && (
-            <button
-              onClick={() => setShowCollaborators(true)}
-              className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-            >
-              <Users className="w-[22px] h-[22px] text-primary" />
-              <span className="text-[11px] font-medium text-primary">Colaborar</span>
-            </button>
-          )}
-          {!isAuthor && (
-            <button
-              onClick={() => setShowReport(true)}
-              className="flex flex-col items-center gap-1 py-2 px-4 active:scale-95 transition-transform"
-            >
-              <Flag className="w-[22px] h-[22px] text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground">Reportar</span>
-            </button>
-          )}
+      {/* About This Book */}
+      {book.description && (
+        <div className="px-5 mb-4">
+          <div className="ios-section p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[17px] font-bold">Acerca de este libro</h3>
+              {book.description.length > 200 && (
+                <button onClick={() => setExpandedDescription(!expandedDescription)} className="text-primary text-[14px] font-medium flex items-center gap-0.5">
+                  {expandedDescription ? "Menos" : "Más"} <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expandedDescription ? "rotate-90" : ""}`} />
+                </button>
+              )}
+            </div>
+            <p className={`text-[15px] leading-relaxed text-muted-foreground ${!expandedDescription ? "line-clamp-4" : ""}`}>
+              {book.description}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Ratings & Reviews Summary */}
+      {reviewStats.total > 0 && (
+        <div className="px-5 mb-4">
+          <div className="ios-section p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[17px] font-bold">Reseñas y puntuaciones</h3>
+              <ChevronRight className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex gap-5">
+              <div className="flex flex-col items-center justify-center">
+                <span className="text-[40px] font-bold leading-none">{reviewStats.avg}</span>
+                <div className="flex gap-0.5 my-1">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(reviewStats.avg) ? "fill-primary text-primary" : "text-muted-foreground/30"}`} />
+                  ))}
+                </div>
+                <span className="text-[12px] text-muted-foreground">({formatNumber(reviewStats.total)} reseñas)</span>
+              </div>
+              <div className="flex-1 flex flex-col justify-center gap-1">
+                {[5, 4, 3, 2, 1].map(stars => (
+                  <RatingBar key={stars} stars={stars} count={reviewStats.distribution[stars - 1]} total={reviewStats.total} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Author Section */}
       <div className="px-5 mb-4">
-        <div
-          onClick={() => navigate(`/user/${book.profiles?.id}`)}
-          className="ios-section p-4 flex items-center gap-3 cursor-pointer active:bg-muted/50 transition-colors"
-        >
+        <div onClick={() => navigate(`/user/${book.profiles?.id}`)} className="ios-section p-4 flex items-center gap-3 cursor-pointer active:bg-muted/50 transition-colors">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold overflow-hidden">
             {book.profiles?.avatar_url ? (
               <img src={book.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -577,56 +428,28 @@ const BookDetailPage = () => {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-[15px]">
-              {book.profiles?.display_name || book.profiles?.username || "Anónimo"}
-            </div>
-            <div className="text-[13px] text-muted-foreground">
-              @{book.profiles?.username || "usuario"}
-            </div>
+            <div className="font-semibold text-[15px]">{book.profiles?.display_name || book.profiles?.username || "Anónimo"}</div>
+            <div className="text-[13px] text-muted-foreground">@{book.profiles?.username || "usuario"}</div>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleFollow(); }}
-            className="px-4 py-1.5 bg-primary text-primary-foreground text-[13px] font-semibold rounded-full active:scale-95 transition-transform"
-          >
+          <button onClick={(e) => { e.stopPropagation(); handleFollow(); }} className="px-4 py-1.5 bg-primary text-primary-foreground text-[13px] font-semibold rounded-full active:scale-95 transition-transform">
             Seguir
           </button>
         </div>
       </div>
 
-      {/* Description */}
-      {book.description && (
-        <div className="px-5 mb-4">
-          <div className="ios-section p-4">
-            <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Sinopsis
-            </h3>
-            <p className={`text-[15px] leading-relaxed text-foreground ${!expandedDescription ? "line-clamp-4" : ""}`}>
-              {book.description}
-            </p>
-            {book.description.length > 200 && (
-              <button
-                onClick={() => setExpandedDescription(!expandedDescription)}
-                className="text-primary text-[13px] font-medium mt-1"
-              >
-                {expandedDescription ? "Menos" : "Más"}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Tags */}
       {book.tags && book.tags.length > 0 && (
         <div className="px-5 mb-4">
           <div className="flex flex-wrap gap-2">
-            {book.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1.5 bg-secondary text-secondary-foreground text-[13px] rounded-full font-medium"
-              >
-                #{tag}
-              </span>
+            {book.tags.map(tag => (
+              <span key={tag} className="px-3 py-1.5 bg-secondary text-secondary-foreground text-[13px] rounded-full font-medium">#{tag}</span>
             ))}
+            {book.age_rating && book.age_rating !== "all" && (
+              <span className="px-3 py-1.5 bg-destructive/10 text-destructive text-[13px] rounded-full font-semibold">{book.age_rating}</span>
+            )}
+            {book.ai_generated && (
+              <span className="px-3 py-1.5 bg-accent/20 text-accent-foreground text-[13px] rounded-full">🤖 IA</span>
+            )}
           </div>
         </div>
       )}
@@ -640,32 +463,21 @@ const BookDetailPage = () => {
           </h3>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
             {sagaEntries.map((entry, index) => (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+              <motion.div key={entry.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }}
                 onClick={() => entry.id !== id && navigate(`/book/${entry.id}`)}
-                className={`flex-shrink-0 w-[100px] cursor-pointer ${entry.id === id ? "ring-2 ring-primary rounded-xl" : ""}`}
-              >
+                className={`flex-shrink-0 w-[100px] cursor-pointer ${entry.id === id ? "ring-2 ring-primary rounded-xl" : ""}`}>
                 <div className="aspect-[3/4] rounded-xl overflow-hidden mb-1.5 shadow-card">
-                  <img
-                    src={entry.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop"}
-                    alt={entry.title}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={entry.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop"} alt={entry.title} className="w-full h-full object-cover" />
                 </div>
                 <p className="text-[12px] font-medium line-clamp-1">{entry.title}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Parte {(entry.saga_order ?? index) + 1}
-                  {entry.status === "completed" && " • Completo"}
-                </p>
+                <p className="text-[10px] text-muted-foreground">Parte {(entry.saga_order ?? index) + 1}{entry.status === "completed" && " • Completo"}</p>
               </motion.div>
             ))}
           </div>
         </div>
       )}
 
+      {/* Book Info */}
       <div className="px-5 mb-4">
         <div className="ios-section">
           <div className="ios-item">
@@ -685,42 +497,41 @@ const BookDetailPage = () => {
               {book.status === "published" ? "En progreso" : book.status === "completed" ? "Completo" : book.status || "Borrador"}
             </span>
           </div>
+          {isAuthor && (
+            <button onClick={() => setShowCollaborators(true)} className="ios-item w-full text-left">
+              <Users className="w-5 h-5 text-primary" />
+              <span className="flex-1 text-[15px]">Colaboradores</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+            </button>
+          )}
+          {!isAuthor && (
+            <button onClick={() => setShowReport(true)} className="ios-item w-full text-left">
+              <Flag className="w-5 h-5 text-muted-foreground" />
+              <span className="flex-1 text-[15px]">Reportar contenido</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Chapters List */}
       {chapters.length > 0 && (
         <div className="px-5 mb-4">
-          <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
-            Capítulos
-          </h3>
+          <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">Capítulos</h3>
           <div className="ios-section">
             {displayedChapters.map((chapter, index) => (
-              <motion.button
-                key={chapter.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04 }}
-                onClick={() => navigate(`/book/${id}/chapter/${chapter.chapter_number}`)}
-                className="ios-item w-full text-left"
-              >
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-semibold text-[13px]">
-                  {chapter.chapter_number}
-                </div>
+              <motion.button key={chapter.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}
+                onClick={() => navigate(`/book/${id}/chapter/${chapter.chapter_number}`)} className="ios-item w-full text-left">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-semibold text-[13px]">{chapter.chapter_number}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-medium truncate">{chapter.title}</div>
-                  <div className="text-[12px] text-muted-foreground">
-                    {formatNumber(chapter.word_count || 0)} palabras
-                  </div>
+                  <div className="text-[12px] text-muted-foreground">{formatNumber(chapter.word_count || 0)} palabras</div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
               </motion.button>
             ))}
             {chapters.length > 5 && (
-              <button
-                onClick={() => setShowAllChapters(!showAllChapters)}
-                className="w-full py-3 text-center text-primary text-[15px] font-medium active:bg-muted/50 transition-colors"
-              >
+              <button onClick={() => setShowAllChapters(!showAllChapters)} className="w-full py-3 text-center text-primary text-[15px] font-medium active:bg-muted/50 transition-colors">
                 {showAllChapters ? "Mostrar menos" : `Ver los ${chapters.length} capítulos`}
               </button>
             )}
@@ -728,7 +539,7 @@ const BookDetailPage = () => {
         </div>
       )}
 
-      {/* Reviews Section */}
+      {/* Full Reviews Section */}
       {id && <BookReviewsSection bookId={id} />}
 
       {/* Comments Section */}
@@ -736,59 +547,27 @@ const BookDetailPage = () => {
         <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
           Comentarios · {book.comments_count || comments.length}
         </h3>
-
-        {/* Comment Input */}
         <div className="ios-section mb-3">
           <div className="flex items-center gap-3 p-3">
-            <input
-              type="text"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Escribe un comentario..."
-              className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/50"
-              onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
-            />
-            <button
-              onClick={handleSendComment}
-              disabled={!newComment.trim() || sendingComment}
-              className="text-primary disabled:opacity-30 active:scale-90 transition-transform"
-            >
-              {sendingComment ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
+            <input type="text" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Escribe un comentario..."
+              className="flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/50" onKeyDown={(e) => e.key === "Enter" && handleSendComment()} />
+            <button onClick={handleSendComment} disabled={!newComment.trim() || sendingComment} className="text-primary disabled:opacity-30 active:scale-90 transition-transform">
+              {sendingComment ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </button>
           </div>
         </div>
-
-        {/* Comments List */}
         {comments.length > 0 ? (
           <div className="space-y-3">
             {comments.map((comment, index) => (
-              <motion.div
-                key={comment.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="ios-section p-4"
-              >
+              <motion.div key={comment.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="ios-section p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-xs font-bold flex-shrink-0 overflow-hidden">
-                    {comment.profiles?.avatar_url ? (
-                      <img src={comment.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      (comment.profiles?.display_name || comment.profiles?.username)?.[0]?.toUpperCase() || "?"
-                    )}
+                    {comment.profiles?.avatar_url ? <img src={comment.profiles.avatar_url} alt="" className="w-full h-full object-cover" /> : (comment.profiles?.display_name || comment.profiles?.username)?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-semibold text-[14px]">
-                        {comment.profiles?.display_name || comment.profiles?.username || "Usuario"}
-                      </span>
-                      <span className="text-[12px] text-muted-foreground">
-                        {timeAgo(comment.created_at)}
-                      </span>
+                      <span className="font-semibold text-[14px]">{comment.profiles?.display_name || comment.profiles?.username || "Usuario"}</span>
+                      <span className="text-[12px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
                     </div>
                     <p className="text-[14px] leading-snug text-foreground/90">{comment.content}</p>
                   </div>
@@ -805,65 +584,12 @@ const BookDetailPage = () => {
         )}
       </div>
 
-      {/* Share Modal */}
-      {book && (
-        <ShareBookAsImage
-          isOpen={showShare}
-          onClose={() => setShowShare(false)}
-          book={{
-            title: book.title,
-            cover_url: book.cover_url,
-            genre: book.genre,
-            author: {
-              display_name: book.profiles?.display_name || null,
-              username: book.profiles?.username || null,
-            },
-          }}
-          stats={{
-            reads: book.reads_count || 0,
-            likes: book.likes_count || 0,
-          }}
-        />
-      )}
-
-      {/* QR Code Modal */}
-      <QRCodeModal
-        isOpen={showQR}
-        onClose={() => setShowQR(false)}
-        url={`${window.location.origin}/book/${id}`}
-        title={book?.title || "Libro"}
-        subtitle="Escanea para abrir este libro"
-      />
-
-      {/* Collaborators Modal */}
-      {book && isAuthor && (
-        <BookCollaboratorsModal
-          isOpen={showCollaborators}
-          onClose={() => setShowCollaborators(false)}
-          bookId={book.id}
-          bookTitle={book.title}
-        />
-      )}
-      {/* Report Modal */}
-      <ReportContentModal
-        isOpen={showReport}
-        onClose={() => setShowReport(false)}
-        contentType="book"
-        contentId={book.id}
-        contentTitle={book.title}
-      />
-
-      {/* Share in Chat */}
-      <ShareBookInChat
-        isOpen={showShareInChat}
-        onClose={() => setShowShareInChat(false)}
-        book={{
-          id: book.id,
-          title: book.title,
-          cover_url: book.cover_url,
-          author_name: book.profiles?.display_name || book.profiles?.username || "Anónimo",
-        }}
-      />
+      {/* Modals */}
+      {book && <ShareBookAsImage isOpen={showShare} onClose={() => setShowShare(false)} book={{ title: book.title, cover_url: book.cover_url, genre: book.genre, author: { display_name: book.profiles?.display_name || null, username: book.profiles?.username || null } }} stats={{ reads: book.reads_count || 0, likes: book.likes_count || 0 }} />}
+      <QRCodeModal isOpen={showQR} onClose={() => setShowQR(false)} url={`${window.location.origin}/book/${id}`} title={book?.title || "Libro"} subtitle="Escanea para abrir este libro" />
+      {book && isAuthor && <BookCollaboratorsModal isOpen={showCollaborators} onClose={() => setShowCollaborators(false)} bookId={book.id} bookTitle={book.title} />}
+      <ReportContentModal isOpen={showReport} onClose={() => setShowReport(false)} contentType="book" contentId={book.id} contentTitle={book.title} />
+      <ShareBookInChat isOpen={showShareInChat} onClose={() => setShowShareInChat(false)} book={{ id: book.id, title: book.title, cover_url: book.cover_url, author_name: book.profiles?.display_name || book.profiles?.username || "Anónimo" }} />
     </div>
   );
 };
