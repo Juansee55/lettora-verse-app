@@ -20,6 +20,7 @@ import PremiumBadge from "@/components/premium/PremiumBadge";
 import { usePremium } from "@/hooks/usePremium";
 import FollowersListModal from "@/components/followers/FollowersListModal";
 import UserBadges from "@/components/badges/UserBadges";
+import WriterSubscribeButton from "@/components/subscriptions/WriterSubscribeButton";
 
 interface UserProfileData {
   id: string;
@@ -422,6 +423,11 @@ const UserProfilePage = () => {
                 <Button variant="ios-secondary" size="ios-md" onClick={() => setShowQR(true)}>
                   <QrCode className="w-4 h-4" />
                 </Button>
+              </div>
+              {/* Writer Subscribe */}
+              <div className="flex items-center gap-2 mb-4">
+                <WriterSubscribeButton writerId={userId!} />
+                <span className="text-[12px] text-muted-foreground">Recibe notificaciones de nuevas publicaciones</span>
               </div>
             )}
 
