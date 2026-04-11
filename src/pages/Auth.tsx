@@ -36,6 +36,8 @@ const Auth = () => {
   const ballX = useMotionValue(0);
   const trackProgress = useTransform(ballX, [0, THRESHOLD], [0, 1]);
   const trackGlow = useTransform(trackProgress, [0, 1], ["hsl(var(--primary) / 0.1)", "hsl(var(--primary) / 0.4)"]);
+  const trackFillWidth = useTransform(trackProgress, [0, 1], ["0%", "100%"]);
+  const trackTextOpacity = useTransform(trackProgress, [0, 0.4], [1, 0]);
   const [unlocked, setUnlocked] = useState(false);
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
