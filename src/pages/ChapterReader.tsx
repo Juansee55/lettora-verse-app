@@ -64,6 +64,7 @@ const ChapterReaderPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [savedChapter, setSavedChapter] = useState(false);
+  const [readingStartTime] = useState(Date.now());
   
   // Swipe gesture
   const x = useMotionValue(0);
