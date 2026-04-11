@@ -246,7 +246,7 @@ const Auth = () => {
               {/* Track text */}
               <motion.span
                 className="absolute inset-0 flex items-center justify-center text-[14px] font-medium text-muted-foreground pointer-events-none select-none"
-                style={{ opacity: useTransform(trackProgress, [0, 0.4], [1, 0]) }}
+                style={{ opacity: trackTextOpacity }}
               >
                 Desliza para comenzar →
               </motion.span>
