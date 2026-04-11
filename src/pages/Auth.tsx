@@ -241,7 +241,7 @@ const Auth = () => {
               {/* Fill */}
               <motion.div
                 className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary/20 to-primary/40 rounded-full"
-                style={{ width: useTransform(trackProgress, [0, 1], ["0%", "100%"]) }}
+                style={{ width: trackFillWidth }}
               />
               {/* Track text */}
               <motion.span
