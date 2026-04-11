@@ -401,6 +401,7 @@ const UserProfilePage = () => {
 
             {/* Actions */}
             {!isOwnProfile && (
+              <>
               <div className="flex gap-2 mb-4">
                 <Button
                   variant={isFollowing ? "outline" : "ios"}
@@ -424,11 +425,11 @@ const UserProfilePage = () => {
                   <QrCode className="w-4 h-4" />
                 </Button>
               </div>
-              {/* Writer Subscribe */}
               <div className="flex items-center gap-2 mb-4">
                 <WriterSubscribeButton writerId={userId!} />
-                <span className="text-[12px] text-muted-foreground">Recibe notificaciones de nuevas publicaciones</span>
+                <span className="text-[12px] text-muted-foreground">Recibe notificaciones</span>
               </div>
+              </>
             )}
 
             {/* Bio */}
