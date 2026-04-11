@@ -1907,6 +1907,51 @@ export type Database = {
           },
         ]
       }
+      reading_sessions: {
+        Row: {
+          book_id: string
+          chapter_id: string | null
+          duration_seconds: number
+          id: string
+          pages_read: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id?: string | null
+          duration_seconds?: number
+          id?: string
+          pages_read?: number
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string | null
+          duration_seconds?: number
+          id?: string
+          pages_read?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_sessions_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_sessions_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_books: {
         Row: {
           book_id: string
@@ -1963,6 +2008,71 @@ export type Database = {
             columns: ["chapter_id"]
             isOneToOne: false
             referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      shop_purchases: {
+        Row: {
+          id: string
+          item_id: string
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
             referencedColumns: ["id"]
           },
         ]
@@ -2578,6 +2688,41 @@ export type Database = {
         }
         Relationships: []
       }
+      writer_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          subscriber_id: string
+          tier: string
+          writer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          subscriber_id: string
+          tier?: string
+          writer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          subscriber_id?: string
+          tier?: string
+          writer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "writer_subscriptions_writer_id_fkey"
+            columns: ["writer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2639,6 +2784,7 @@ export type Database = {
         Args: { p_item_id: string; p_user_id: string }
         Returns: boolean
       }
+      purchase_shop_item: { Args: { p_item_id: string }; Returns: Json }
       upgrade_weapon: { Args: { p_user_weapon_id: string }; Returns: Json }
       upsert_hashtags: {
         Args: {
