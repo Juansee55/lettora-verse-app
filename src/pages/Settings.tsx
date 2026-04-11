@@ -7,6 +7,7 @@ import {
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
   MessageCircleHeart, BookHeart, UserPlus2, Swords, Trophy, Type, Zap,
+  ShoppingBag,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -520,6 +521,13 @@ const SettingsPage = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <IOSSettingSection title={t("content")}>
             <IOSSettingItem
+              icon={<ShoppingBag className="w-4 h-4" />}
+              iconBg="bg-gradient-to-r from-amber-500 to-orange-500"
+              title="Tienda de Puntos"
+              subtitle="Compra items con tus monedas (Beta)"
+              onClick={() => navigate("/shop")}
+            />
+            <IOSSettingItem
               icon={<Trophy className="w-4 h-4" />}
               iconBg="bg-amber-500"
               title="TOP Rankings"
@@ -687,7 +695,7 @@ const SettingsPage = () => {
               icon={<Info className="w-4 h-4" />}
               iconBg="bg-gray-400"
               title={t("version")}
-              value="1.8.1"
+              value="1.9.3"
               showChevron={false}
             />
           </IOSSettingSection>

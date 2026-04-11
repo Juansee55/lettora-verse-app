@@ -64,6 +64,7 @@ const ChapterReaderPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [savedChapter, setSavedChapter] = useState(false);
+  const [readingStartTime] = useState(Date.now());
   
   // Swipe gesture
   const x = useMotionValue(0);
@@ -109,6 +110,26 @@ const ChapterReaderPage = () => {
       }
     };
   }, [settings.keepScreenOn]);
+
+  // Save reading session on unmount
+  useEffect(() => {
+    return () => {
+      const duration = Math.round((Date.now() - readingStartTime) / 1000);
+      if (duration > 10 && bookId) {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            supabase.from("reading_sessions").insert({
+              user_id: user.id,
+              book_id: bookId,
+              chapter_id: chapter?.id || null,
+              duration_seconds: duration,
+              pages_read: 1,
+            }).then(() => {});
+          }
+        });
+      }
+    };
+  }, [bookId, readingStartTime, chapter?.id]);
 
   // Fetch chapter data
   useEffect(() => {

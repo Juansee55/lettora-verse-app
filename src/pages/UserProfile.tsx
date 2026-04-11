@@ -20,6 +20,7 @@ import PremiumBadge from "@/components/premium/PremiumBadge";
 import { usePremium } from "@/hooks/usePremium";
 import FollowersListModal from "@/components/followers/FollowersListModal";
 import UserBadges from "@/components/badges/UserBadges";
+import WriterSubscribeButton from "@/components/subscriptions/WriterSubscribeButton";
 
 interface UserProfileData {
   id: string;
@@ -400,6 +401,7 @@ const UserProfilePage = () => {
 
             {/* Actions */}
             {!isOwnProfile && (
+              <>
               <div className="flex gap-2 mb-4">
                 <Button
                   variant={isFollowing ? "outline" : "ios"}
@@ -423,6 +425,11 @@ const UserProfilePage = () => {
                   <QrCode className="w-4 h-4" />
                 </Button>
               </div>
+              <div className="flex items-center gap-2 mb-4">
+                <WriterSubscribeButton writerId={userId!} />
+                <span className="text-[12px] text-muted-foreground">Recibe notificaciones</span>
+              </div>
+              </>
             )}
 
             {/* Bio */}
