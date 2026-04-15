@@ -21,6 +21,7 @@ import { usePremium } from "@/hooks/usePremium";
 import FollowersListModal from "@/components/followers/FollowersListModal";
 import UserBadges from "@/components/badges/UserBadges";
 import WriterSubscribeButton from "@/components/subscriptions/WriterSubscribeButton";
+import VerifiedBadge from "@/components/verification/VerifiedBadge";
 
 interface UserProfileData {
   id: string;
@@ -376,11 +377,7 @@ const UserProfilePage = () => {
                   )}
                   {premiumData.isPremium && <PremiumBadge compact />}
                   <UserBadges userId={profile.id} size="md" />
-                  {profile.is_verified && (
-                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                  )}
+                  <VerifiedBadge userId={profile.id} size="md" />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>

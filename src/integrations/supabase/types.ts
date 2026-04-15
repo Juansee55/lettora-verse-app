@@ -2559,6 +2559,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["verification_status"]
+          updated_at: string
+          user_id: string
+          verification_type: Database["public"]["Enums"]["verification_type"]
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id: string
+          verification_type?: Database["public"]["Enums"]["verification_type"]
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id?: string
+          verification_type?: Database["public"]["Enums"]["verification_type"]
+        }
+        Relationships: []
+      }
       user_weapons: {
         Row: {
           id: string
@@ -2798,6 +2828,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      verification_status: "active" | "expired" | "pending" | "cancelled"
+      verification_type: "official" | "premium" | "creator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2926,6 +2958,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      verification_status: ["active", "expired", "pending", "cancelled"],
+      verification_type: ["official", "premium", "creator"],
     },
   },
 } as const
