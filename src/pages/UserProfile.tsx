@@ -21,6 +21,7 @@ import { usePremium } from "@/hooks/usePremium";
 import FollowersListModal from "@/components/followers/FollowersListModal";
 import UserBadges from "@/components/badges/UserBadges";
 import WriterSubscribeButton from "@/components/subscriptions/WriterSubscribeButton";
+import VerifiedBadge from "@/components/verification/VerifiedBadge";
 
 interface UserProfileData {
   id: string;
