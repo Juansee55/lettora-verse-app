@@ -521,6 +521,13 @@ const SettingsPage = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <IOSSettingSection title={t("content")}>
             <IOSSettingItem
+              icon={<Shield className="w-4 h-4" />}
+              iconBg="bg-gradient-to-r from-blue-500 to-cyan-400"
+              title="Verificación"
+              subtitle="Obtén tu insignia verificada"
+              onClick={() => navigate("/verification")}
+            />
+            <IOSSettingItem
               icon={<ShoppingBag className="w-4 h-4" />}
               iconBg="bg-gradient-to-r from-amber-500 to-orange-500"
               title="Tienda de Puntos"
