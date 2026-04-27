@@ -13,6 +13,7 @@ import PageLoader from "@/components/PageLoader";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
+import UpdateBanner from "@/components/UpdateBanner";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -152,6 +153,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <BrowserProvider>
+              <UpdateBanner />
               <ScrollToTop />
               <AppContent />
             </BrowserProvider>
