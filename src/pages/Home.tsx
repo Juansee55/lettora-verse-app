@@ -1,12 +1,7 @@
-import EventBanner from './EventBanner';
-import UpdateBanner from './UpdateBanner';
-
 const Home = () => {
   return (
-    <div>
-      <EventBanner />
-      <UpdateBanner />
-      {/* Other components can go here */}
+    <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+      <p>Inicio</p>
     </div>
   );
 };
