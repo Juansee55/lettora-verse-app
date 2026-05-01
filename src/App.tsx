@@ -99,9 +99,10 @@ const AppContent = () => {
   return (
     <Suspense fallback={<PageLoader />}>
     <Routes>
-      <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : user ? <Navigate to="/home" replace /> : <Navigate to="/auth" replace />} />
+      <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : <Navigate to="/home" replace />} />
+      <Route path="/index" element={<Navigate to="/home" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
-      <Route path="/home" element={user ? <HomePage /> : <Navigate to="/auth" replace />} />
+      <Route path="/home" element={<HomePage />} />
       <Route path="/explore" element={user ? <ExplorePage /> : <Navigate to="/auth" replace />} />
       <Route path="/library" element={user ? <LibraryPage /> : <Navigate to="/auth" replace />} />
       <Route path="/chats" element={user ? <ChatsPage /> : <Navigate to="/auth" replace />} />
