@@ -23,6 +23,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { NotificationButton } from "@/components/pwa/PWAComponents";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
