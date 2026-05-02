@@ -364,6 +364,13 @@ const SettingsPage = () => {
         {/* Notifications */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <IOSSettingSection title={t("notifications")}>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">Notificaciones del dispositivo</p>
+                <p className="text-xs text-muted-foreground">Recibe push aunque la app esté cerrada</p>
+              </div>
+              <NotificationButton />
+            </div>
             <IOSSettingItem
               icon={<Bell className="w-4 h-4" />}
               iconBg="bg-red-500"
