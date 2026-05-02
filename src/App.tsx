@@ -14,6 +14,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
 import UpdateBanner from "@/components/UpdateBanner";
+import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -155,6 +156,8 @@ const App = () => (
           <BrowserRouter>
             <BrowserProvider>
               <UpdateBanner />
+              <OfflineIndicator />
+              <InstallBanner />
               <ScrollToTop />
               <AppContent />
             </BrowserProvider>
