@@ -1759,6 +1759,7 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           display_name: string | null
+          dm_privacy: string
           favorite_genres: string[] | null
           followers_visibility: string
           id: string
@@ -1780,6 +1781,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
           id: string
@@ -1801,6 +1803,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
           id?: string
