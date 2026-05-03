@@ -797,6 +797,62 @@ const SettingsPage = () => {
         )}
       </AnimatePresence>
 
+      {/* DM Privacy Picker Modal */}
+      <AnimatePresence>
+        {showDmPrivacyPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+            onClick={() => setShowDmPrivacyPicker(false)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-[17px] font-semibold">¿Quién puede enviarte mensajes?</h2>
+                <button onClick={() => setShowDmPrivacyPicker(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="p-2 pb-8">
+                {([
+                  { value: "everyone", label: "Todos", desc: "Cualquiera puede iniciar un chat contigo" },
+                  { value: "followers", label: "Solo seguidores", desc: "Solo quienes sigues pueden escribirte" },
+                  { value: "nobody", label: "Nadie", desc: "Bloquea nuevos mensajes directos" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={async () => {
+                      setDmPrivacy(opt.value);
+                      setShowDmPrivacyPicker(false);
+                      if (user) {
+                        await supabase.from("profiles").update({ dm_privacy: opt.value } as any).eq("id", user.id);
+                      }
+                      toast({ title: "Privacidad de mensajes actualizada" });
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors ${
+                      dmPrivacy === opt.value ? "bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="text-left">
+                      <span className="text-[17px] font-medium">{opt.label}</span>
+                      <p className="text-[13px] text-muted-foreground">{opt.desc}</p>
+                    </div>
+                    {dmPrivacy === opt.value && <Check className="w-5 h-5 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Language Picker Modal */}
       <AnimatePresence>
         {showLanguagePicker && (
