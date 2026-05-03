@@ -22,20 +22,30 @@ export const usePremium = (userId: string | null | undefined) => {
     }
 
     const fetch = async () => {
-      const { data } = await supabase
-        .from("premium_subscriptions")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .maybeSingle();
+      const { data: { user } } = await supabase.auth.getUser();
+      const isSelf = user?.id === userId;
 
-      if (data) {
-        const isActive = !data.expires_at || new Date(data.expires_at) > new Date();
-        setPremiumData({
-          isPremium: isActive,
-          plan: data.plan,
-          expiresAt: data.expires_at,
-        });
+      if (isSelf) {
+        const { data } = await supabase
+          .from("premium_subscriptions")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .maybeSingle();
+        if (data) {
+          const isActive = !data.expires_at || new Date(data.expires_at) > new Date();
+          setPremiumData({ isPremium: isActive, plan: data.plan, expiresAt: data.expires_at });
+        }
+      } else {
+        // For other users, only the public is_premium flag is exposed
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("is_premium")
+          .eq("id", userId)
+          .maybeSingle();
+        if (prof?.is_premium) {
+          setPremiumData({ isPremium: true, plan: null, expiresAt: null });
+        }
       }
       setLoading(false);
     };

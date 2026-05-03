@@ -1763,6 +1763,7 @@ export type Database = {
           followers_visibility: string
           id: string
           is_banned: boolean | null
+          is_premium: boolean
           is_private: boolean | null
           is_verified: boolean | null
           location: string | null
@@ -1783,6 +1784,7 @@ export type Database = {
           followers_visibility?: string
           id: string
           is_banned?: boolean | null
+          is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -1803,6 +1805,7 @@ export type Database = {
           followers_visibility?: string
           id?: string
           is_banned?: boolean | null
+          is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -2851,6 +2854,16 @@ export type Database = {
         Returns: boolean
       }
       purchase_shop_item: { Args: { p_item_id: string }; Returns: Json }
+      send_notification: {
+        Args: {
+          p_link?: string
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       upgrade_weapon: { Args: { p_user_weapon_id: string }; Returns: Json }
       upsert_hashtags: {
         Args: {
