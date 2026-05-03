@@ -1,7 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Check, CheckCheck } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ChatBubbleProps {
   content: string;
@@ -17,24 +16,8 @@ interface ChatBubbleProps {
 
 const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, senderNameColorClass, showSender, onLongPress }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | null>(null);
   const isMedia = mediaType === "image" || mediaType === "video";
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const resolve = async () => {
-      if (!mediaUrl) { setResolvedMediaUrl(null); return; }
-      // Legacy/full URL → use as-is
-      if (/^https?:\/\//i.test(mediaUrl)) { setResolvedMediaUrl(mediaUrl); return; }
-      const { data } = await supabase.storage
-        .from("chat-media")
-        .createSignedUrl(mediaUrl, 60 * 60);
-      if (!cancelled) setResolvedMediaUrl(data?.signedUrl ?? null);
-    };
-    resolve();
-    return () => { cancelled = true; };
-  }, [mediaUrl]);
 
   const handleTouchStart = useCallback(() => {
     longPressTimer.current = setTimeout(() => onLongPress?.(), 500);
@@ -76,10 +59,10 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
           <p className={`text-[12px] font-semibold mb-1 leading-none ${senderNameColorClass || "text-primary"}`}>{senderName}</p>
         )}
 
-        {resolvedMediaUrl && mediaType === "image" && (
+        {mediaUrl && mediaType === "image" && (
           <div className="rounded-[16px] overflow-hidden mb-1.5">
             <img
-              src={resolvedMediaUrl}
+              src={mediaUrl}
               alt=""
               className={`max-w-full max-h-[280px] object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
               onLoad={() => setImageLoaded(true)}
@@ -90,9 +73,9 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
           </div>
         )}
 
-        {resolvedMediaUrl && mediaType === "video" && (
+        {mediaUrl && mediaType === "video" && (
           <div className="rounded-[16px] overflow-hidden mb-1.5">
-            <video src={resolvedMediaUrl} controls className="max-w-full max-h-[280px] rounded-[16px]" preload="metadata" />
+            <video src={mediaUrl} controls className="max-w-full max-h-[280px] rounded-[16px]" preload="metadata" />
           </div>
         )}
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { MessageCircle } from "lucide-react";
-import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import ParagraphComments from "./ParagraphComments";
 
@@ -47,7 +46,7 @@ const InteractiveContent = ({ content, chapterId, fontSize, lineHeight, fontFami
             <p
               style={{ fontSize: `${fontSize}px`, lineHeight, fontFamily, textAlign: textAlign as any }}
               className="leading-relaxed py-1"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph, { USE_PROFILES: { html: true } }) }}
+              dangerouslySetInnerHTML={{ __html: paragraph }}
             />
             <button
               onClick={(e) => { e.stopPropagation(); setActiveParagraph(index); }}

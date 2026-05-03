@@ -144,12 +144,12 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
     const notes = adminNotes[report.id] || "";
     const message = `Tu reporte sobre "${report.content_title}" ha sido ${decision}. ${notes ? `Notas: ${notes}` : ""}`;
 
-    await supabase.rpc("send_notification", {
-      p_user_id: report.reporter_id,
-      p_type: "report_update",
-      p_title: `Reporte ${decision}`,
-      p_message: message,
-      p_link: null,
+    await supabase.from("notifications").insert({
+      user_id: report.reporter_id,
+      type: "report_update",
+      title: `Reporte ${decision}`,
+      message,
+      link: null,
     });
 
     toast({ title: "Notificación enviada al reportador" });
@@ -210,12 +210,12 @@ const ModerationPanel = ({ isAdmin }: ModerationPanelProps) => {
   const banUser = async (userId: string, userName: string) => {
     await supabase.from("profiles").update({ is_banned: true } as any).eq("id", userId);
     
-    await supabase.rpc("send_notification", {
-      p_user_id: userId,
-      p_type: "account",
-      p_title: "Cuenta suspendida",
-      p_message: "Tu cuenta ha sido suspendida por violar las normas de la comunidad.",
-      p_link: null,
+    await supabase.from("notifications").insert({
+      user_id: userId,
+      type: "account",
+      title: "Cuenta suspendida",
+      message: "Tu cuenta ha sido suspendida por violar las normas de la comunidad.",
+      link: null,
     });
 
     toast({ title: "Usuario bloqueado", description: `${userName} ha sido bloqueado.` });

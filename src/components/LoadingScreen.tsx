@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import lettoraLogo from "@/assets/lettora-logo.png";
+import { BookOpen } from "lucide-react";
 
 const LoadingScreen = () => {
   return (
@@ -42,7 +42,7 @@ const LoadingScreen = () => {
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           >
             <motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}>
-              <img src={lettoraLogo} alt="Lettora" className="w-16 h-16 object-contain" />
+              <BookOpen className="w-12 h-12 text-white" />
             </motion.div>
           </motion.div>
         </motion.div>

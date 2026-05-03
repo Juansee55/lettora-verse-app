@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import lettoraLogo from "@/assets/lettora-logo.png";
+import { BookOpen } from "lucide-react";
 
 interface AnimatedLettoraIconProps {
   size?: "sm" | "md" | "lg";
@@ -18,7 +18,7 @@ export const AnimatedLettoraIcon = ({ size = "md", showText = true }: AnimatedLe
   return (
     <div className="flex items-center gap-2">
       <motion.div
-        className={`${s.container} rounded-xl flex items-center justify-center relative overflow-hidden`}
+        className={`${s.container} bg-gradient-hero rounded-xl flex items-center justify-center shadow-glow relative overflow-hidden`}
         animate={{
           scale: [1, 1.05, 1],
           rotate: [0, 2, -2, 0],
@@ -29,7 +29,13 @@ export const AnimatedLettoraIcon = ({ size = "md", showText = true }: AnimatedLe
           ease: "easeInOut",
         }}
       >
-        <img src={lettoraLogo} alt="Lettora" className="w-full h-full object-contain relative z-10" />
+        {/* Shimmer effect */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          animate={{ x: ["-100%", "200%"] }}
+          transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3 }}
+        />
+        <BookOpen className={`${s.icon} text-primary-foreground relative z-10`} />
       </motion.div>
       {showText && (
         <motion.span

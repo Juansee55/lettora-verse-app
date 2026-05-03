@@ -177,8 +177,7 @@ const ChatConversationPage = () => {
     const path = `${currentUserId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (error) { toast.error("Error al subir archivo"); return null; }
-    // Store the path; we generate signed URLs at render time.
-    return path;
+    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
   };
 
   const canSendMessage = (): boolean => {
