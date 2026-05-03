@@ -40,6 +40,8 @@ const SettingsPage = () => {
   const [privateProfile, setPrivateProfile] = useState(false);
   const [followersVisibility, setFollowersVisibility] = useState<"all" | "followers" | "nobody">("all");
   const [showFollowersVisibilityPicker, setShowFollowersVisibilityPicker] = useState(false);
+  const [dmPrivacy, setDmPrivacy] = useState<"everyone" | "followers" | "nobody">("everyone");
+  const [showDmPrivacyPicker, setShowDmPrivacyPicker] = useState(false);
   const [showReadingActivity, setShowReadingActivity] = useState(true);
   const [notifyLikes, setNotifyLikes] = useState(true);
   const [notifyComments, setNotifyComments] = useState(true);
@@ -85,13 +87,14 @@ const SettingsPage = () => {
       // Load profile settings from DB
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_private, followers_visibility")
+        .select("is_private, followers_visibility, dm_privacy")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile) {
         setPrivateProfile(profile.is_private || false);
         setFollowersVisibility((profile as any).followers_visibility || "all");
+        setDmPrivacy(((profile as any).dm_privacy as any) || "everyone");
       }
 
       // Load favorite genres
