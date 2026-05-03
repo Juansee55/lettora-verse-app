@@ -289,17 +289,7 @@ const ChapterReaderPage = () => {
       });
       setLiked(true);
       setLikesCount((c) => c + 1);
-
-      // Create notification for author
-      if (chapter.books?.author_id && chapter.books.author_id !== user.id) {
-        await supabase.from("notifications").insert({
-          user_id: chapter.books.author_id,
-          type: "chapter_like",
-          title: "Nuevo like en tu capítulo",
-          message: `A alguien le gustó "${chapter.title}"`,
-          link: `/book/${bookId}/chapter/${chapterNumber}`,
-        });
-      }
+      // Notification is created automatically via DB trigger (trigger_notify_chapter_like)
     }
   };
 
