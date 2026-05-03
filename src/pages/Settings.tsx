@@ -485,6 +485,13 @@ const SettingsPage = () => {
               onClick={() => setShowFollowersVisibilityPicker(true)}
             />
             <IOSSettingItem
+              icon={<MessageSquare className="w-4 h-4" />}
+              iconBg="bg-sky-500"
+              title="Quién puede enviarte mensajes"
+              subtitle={dmPrivacy === "everyone" ? "Todos" : dmPrivacy === "followers" ? "Solo seguidores" : "Nadie"}
+              onClick={() => setShowDmPrivacyPicker(true)}
+            />
+            <IOSSettingItem
               icon={showReadingActivity ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               iconBg="bg-purple-500"
               title={t("showReadingActivity")}
