@@ -174,7 +174,7 @@ const Auth = () => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verificar"}
           </Button>
           {step === "verify" && <button onClick={handleResendCode} className="text-sm text-primary hover:underline">¿No recibiste el código? Reenviar</button>}
-          <button onClick={() => { setStep("form"); setOtpCode(""); }} className="block mx-auto mt-4 text-sm text-muted-foreground hover:text-foreground">Volver al inicio</button>
+          <button onClick={() => { setStep(isLogin ? "login" : "register"); setOtpCode(""); }} className="block mx-auto mt-4 text-sm text-muted-foreground hover:text-foreground">Volver al inicio</button>
         </motion.div>
       </div>
     );
