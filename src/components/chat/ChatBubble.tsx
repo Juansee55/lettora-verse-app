@@ -10,11 +10,13 @@ interface ChatBubbleProps {
   mediaType?: string;
   senderName?: string | null;
   senderNameColorClass?: string;
+  senderAvatarUrl?: string | null;
   showSender?: boolean;
   onLongPress?: () => void;
+  onAvatarClick?: () => void;
 }
 
-const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, senderNameColorClass, showSender, onLongPress }: ChatBubbleProps) => {
+const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, senderNameColorClass, senderAvatarUrl, showSender, onLongPress, onAvatarClick }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMedia = mediaType === "image" || mediaType === "video";
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,12 +39,25 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
       initial={{ opacity: 0, scale: 0.92, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-0.5`}
+      className={`flex items-end gap-1.5 ${isOwn ? "justify-end" : "justify-start"} mb-0.5`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
       onContextMenu={handleContextMenu}
     >
+      {/* Avatar (only for incoming messages in groups) */}
+      {!isOwn && showSender && (
+        <button
+          onClick={onAvatarClick}
+          className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden bg-gradient-to-br from-primary/50 to-primary flex items-center justify-center text-primary-foreground text-[11px] font-semibold mb-0.5"
+        >
+          {senderAvatarUrl ? (
+            <img src={senderAvatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span>{(senderName || "?")[0]?.toUpperCase()}</span>
+          )}
+        </button>
+      )}
       <div
         className={`relative max-w-[75%] ${isMedia && !content ? "p-[3px]" : "px-[14px] py-[8px]"} ${
           isOwn
