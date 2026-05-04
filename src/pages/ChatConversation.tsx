@@ -8,6 +8,7 @@ import ChatBubble from "@/components/chat/ChatBubble";
 import ChatDateSeparator from "@/components/chat/ChatDateSeparator";
 import GroupInfoSheet from "@/components/chat/GroupInfoSheet";
 import MessageActionsSheet from "@/components/chat/MessageActionsSheet";
+import DirectChatSheet from "@/components/chat/DirectChatSheet";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import { useNameColors } from "@/hooks/useNameColors";
 
@@ -48,6 +49,7 @@ const ChatConversationPage = () => {
   const [convInfo, setConvInfo] = useState<ConvInfo | null>(null);
   const [participantsMap, setParticipantsMap] = useState<Record<string, Participant>>({});
   const [showGroupInfo, setShowGroupInfo] = useState(false);
+  const [showDirectInfo, setShowDirectInfo] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<{ file: File; url: string; type: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentRole, setCurrentRole] = useState<string>("member");
@@ -324,7 +326,15 @@ const ChatConversationPage = () => {
             </div>
           </div>
 
-          <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => convInfo?.is_group && setShowGroupInfo(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-9 w-9"
+            onClick={() => {
+              if (convInfo?.is_group) setShowGroupInfo(true);
+              else setShowDirectInfo(true);
+            }}
+          >
             <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
           </Button>
         </div>
@@ -379,7 +389,9 @@ const ChatConversationPage = () => {
                   mediaType={message.media_type}
                   senderName={participantsMap[message.sender_id]?.display_name || participantsMap[message.sender_id]?.username}
                   senderNameColorClass={nameColors[message.sender_id]}
+                  senderAvatarUrl={participantsMap[message.sender_id]?.avatar_url}
                   showSender={convInfo?.is_group || false}
+                  onAvatarClick={() => navigate(`/user/${message.sender_id}`)}
                   onLongPress={() => { setSelectedMessage(message); setShowMessageActions(true); }}
                 />
               </div>
@@ -452,6 +464,19 @@ const ChatConversationPage = () => {
           conversationId={conversationId!}
           currentUserId={currentUserId}
           onSettingsChanged={() => fetchConversationData(currentUserId)}
+        />
+      )}
+
+      {/* Direct (1-to-1) chat settings */}
+      {!convInfo?.is_group && currentUserId && otherUser && (
+        <DirectChatSheet
+          isOpen={showDirectInfo}
+          onClose={() => setShowDirectInfo(false)}
+          conversationId={conversationId!}
+          otherUser={otherUser}
+          currentUserId={currentUserId}
+          onCleared={() => setMessages([])}
+          onReport={() => { setReportMessageId(conversationId!); setShowReportModal(true); }}
         />
       )}
 
