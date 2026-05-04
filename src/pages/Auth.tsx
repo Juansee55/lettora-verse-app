@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar, ShieldCheck, ChevronLeft, LogIn, UserPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,9 @@ import { lovable } from "@/integrations/lovable/index";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 type AuthMethod = "email" | "phone";
-type AuthStep = "welcome" | "form" | "verify" | "mfa";
-
-const TRACK_WIDTH = 280;
-const BALL_SIZE = 56;
-const THRESHOLD = TRACK_WIDTH - BALL_SIZE - 8;
+type AuthStep = "welcome" | "login" | "register" | "verify" | "mfa";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,23 +27,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Neon ball slider
-  const ballX = useMotionValue(0);
-  const trackProgress = useTransform(ballX, [0, THRESHOLD], [0, 1]);
-  const trackGlow = useTransform(trackProgress, [0, 1], ["hsl(var(--primary) / 0.1)", "hsl(var(--primary) / 0.4)"]);
-  const trackFillWidth = useTransform(trackProgress, [0, 1], ["0%", "100%"]);
-  const trackTextOpacity = useTransform(trackProgress, [0, 0.4], [1, 0]);
-  const [unlocked, setUnlocked] = useState(false);
-
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    const currentX = ballX.get();
-    if (currentX >= THRESHOLD * 0.85) {
-      setUnlocked(true);
-      setTimeout(() => setStep("form"), 400);
-    } else {
-      ballX.set(0);
-    }
-  }, [ballX]);
+  const isLogin = step === "login";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
