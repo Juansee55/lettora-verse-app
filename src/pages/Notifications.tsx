@@ -105,6 +105,24 @@ const NotificationsPage = () => {
   const filtered = filter === "unread" ? notifications.filter((n) => !n.read_at) : notifications;
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
+  // Group notifications by date bucket
+  const groupByDate = (items: Notification[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterday = today - 86400000;
+    const weekAgo = today - 6 * 86400000;
+    const groups: Record<string, Notification[]> = { Hoy: [], Ayer: [], "Esta semana": [], Anteriores: [] };
+    items.forEach((n) => {
+      const t = new Date(n.created_at).getTime();
+      if (t >= today) groups["Hoy"].push(n);
+      else if (t >= yesterday) groups["Ayer"].push(n);
+      else if (t >= weekAgo) groups["Esta semana"].push(n);
+      else groups["Anteriores"].push(n);
+    });
+    return groups;
+  };
+  const grouped = groupByDate(filtered);
+
   return (
     <div className="min-h-screen bg-muted/30 pb-24">
       <IOSHeader title="Notificaciones" large />
@@ -150,51 +168,65 @@ const NotificationsPage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filtered.map((notification, index) => (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.02 }}
-                className={`bg-card rounded-2xl overflow-hidden transition-colors relative group ${
-                  !notification.read_at ? "border-l-4 border-l-primary" : "border border-border/50"
-                }`}
-                onClick={() => {
-                  markAsRead(notification.id);
-                  if (notification.link) { navigate(notification.link); }
-                }}
-              >
-                <div className="flex gap-3 p-4 cursor-pointer">
-                  <div className="w-11 h-11 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
-                    {getIcon(notification.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className={`text-[15px] ${!notification.read_at ? "font-semibold" : "font-medium"}`}>
-                        {notification.title}
-                      </h4>
-                      <span className="text-[12px] text-muted-foreground flex-shrink-0 mt-0.5">
-                        {timeAgo(notification.created_at)}
-                      </span>
-                    </div>
-                    {notification.message && (
-                      <p className="text-[14px] text-muted-foreground mt-0.5 line-clamp-3">
-                        {notification.message}
-                      </p>
-                    )}
+          <div className="space-y-5">
+            {(["Hoy", "Ayer", "Esta semana", "Anteriores"] as const).map((bucket) => {
+              const items = grouped[bucket];
+              if (!items || items.length === 0) return null;
+              return (
+                <div key={bucket}>
+                  <h3 className="px-1 mb-2 text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {bucket}
+                  </h3>
+                  <div className="bg-card rounded-2xl overflow-hidden border border-border/40 divide-y divide-border/40">
+                    {items.map((notification, index) => (
+                      <motion.div
+                        key={notification.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.02 }}
+                        className={`relative group cursor-pointer transition-colors ${
+                          !notification.read_at ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/40"
+                        }`}
+                        onClick={() => {
+                          markAsRead(notification.id);
+                          if (notification.link) navigate(notification.link);
+                        }}
+                      >
+                        <div className="flex gap-3 p-3.5">
+                          <div className="w-11 h-11 bg-muted rounded-xl flex items-center justify-center flex-shrink-0 relative">
+                            {getIcon(notification.type)}
+                            {!notification.read_at && (
+                              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-card" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className={`text-[15px] leading-tight ${!notification.read_at ? "font-semibold" : "font-medium"}`}>
+                                {notification.title}
+                              </h4>
+                              <span className="text-[12px] text-muted-foreground flex-shrink-0 mt-0.5">
+                                {timeAgo(notification.created_at)}
+                              </span>
+                            </div>
+                            {notification.message && (
+                              <p className="text-[13.5px] text-muted-foreground mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-destructive/10 rounded-lg transition-all self-start"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Delete button on hover */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-destructive/10 rounded-lg transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
