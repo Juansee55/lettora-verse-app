@@ -414,10 +414,15 @@ const Auth = () => {
             </div>
           </div>
 
-          {/* Back to welcome */}
-          <button onClick={() => { setStep("welcome"); setUnlocked(false); ballX.set(0); }} className="block mx-auto mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            ← Volver al inicio
-          </button>
+          {/* Switch login/register (desktop) + back */}
+          <div className="hidden lg:flex items-center justify-between mt-6">
+            <button onClick={() => setStep("welcome")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              ← Volver al inicio
+            </button>
+            <button onClick={() => setStep(isLogin ? "register" : "login")} className="text-sm text-primary hover:underline">
+              {isLogin ? "Crear cuenta nueva" : "Ya tengo cuenta"}
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>
