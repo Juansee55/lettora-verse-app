@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2, Phone, Calendar, ShieldCheck, ChevronLeft, LogIn, UserPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,9 @@ import { lovable } from "@/integrations/lovable/index";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 type AuthMethod = "email" | "phone";
-type AuthStep = "welcome" | "form" | "verify" | "mfa";
-
-const TRACK_WIDTH = 280;
-const BALL_SIZE = 56;
-const THRESHOLD = TRACK_WIDTH - BALL_SIZE - 8;
+type AuthStep = "welcome" | "login" | "register" | "verify" | "mfa";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,23 +27,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Neon ball slider
-  const ballX = useMotionValue(0);
-  const trackProgress = useTransform(ballX, [0, THRESHOLD], [0, 1]);
-  const trackGlow = useTransform(trackProgress, [0, 1], ["hsl(var(--primary) / 0.1)", "hsl(var(--primary) / 0.4)"]);
-  const trackFillWidth = useTransform(trackProgress, [0, 1], ["0%", "100%"]);
-  const trackTextOpacity = useTransform(trackProgress, [0, 0.4], [1, 0]);
-  const [unlocked, setUnlocked] = useState(false);
-
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    const currentX = ballX.get();
-    if (currentX >= THRESHOLD * 0.85) {
-      setUnlocked(true);
-      setTimeout(() => setStep("form"), 400);
-    } else {
-      ballX.set(0);
-    }
-  }, [ballX]);
+  const isLogin = step === "login";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -195,13 +174,13 @@ const Auth = () => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verificar"}
           </Button>
           {step === "verify" && <button onClick={handleResendCode} className="text-sm text-primary hover:underline">¿No recibiste el código? Reenviar</button>}
-          <button onClick={() => { setStep("form"); setOtpCode(""); }} className="block mx-auto mt-4 text-sm text-muted-foreground hover:text-foreground">Volver al inicio</button>
+          <button onClick={() => { setStep(isLogin ? "login" : "register"); setOtpCode(""); }} className="block mx-auto mt-4 text-sm text-muted-foreground hover:text-foreground">Volver al inicio</button>
         </motion.div>
       </div>
     );
   }
 
-  // --- Welcome screen with neon ball ---
+  // --- Welcome screen ---
   if (step === "welcome") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 overflow-hidden relative">
@@ -209,7 +188,7 @@ const Auth = () => {
         <motion.div className="absolute w-[400px] h-[400px] bg-primary/5 rounded-full blur-[120px]" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 5, repeat: Infinity }} />
         <motion.div className="absolute w-[250px] h-[250px] bg-accent/5 rounded-full blur-[80px] -translate-y-40" animate={{ scale: [1.1, 1, 1.1] }} transition={{ duration: 4, repeat: Infinity }} />
 
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative z-10 flex flex-col items-center">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative z-10 flex flex-col items-center w-full max-w-sm">
           {/* Logo */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
@@ -223,67 +202,70 @@ const Auth = () => {
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-4xl font-display font-bold mb-2">Lettora</motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="text-muted-foreground text-center text-[15px] mb-12 max-w-[260px]">Donde las historias cobran vida y los escritores se conectan</motion.p>
+            className="text-muted-foreground text-center text-[15px] mb-10 max-w-[280px]">
+            Donde las historias cobran vida y los escritores se conectan
+          </motion.p>
 
-          {/* Neon Ball Slider */}
+          {/* Action buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="relative"
-            style={{ width: TRACK_WIDTH }}
+            className="w-full space-y-3"
           >
-            {/* Track */}
-            <motion.div
-              className="h-[60px] rounded-full border border-primary/20 flex items-center px-1 overflow-hidden relative"
-              style={{ background: trackGlow }}
+            <Button variant="hero" size="xl" className="w-full group" onClick={() => setStep("login")}>
+              <LogIn className="w-5 h-5" />
+              Iniciar sesión
+              <ArrowRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button
+              variant="outline"
+              size="xl"
+              className="w-full group border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+              onClick={() => setStep("register")}
             >
-              {/* Fill */}
-              <motion.div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary/20 to-primary/40 rounded-full"
-                style={{ width: trackFillWidth }}
-              />
-              {/* Track text */}
-              <motion.span
-                className="absolute inset-0 flex items-center justify-center text-[14px] font-medium text-muted-foreground pointer-events-none select-none"
-                style={{ opacity: trackTextOpacity }}
-              >
-                Desliza para comenzar →
-              </motion.span>
+              <UserPlus className="w-5 h-5" />
+              Crear cuenta nueva
+              <Sparkles className="w-4 h-4 ml-auto text-primary" />
+            </Button>
+          </motion.div>
 
-              {/* Ball */}
-              <motion.div
-                drag="x"
-                dragConstraints={{ left: 0, right: THRESHOLD }}
-                dragElastic={0}
-                dragMomentum={false}
-                onDragEnd={handleDragEnd}
-                style={{ x: ballX }}
-                className="relative z-10 w-[52px] h-[52px] rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center"
-                whileTap={{ scale: 1.05 }}
-              >
-                {/* Glow */}
-                <div className="absolute inset-0 rounded-full bg-primary/30 blur-lg" />
-                {/* Neon ring */}
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-primary"
-                  animate={{ boxShadow: ["0 0 15px hsl(var(--primary) / 0.4)", "0 0 30px hsl(var(--primary) / 0.6)", "0 0 15px hsl(var(--primary) / 0.4)"] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                />
-                {/* Inner */}
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl relative z-10">
-                  <ArrowRight className="w-6 h-6 text-primary-foreground" />
-                </div>
-              </motion.div>
-            </motion.div>
+          {/* Quick Google sign-in */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="w-full mt-6"
+          >
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground/70">o</span></div>
+            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full rounded-xl"
+              onClick={async () => {
+                const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+                if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+              }}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Continuar con Google
+            </Button>
           </motion.div>
 
           {/* Branding */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="mt-12 text-[11px] text-muted-foreground/40 tracking-wider uppercase"
+            transition={{ delay: 0.9 }}
+            className="mt-10 text-[11px] text-muted-foreground/40 tracking-wider uppercase"
           >
             Made by Lettora.Dev / PerriStudios
           </motion.p>
@@ -312,16 +294,34 @@ const Auth = () => {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
-          <div className="lg:hidden flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-3">
-              <BookOpen className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-2xl font-display font-bold">Lettora</h2>
+          {/* Header with back button */}
+          <div className="flex items-center justify-between mb-6 lg:hidden">
+            <button
+              onClick={() => setStep("welcome")}
+              className="flex items-center gap-1 text-primary text-[15px] font-medium -ml-2 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Atrás
+            </button>
+            <button
+              onClick={() => setStep(isLogin ? "register" : "login")}
+              className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isLogin ? "¿Sin cuenta? Crear" : "¿Ya tienes cuenta? Entrar"}
+            </button>
           </div>
 
-          <div className="flex bg-muted rounded-xl p-1 mb-6">
-            <button onClick={() => setIsLogin(true)} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Iniciar sesión</button>
-            <button onClick={() => setIsLogin(false)} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${!isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Registrarse</button>
+          {/* Title block */}
+          <div className="mb-6">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${isLogin ? "bg-primary/10" : "bg-gradient-to-br from-primary/20 to-primary/40"}`}>
+              {isLogin ? <LogIn className="w-7 h-7 text-primary" /> : <UserPlus className="w-7 h-7 text-primary" />}
+            </div>
+            <h1 className="text-3xl font-display font-bold mb-1.5 leading-tight">
+              {isLogin ? "Bienvenido de vuelta" : "Crea tu cuenta"}
+            </h1>
+            <p className="text-[15px] text-muted-foreground">
+              {isLogin ? "Ingresa para continuar leyendo y escribiendo" : "Únete a la comunidad de Lettora"}
+            </p>
           </div>
 
           <div className="flex gap-2 mb-5">
@@ -414,10 +414,15 @@ const Auth = () => {
             </div>
           </div>
 
-          {/* Back to welcome */}
-          <button onClick={() => { setStep("welcome"); setUnlocked(false); ballX.set(0); }} className="block mx-auto mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            ← Volver al inicio
-          </button>
+          {/* Switch login/register (desktop) + back */}
+          <div className="hidden lg:flex items-center justify-between mt-6">
+            <button onClick={() => setStep("welcome")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              ← Volver al inicio
+            </button>
+            <button onClick={() => setStep(isLogin ? "register" : "login")} className="text-sm text-primary hover:underline">
+              {isLogin ? "Crear cuenta nueva" : "Ya tengo cuenta"}
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>
