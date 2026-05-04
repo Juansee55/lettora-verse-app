@@ -294,16 +294,34 @@ const Auth = () => {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
-          <div className="lg:hidden flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-3">
-              <BookOpen className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-2xl font-display font-bold">Lettora</h2>
+          {/* Header with back button */}
+          <div className="flex items-center justify-between mb-6 lg:hidden">
+            <button
+              onClick={() => setStep("welcome")}
+              className="flex items-center gap-1 text-primary text-[15px] font-medium -ml-2 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Atrás
+            </button>
+            <button
+              onClick={() => setStep(isLogin ? "register" : "login")}
+              className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isLogin ? "¿Sin cuenta? Crear" : "¿Ya tienes cuenta? Entrar"}
+            </button>
           </div>
 
-          <div className="flex bg-muted rounded-xl p-1 mb-6">
-            <button onClick={() => setIsLogin(true)} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Iniciar sesión</button>
-            <button onClick={() => setIsLogin(false)} className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${!isLogin ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>Registrarse</button>
+          {/* Title block */}
+          <div className="mb-6">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${isLogin ? "bg-primary/10" : "bg-gradient-to-br from-primary/20 to-primary/40"}`}>
+              {isLogin ? <LogIn className="w-7 h-7 text-primary" /> : <UserPlus className="w-7 h-7 text-primary" />}
+            </div>
+            <h1 className="text-3xl font-display font-bold mb-1.5 leading-tight">
+              {isLogin ? "Bienvenido de vuelta" : "Crea tu cuenta"}
+            </h1>
+            <p className="text-[15px] text-muted-foreground">
+              {isLogin ? "Ingresa para continuar leyendo y escribiendo" : "Únete a la comunidad de Lettora"}
+            </p>
           </div>
 
           <div className="flex gap-2 mb-5">
