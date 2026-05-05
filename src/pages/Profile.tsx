@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
   Grid3X3, List, Crown, ChevronRight, Trash2, QrCode, MapPin,
-  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check,
+  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check, Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
