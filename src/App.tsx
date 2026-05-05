@@ -15,6 +15,8 @@ import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
 import UpdateBanner from "@/components/UpdateBanner";
 import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
+import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
+import { usePWA } from "@/hooks/usePWA";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -29,6 +31,7 @@ const WritePage = lazy(() => import("./pages/Write"));
 const WriteSelectorPage = lazy(() => import("./pages/WriteSelector"));
 const AdvancedWritePage = lazy(() => import("./pages/AdvancedWrite"));
 const MicrostoriesPage = lazy(() => import("./pages/Microstories"));
+const MedalsPage = lazy(() => import("./pages/Medals"));
 const UserProfilePage = lazy(() => import("./pages/UserProfile"));
 const EditProfilePage = lazy(() => import("./pages/EditProfile"));
 const AdminPage = lazy(() => import("./pages/Admin"));
@@ -64,6 +67,17 @@ const AppContent = () => {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
 
   useAutoCleanup();
+  useDailyCheckIn();
+
+  const { pushSupported, pushSubscribed, notificationPermission, subscribePush } = usePWA();
+  useEffect(() => {
+    if (!user) return;
+    if (!pushSupported) return;
+    if (pushSubscribed) return;
+    if (notificationPermission !== "default") return;
+    const t = setTimeout(() => { subscribePush().catch(() => {}); }, 4000);
+    return () => clearTimeout(t);
+  }, [user, pushSupported, pushSubscribed, notificationPermission, subscribePush]);
 
   useEffect(() => {
     const seen = localStorage.getItem("lettora_onboarding_seen");
@@ -116,6 +130,7 @@ const AppContent = () => {
       <Route path="/write/advanced" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/write/advanced/:bookId" element={user ? <AdvancedWritePage /> : <Navigate to="/auth" replace />} />
       <Route path="/microstories" element={user ? <MicrostoriesPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/medals" element={user ? <MedalsPage /> : <Navigate to="/auth" replace />} />
       
       <Route path="/user/:userId" element={user ? <UserProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/edit-profile" element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} />

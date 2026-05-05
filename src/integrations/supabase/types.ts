@@ -713,6 +713,27 @@ export type Database = {
           },
         ]
       }
+      daily_check_ins: {
+        Row: {
+          check_in_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_messages: {
         Row: {
           content: string
@@ -1504,6 +1525,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_medals: {
+        Row: {
+          created_at: string
+          description: string
+          display_order: number
+          emoji: string
+          id: string
+          name: string
+          rarity: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          display_order?: number
+          emoji: string
+          id?: string
+          name: string
+          rarity?: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          display_order?: number
+          emoji?: string
+          id?: string
+          name?: string
+          rarity?: string
+          slug?: string
+        }
+        Relationships: []
       }
       news: {
         Row: {
@@ -2577,6 +2631,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_monthly_medals: {
+        Row: {
+          awarded_at: string
+          days_count: number
+          id: string
+          medal_id: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          awarded_at?: string
+          days_count: number
+          id?: string
+          medal_id: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          awarded_at?: string
+          days_count?: number
+          id?: string
+          medal_id?: string
+          month?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_monthly_medals_medal_id_fkey"
+            columns: ["medal_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_medals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           admin_title: string | null
@@ -2597,6 +2689,33 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          current_streak: number
+          last_check_in: string | null
+          longest_streak: number
+          total_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          last_check_in?: string | null
+          longest_streak?: number
+          total_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          last_check_in?: string | null
+          longest_streak?: number
+          total_days?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -2857,6 +2976,7 @@ export type Database = {
         Returns: boolean
       }
       purchase_shop_item: { Args: { p_item_id: string }; Returns: Json }
+      record_daily_check_in: { Args: never; Returns: Json }
       send_notification: {
         Args: {
           p_link?: string
