@@ -17,7 +17,6 @@ import UpdateBanner from "@/components/UpdateBanner";
 import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { usePWA } from "@/hooks/usePWA";
-import { useEffect as useEffectAuto } from "react";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -71,7 +70,7 @@ const AppContent = () => {
   useDailyCheckIn();
 
   const { pushSupported, pushSubscribed, notificationPermission, subscribePush } = usePWA();
-  useEffectAuto(() => {
+  useEffect(() => {
     if (!user) return;
     if (!pushSupported) return;
     if (pushSubscribed) return;
