@@ -1,0 +1,7 @@
+- pipeline: id_yml
+  name: Id_yml
+  refs:
+  - refs/heads/main
+  fail_on_prepare_env_warning: true
+  events:
+  - type: WEBHOOK
