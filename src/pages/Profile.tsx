@@ -339,6 +339,13 @@ const ProfilePage = () => {
             <Heart className="w-3.5 h-3.5 text-rose-500" />
             <span className="text-[13px] font-semibold text-rose-500">Inventario</span>
           </button>
+          <button
+            onClick={() => navigate("/medals")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 rounded-full"
+          >
+            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-[13px] font-semibold text-amber-500">Medallas</span>
+          </button>
         </div>
 
         {/* Level + Premium quick links */}
