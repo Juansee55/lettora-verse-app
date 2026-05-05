@@ -25,5 +25,5 @@ jobs:
     - name: Publish APK
       uses: alsrb968/action-release-apk@master
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        GITHUB_TOKEN: ${{ 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 }}
         APP_FOLDER: app
