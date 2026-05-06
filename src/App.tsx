@@ -57,6 +57,7 @@ const SocialLinksPage = lazy(() => import("./pages/SocialLinks"));
 const ProposalsPage = lazy(() => import("./pages/Proposals"));
 const ShopPage = lazy(() => import("./pages/Shop"));
 const VerificationPage = lazy(() => import("./pages/Verification"));
+const AppBuildsPage = lazy(() => import("./pages/AppBuilds"));
 
 const queryClient = new QueryClient();
 
@@ -155,6 +156,7 @@ const AppContent = () => {
       <Route path="/proposals" element={user ? <ProposalsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/shop" element={user ? <ShopPage /> : <Navigate to="/auth" replace />} />
       <Route path="/verification" element={user ? <VerificationPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/app-builds" element={user ? <AppBuildsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
