@@ -24,6 +24,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { NotificationButton } from "@/components/pwa/PWAComponents";
+import { ShareAppButton } from "@/components/ShareAppButton";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -652,6 +653,13 @@ const SettingsPage = () => {
                 subtitle="Bases, gangs y territorio"
                 onClick={() => navigate("/gang-wars")}
               />
+              <IOSSettingItem
+                icon={<Download className="w-4 h-4" />}
+                iconBg="bg-emerald-500"
+                title="App Builds (APK / OBB)"
+                subtitle="Subir y gestionar instaladores"
+                onClick={() => navigate("/app-builds")}
+              />
             </IOSSettingSection>
           </motion.div>
         )}
@@ -692,6 +700,16 @@ const SettingsPage = () => {
               subtitle="Síguenos en redes"
               onClick={() => navigate("/social-links")}
             />
+            <div className="px-4 py-3 bg-card flex items-center gap-3.5 min-h-[52px]">
+              <div className="w-[29px] h-[29px] rounded-[7px] bg-gradient-to-br from-primary to-violet-500 text-white flex items-center justify-center shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-[15px] font-medium">Compartir Lettora</p>
+                <p className="text-[12px] text-muted-foreground">Invita a tus amigos a leer y escribir</p>
+              </div>
+              <ShareAppButton variant="full" />
+            </div>
             <IOSSettingItem
               icon={<MessageSquare className="w-4 h-4" />}
               iconBg="bg-teal-500"
