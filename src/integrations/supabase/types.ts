@@ -76,6 +76,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_builds: {
+        Row: {
+          created_at: string
+          file_path: string
+          file_size: number
+          id: string
+          notes: string | null
+          platform: string
+          uploaded_by: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          file_size?: number
+          id?: string
+          notes?: string | null
+          platform: string
+          uploaded_by: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          notes?: string | null
+          platform?: string
+          uploaded_by?: string
+          version?: string
+        }
+        Relationships: []
+      }
       base_attacks: {
         Row: {
           attacker_gang_id: string
