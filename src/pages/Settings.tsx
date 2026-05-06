@@ -24,6 +24,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { NotificationButton } from "@/components/pwa/PWAComponents";
+import { ShareAppButton } from "@/components/ShareAppButton";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -651,6 +652,13 @@ const SettingsPage = () => {
                 title="Gang Wars"
                 subtitle="Bases, gangs y territorio"
                 onClick={() => navigate("/gang-wars")}
+              />
+              <IOSSettingItem
+                icon={<Download className="w-4 h-4" />}
+                iconBg="bg-emerald-500"
+                title="App Builds (APK / OBB)"
+                subtitle="Subir y gestionar instaladores"
+                onClick={() => navigate("/app-builds")}
               />
             </IOSSettingSection>
           </motion.div>
