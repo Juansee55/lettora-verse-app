@@ -586,6 +586,20 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                   className="min-h-[200px] bg-muted/30 resize-none text-[14px]"
                 />
                 <div className="mt-4">
+                  <label className="text-[11px] text-muted-foreground mb-1 flex items-center gap-1">
+                    <CalendarClock className="w-3 h-3" /> Publicar capítulo el
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={activeChapter.publish_at ? activeChapter.publish_at.slice(0, 16) : ""}
+                    onChange={(e) => updateChapterPublishAt(e.target.value ? new Date(e.target.value).toISOString() : "")}
+                    className="bg-muted/30 text-[13px] rounded-xl"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Si lo dejas vacío, se publica al instante.
+                  </p>
+                </div>
+                <div className="mt-4">
                   <Textarea
                     placeholder="Descripción del libro..."
                     value={description}
