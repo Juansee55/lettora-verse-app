@@ -14,6 +14,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
 import UpdateBanner from "@/components/UpdateBanner";
+import VersionUpdateBanner from "@/components/VersionUpdateBanner";
 import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { usePWA } from "@/hooks/usePWA";
@@ -173,6 +174,7 @@ const App = () => (
           <BrowserRouter>
             <BrowserProvider>
               <UpdateBanner />
+              <VersionUpdateBanner />
               <OfflineIndicator />
               <InstallBanner />
               <ScrollToTop />
