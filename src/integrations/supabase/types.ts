@@ -109,6 +109,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_current: boolean
+          release_notes: string | null
+          released_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          release_notes?: string | null
+          released_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          release_notes?: string | null
+          released_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       base_attacks: {
         Row: {
           attacker_gang_id: string
@@ -438,6 +465,41 @@ export type Database = {
           },
         ]
       }
+      chapter_bookmarks: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          label: string | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          position?: number
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_bookmarks_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapter_likes: {
         Row: {
           chapter_id: string
@@ -465,9 +527,11 @@ export type Database = {
           chapter_number: number
           content: string | null
           created_at: string | null
+          draft_content: string | null
           id: string
           is_published: boolean | null
           likes_count: number | null
+          publish_at: string | null
           title: string
           updated_at: string | null
           word_count: number | null
@@ -477,9 +541,11 @@ export type Database = {
           chapter_number: number
           content?: string | null
           created_at?: string | null
+          draft_content?: string | null
           id?: string
           is_published?: boolean | null
           likes_count?: number | null
+          publish_at?: string | null
           title: string
           updated_at?: string | null
           word_count?: number | null
@@ -489,9 +555,11 @@ export type Database = {
           chapter_number?: number
           content?: string | null
           created_at?: string | null
+          draft_content?: string | null
           id?: string
           is_published?: boolean | null
           likes_count?: number | null
+          publish_at?: string | null
           title?: string
           updated_at?: string | null
           word_count?: number | null
@@ -1987,6 +2055,79 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reader_highlights: {
+        Row: {
+          chapter_id: string
+          color: string
+          created_at: string
+          id: string
+          paragraph_index: number
+          snippet: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          paragraph_index?: number
+          snippet: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          paragraph_index?: number
+          snippet?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reader_highlights_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reader_notes: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          note: string
+          paragraph_index: number
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          note: string
+          paragraph_index?: number
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          paragraph_index?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reader_notes_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reading_progress: {
         Row: {
