@@ -160,6 +160,7 @@ const AdvancedWritePage = () => {
         chapter_number: c.chapter_number,
         word_count: c.word_count || 0,
         notes: "",
+        publish_at: (c as any).publish_at || null,
       })));
       setActiveChapterId(chaptersData[0].id);
     }
@@ -193,6 +194,12 @@ const AdvancedWritePage = () => {
   const updateChapterNotes = (notes: string) => {
     setChapters(prev => prev.map(c => 
       c.id === activeChapterId ? { ...c, notes } : c
+    ));
+  };
+
+  const updateChapterPublishAt = (value: string) => {
+    setChapters(prev => prev.map(c =>
+      c.id === activeChapterId ? { ...c, publish_at: value || null } : c
     ));
   };
 
@@ -280,7 +287,9 @@ const AdvancedWritePage = () => {
               content: chapter.content,
               chapter_number: chapter.chapter_number,
               word_count: chapter.word_count,
-              is_published: saveStatus === "published",
+              is_published: saveStatus === "published" && (!chapter.publish_at || new Date(chapter.publish_at) <= new Date()),
+              publish_at: chapter.publish_at || null,
+              draft_content: saveStatus === "draft" ? chapter.content : null,
             }).eq("id", chapter.dbId);
           } else {
             const { data: newChapter } = await supabase.from("chapters").insert({
@@ -289,7 +298,9 @@ const AdvancedWritePage = () => {
               content: chapter.content,
               chapter_number: chapter.chapter_number,
               word_count: chapter.word_count,
-              is_published: saveStatus === "published",
+              is_published: saveStatus === "published" && (!chapter.publish_at || new Date(chapter.publish_at) <= new Date()),
+              publish_at: chapter.publish_at || null,
+              draft_content: saveStatus === "draft" ? chapter.content : null,
             }).select().single();
             
             if (newChapter) {
