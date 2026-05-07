@@ -24,7 +24,10 @@ const VersionUpdateBanner = () => {
       const dismissed = localStorage.getItem(DISMISS_KEY);
       setVersion(data.version);
       setNotes(data.release_notes || "");
-      if (known !== data.version && dismissed !== data.version) {
+      if (!known) {
+        // First install: register current version silently, no banner
+        localStorage.setItem(STORAGE_KEY, data.version);
+      } else if (known !== data.version && dismissed !== data.version) {
         setVisible(true);
       }
       // Set as known only when user actively updates/dismisses
