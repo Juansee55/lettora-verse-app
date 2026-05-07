@@ -16,6 +16,7 @@ import {
   Wifi,
   WifiOff,
   Bookmark,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -27,6 +28,7 @@ import { ReadingSettingsSheet } from "@/components/reader/ReadingSettingsSheet";
 import { PageTransition } from "@/components/reader/PageTransition";
 import PDFViewer from "@/components/reader/PDFViewer";
 import InteractiveContent from "@/components/reader/InteractiveContent";
+import ReaderToolsSheet from "@/components/reader/ReaderToolsSheet";
 
 interface ChapterData {
   id: string;
@@ -59,6 +61,7 @@ const ChapterReaderPage = () => {
   const [totalChapters, setTotalChapters] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const [downloading, setDownloading] = useState(false);
@@ -499,6 +502,12 @@ const ChapterReaderPage = () => {
                 >
                   <Settings className="w-5 h-5 text-primary" />
                 </button>
+                <button
+                  onClick={() => setShowTools(true)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors"
+                >
+                  <Wrench className="w-5 h-5 text-primary" />
+                </button>
               </div>
             </div>
           </motion.header>
@@ -673,6 +682,16 @@ const ChapterReaderPage = () => {
         onUpdateSetting={updateSetting}
         onReset={resetSettings}
       />
+
+      {chapter && (
+        <ReaderToolsSheet
+          open={showTools}
+          onOpenChange={setShowTools}
+          chapterId={chapter.id}
+          chapterContent={chapter.content || ""}
+          scrollPosition={typeof window !== "undefined" ? window.scrollY : 0}
+        />
+      )}
     </div>
   );
 };
