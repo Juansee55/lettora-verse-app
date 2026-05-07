@@ -660,6 +660,13 @@ const SettingsPage = () => {
                 subtitle="Subir y gestionar instaladores"
                 onClick={() => navigate("/app-builds")}
               />
+              <IOSSettingItem
+                icon={<Download className="w-4 h-4" />}
+                iconBg="bg-violet-500"
+                title="Versiones de la app"
+                subtitle="Publicar nueva versión y notas"
+                onClick={() => navigate("/app-versions")}
+              />
             </IOSSettingSection>
           </motion.div>
         )}

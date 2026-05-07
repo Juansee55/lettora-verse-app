@@ -14,6 +14,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
 import UpdateBanner from "@/components/UpdateBanner";
+import VersionUpdateBanner from "@/components/VersionUpdateBanner";
 import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { usePWA } from "@/hooks/usePWA";
@@ -58,6 +59,7 @@ const ProposalsPage = lazy(() => import("./pages/Proposals"));
 const ShopPage = lazy(() => import("./pages/Shop"));
 const VerificationPage = lazy(() => import("./pages/Verification"));
 const AppBuildsPage = lazy(() => import("./pages/AppBuilds"));
+const AppVersionsPage = lazy(() => import("./pages/AppVersions"));
 
 const queryClient = new QueryClient();
 
@@ -157,6 +159,7 @@ const AppContent = () => {
       <Route path="/shop" element={user ? <ShopPage /> : <Navigate to="/auth" replace />} />
       <Route path="/verification" element={user ? <VerificationPage /> : <Navigate to="/auth" replace />} />
       <Route path="/app-builds" element={user ? <AppBuildsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/app-versions" element={user ? <AppVersionsPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
@@ -173,6 +176,7 @@ const App = () => (
           <BrowserRouter>
             <BrowserProvider>
               <UpdateBanner />
+              <VersionUpdateBanner />
               <OfflineIndicator />
               <InstallBanner />
               <ScrollToTop />

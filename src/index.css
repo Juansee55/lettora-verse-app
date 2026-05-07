@@ -28,7 +28,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 270 50% 10%;
 
-    --primary: 270 75% 55%;
+    --primary: 268 78% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 270 30% 95%;
@@ -37,7 +37,7 @@
     --muted: 270 20% 94%;
     --muted-foreground: 270 15% 45%;
 
-    --accent: 280 85% 60%;
+    --accent: 278 88% 62%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -45,15 +45,15 @@
 
     --border: 270 25% 90%;
     --input: 270 25% 90%;
-    --ring: 270 75% 55%;
+    --ring: 268 78% 52%;
 
     --radius: 1rem;
 
     /* Custom Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 75% 55%), hsl(290 80% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(268 78% 52%), hsl(285 82% 60%));
     --gradient-secondary: linear-gradient(135deg, hsl(270 30% 95%), hsl(280 35% 92%));
-    --gradient-hero: linear-gradient(135deg, hsl(270 75% 55%), hsl(320 70% 55%));
-    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(270 80% 60% / 0.3), transparent 70%);
+    --gradient-hero: linear-gradient(135deg, hsl(258 75% 48%), hsl(285 82% 60%));
+    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(278 88% 62% / 0.32), transparent 70%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(270 30% 98%));
 
     /* Shadows */
@@ -84,7 +84,7 @@
     --popover: 270 25% 10%;
     --popover-foreground: 270 20% 95%;
 
-    --primary: 270 80% 65%;
+    --primary: 275 85% 68%;
     --primary-foreground: 270 50% 10%;
 
     --secondary: 270 30% 15%;
@@ -93,7 +93,7 @@
     --muted: 270 25% 15%;
     --muted-foreground: 270 20% 60%;
 
-    --accent: 280 85% 65%;
+    --accent: 285 92% 72%;
     --accent-foreground: 270 50% 10%;
 
     --destructive: 0 70% 45%;

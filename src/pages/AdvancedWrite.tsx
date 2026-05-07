@@ -27,6 +27,7 @@ import {
   BookOpen,
   Loader2,
   Check,
+  CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ interface Chapter {
   chapter_number: number;
   word_count: number;
   notes: string;
+  publish_at?: string | null;
 }
 
 const genres = [
@@ -158,6 +160,7 @@ const AdvancedWritePage = () => {
         chapter_number: c.chapter_number,
         word_count: c.word_count || 0,
         notes: "",
+        publish_at: (c as any).publish_at || null,
       })));
       setActiveChapterId(chaptersData[0].id);
     }
@@ -191,6 +194,12 @@ const AdvancedWritePage = () => {
   const updateChapterNotes = (notes: string) => {
     setChapters(prev => prev.map(c => 
       c.id === activeChapterId ? { ...c, notes } : c
+    ));
+  };
+
+  const updateChapterPublishAt = (value: string) => {
+    setChapters(prev => prev.map(c =>
+      c.id === activeChapterId ? { ...c, publish_at: value || null } : c
     ));
   };
 
@@ -278,7 +287,9 @@ const AdvancedWritePage = () => {
               content: chapter.content,
               chapter_number: chapter.chapter_number,
               word_count: chapter.word_count,
-              is_published: saveStatus === "published",
+              is_published: saveStatus === "published" && (!chapter.publish_at || new Date(chapter.publish_at) <= new Date()),
+              publish_at: chapter.publish_at || null,
+              draft_content: saveStatus === "draft" ? chapter.content : null,
             }).eq("id", chapter.dbId);
           } else {
             const { data: newChapter } = await supabase.from("chapters").insert({
@@ -287,7 +298,9 @@ const AdvancedWritePage = () => {
               content: chapter.content,
               chapter_number: chapter.chapter_number,
               word_count: chapter.word_count,
-              is_published: saveStatus === "published",
+              is_published: saveStatus === "published" && (!chapter.publish_at || new Date(chapter.publish_at) <= new Date()),
+              publish_at: chapter.publish_at || null,
+              draft_content: saveStatus === "draft" ? chapter.content : null,
             }).select().single();
             
             if (newChapter) {
@@ -572,6 +585,20 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                   onChange={(e) => updateChapterNotes(e.target.value)}
                   className="min-h-[200px] bg-muted/30 resize-none text-[14px]"
                 />
+                <div className="mt-4">
+                  <label className="text-[11px] text-muted-foreground mb-1 flex items-center gap-1">
+                    <CalendarClock className="w-3 h-3" /> Publicar capítulo el
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    value={activeChapter.publish_at ? activeChapter.publish_at.slice(0, 16) : ""}
+                    onChange={(e) => updateChapterPublishAt(e.target.value ? new Date(e.target.value).toISOString() : "")}
+                    className="bg-muted/30 text-[13px] rounded-xl"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Si lo dejas vacío, se publica al instante.
+                  </p>
+                </div>
                 <div className="mt-4">
                   <Textarea
                     placeholder="Descripción del libro..."
