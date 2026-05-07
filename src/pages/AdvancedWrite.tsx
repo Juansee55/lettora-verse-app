@@ -27,6 +27,7 @@ import {
   BookOpen,
   Loader2,
   Check,
+  CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ interface Chapter {
   chapter_number: number;
   word_count: number;
   notes: string;
+  publish_at?: string | null;
 }
 
 const genres = [
