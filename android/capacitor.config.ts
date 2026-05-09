@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.lettora.app',
+  appId: 'com.juanse.lettora',
   appName: 'Lettora',
   webDir: 'dist',
 };
