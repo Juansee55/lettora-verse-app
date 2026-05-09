@@ -30,6 +30,8 @@ jobs:
 
       - run: npm run build
 
+      - run: npx cap add android
+
       - run: npx cap sync
 
       - run: |
