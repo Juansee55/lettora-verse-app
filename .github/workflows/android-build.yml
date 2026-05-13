@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-  release:
-    types:
-      - published
+  workflow_dispatch:
 
 jobs:
   build-android:
@@ -33,29 +31,53 @@ jobs:
       - name: Build web assets
         run: npm run build
 
-      - name: Add Android platform and sync Capacitor
+      - name: Sync Capacitor
         run: |
-          npx cap add android || true # Add android if not already added
+          npx cap add android || true
           npx cap sync android
 
-      - name: Build Android Release APK
+      - name: Build Android APK and Bundle
         run: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease bundleRelease
         env:
-          ORG_GRADLE_PROJECT_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          # Pasamos los secretos como variables de entorno para que Gradle los use si está configurado
           ORG_GRADLE_PROJECT_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           ORG_GRADLE_PROJECT_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           ORG_GRADLE_PROJECT_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Sign APK
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Sign AAB
+        id: sign_aab
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
 
       - name: Upload Release AAB
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          path: ${{ steps.sign_aab.outputs.signedReleaseFile }}
