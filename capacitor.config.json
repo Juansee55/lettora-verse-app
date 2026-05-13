@@ -1,0 +1,9 @@
+{
+  "appId": "com.lettora.verse",
+  "appName": "Lettora Verse",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
