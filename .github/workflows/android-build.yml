@@ -48,33 +48,24 @@ jobs:
         run: |
           cd android
           ./gradlew assembleRelease
-        env:
-          ORG_GRADLE_PROJECT_KEYSTORE_PATH: ${{ github.workspace }}/android/app/release.keystore
-          ORG_GRADLE_PROJECT_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          ORG_GRADLE_PROJECT_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Sign and Align APK (Optional, if not handled by Gradle)
-        # Gradle usually handles signing and zipalign for assembleRelease
-        # This step is a fallback/double-check. Adjust if your Gradle setup is different.
-        run: |
-          # No need for manual signing if assembleRelease handles it. 
-          # If you need to sign manually, uncomment and adjust paths/commands:
-          # jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-          #   -keystore android/app/release.keystore \
-          #   -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
-          #   android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          #   ${{ secrets.KEY_ALIAS }}
-          # zipalign -v 4 \
-          #   android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          #   android/app/build/outputs/apk/release/app-release-signed-aligned.apk
-          echo "Signing and aligning handled by Gradle assembleRelease. Skipping manual step."
+      - name: Sign APK
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
 
       - name: Upload Release AAB
         uses: actions/upload-artifact@v4
