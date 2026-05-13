@@ -8,6 +8,7 @@ import BottomNav from "@/components/navigation/BottomNav";
 import NewConversationModal from "@/components/chat/NewConversationModal";
 import CreateGroupModal from "@/components/chat/CreateGroupModal";
 import ChatListItem from "@/components/chat/ChatListItem";
+import NotesSection from "@/components/chat/NotesSection";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -210,6 +211,9 @@ const ChatsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Notes Section */}
+      <NotesSection />
 
       {/* Content */}
       <div>

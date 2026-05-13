@@ -18,6 +18,7 @@ import VersionUpdateBanner from "@/components/VersionUpdateBanner";
 import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents";
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { usePWA } from "@/hooks/usePWA";
+import { useLinkInterceptor } from "@/hooks/useLinkInterceptor";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -71,6 +72,7 @@ const AppContent = () => {
 
   useAutoCleanup();
   useDailyCheckIn();
+  useLinkInterceptor();
 
   const { pushSupported, pushSubscribed, notificationPermission, subscribePush } = usePWA();
   useEffect(() => {
