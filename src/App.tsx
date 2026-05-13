@@ -19,6 +19,9 @@ import { InstallBanner, OfflineIndicator } from "@/components/pwa/PWAComponents"
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { usePWA } from "@/hooks/usePWA";
 import { useLinkInterceptor } from "@/hooks/useLinkInterceptor";
+import { useOfflineMode } from "@/hooks/useOfflineMode";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import OfflineOverlay from "@/components/pwa/OfflineOverlay";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -73,6 +76,9 @@ const AppContent = () => {
   useAutoCleanup();
   useDailyCheckIn();
   useLinkInterceptor();
+  
+  const { isOffline } = useOfflineMode();
+  useRealtimeNotifications(user?.id || null);
 
   const { pushSupported, pushSubscribed, notificationPermission, subscribePush } = usePWA();
   useEffect(() => {
@@ -117,8 +123,10 @@ const AppContent = () => {
   }
 
   return (
-    <Suspense fallback={<PageLoader />}>
-    <Routes>
+    <>
+      <OfflineOverlay isOffline={isOffline} />
+      <Suspense fallback={<PageLoader />}>
+      <Routes>
       <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : <Navigate to="/home" replace />} />
       <Route path="/index" element={<Navigate to="/home" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
@@ -165,6 +173,7 @@ const AppContent = () => {
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
+    </>
   );
 };
 
