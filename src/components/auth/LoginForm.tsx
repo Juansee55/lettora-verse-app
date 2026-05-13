@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, Loader2, ChevronLeft, AlertCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2, ChevronLeft, AlertCircle, Apple, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,9 +66,9 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
       <motion.div className="mb-8" variants={itemVariants}>
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5" strokeWidth={2} />
           <span className="text-sm font-medium">Volver</span>
         </button>
         <h2 className="text-3xl font-bold mb-2">Bienvenido de Vuelta</h2>
@@ -82,7 +82,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3"
         >
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
           <p className="text-sm text-red-500">{error}</p>
         </motion.div>
       )}
@@ -95,7 +95,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
             Correo Electrónico
           </Label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
             <Input
               id="email"
               type="email"
@@ -103,7 +103,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setTouched({ ...touched, email: true })}
-              className="pl-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+              className="pl-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
               disabled={loading}
             />
             {touched.email && email && (
@@ -132,7 +132,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
             Contraseña
           </Label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -140,7 +140,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched({ ...touched, password: true })}
-              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
               disabled={loading}
             />
             <button
@@ -150,9 +150,9 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
               disabled={loading}
             >
               {showPassword ? (
-                <EyeOff className="w-5 h-5" />
+                <EyeOff className="w-5 h-5" strokeWidth={1.5} />
               ) : (
-                <Eye className="w-5 h-5" />
+                <Eye className="w-5 h-5" strokeWidth={1.5} />
               )}
             </button>
           </div>
@@ -173,7 +173,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
           </label>
           <button
             type="button"
-            className="text-primary hover:underline transition-colors"
+            className="text-primary hover:underline transition-colors font-medium"
             disabled={loading}
           >
             ¿Olvidaste tu contraseña?
@@ -181,15 +181,15 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
         </motion.div>
 
         {/* Submit Button */}
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="pt-2">
           <Button
             type="submit"
             disabled={!isFormValid || loading}
-            className="w-full h-12 rounded-xl font-semibold text-base bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full h-14 rounded-xl font-semibold text-base bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Iniciando sesión...
               </>
             ) : (
@@ -200,7 +200,7 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
       </form>
 
       {/* Divider */}
-      <motion.div className="relative my-6" variants={itemVariants}>
+      <motion.div className="relative my-8" variants={itemVariants}>
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-white/10" />
         </div>
@@ -209,26 +209,26 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
         </div>
       </motion.div>
 
-      {/* Social Login */}
+      {/* Social Login Buttons */}
       <motion.div className="grid grid-cols-2 gap-3" variants={itemVariants}>
         <Button
           variant="outline"
-          className="h-11 rounded-xl border-white/20 hover:bg-muted/50 transition-all"
+          className="h-12 rounded-xl border-white/20 hover:bg-muted/50 transition-all font-medium"
           disabled={loading}
         >
-          <span className="text-lg">🍎</span>
+          <Apple className="w-5 h-5" strokeWidth={1.5} />
         </Button>
         <Button
           variant="outline"
-          className="h-11 rounded-xl border-white/20 hover:bg-muted/50 transition-all"
+          className="h-12 rounded-xl border-white/20 hover:bg-muted/50 transition-all font-medium"
           disabled={loading}
         >
-          <span className="text-lg">🔵</span>
+          <Chrome className="w-5 h-5" strokeWidth={1.5} />
         </Button>
       </motion.div>
 
       {/* Sign Up Link */}
-      <motion.p className="text-center text-sm text-muted-foreground mt-6" variants={itemVariants}>
+      <motion.p className="text-center text-sm text-muted-foreground mt-8" variants={itemVariants}>
         ¿No tienes cuenta?{" "}
         <button className="text-primary hover:underline font-semibold transition-colors">
           Regístrate aquí

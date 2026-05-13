@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, BookMarked, Users, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface WelcomeScreenProps {
@@ -86,7 +86,7 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
           animate="animate"
           variants={floatingVariants}
         >
-          <BookOpen className="w-10 h-10 text-white" />
+          <BookOpen className="w-10 h-10 text-white" strokeWidth={1.5} />
         </motion.div>
 
         <motion.div className="text-center" variants={itemVariants}>
@@ -108,9 +108,9 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
         variants={containerVariants}
       >
         {[
-          { icon: "📖", title: "Lee historias", desc: "Descubre miles de historias" },
-          { icon: "✍️", title: "Escribe", desc: "Comparte tu creatividad" },
-          { icon: "👥", title: "Conecta", desc: "Únete a una comunidad" },
+          { icon: BookMarked, title: "Lee historias", desc: "Descubre miles de historias" },
+          { icon: Pen, title: "Escribe", desc: "Comparte tu creatividad" },
+          { icon: Users, title: "Conecta", desc: "Únete a una comunidad" },
         ].map((feature, index) => (
           <motion.div
             key={index}
@@ -118,7 +118,9 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
             variants={itemVariants}
             whileHover={{ scale: 1.02, backgroundColor: "rgba(var(--primary), 0.05)" }}
           >
-            <span className="text-3xl">{feature.icon}</span>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <feature.icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
+            </div>
             <div>
               <h3 className="font-semibold text-sm">{feature.title}</h3>
               <p className="text-xs text-muted-foreground">{feature.desc}</p>
@@ -135,10 +137,10 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
         <motion.div variants={itemVariants}>
           <Button
             onClick={onLoginClick}
-            className="w-full h-12 rounded-xl font-semibold text-base bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 transition-all"
+            className="w-full h-14 rounded-xl font-semibold text-base bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 transition-all"
           >
             Iniciar Sesión
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <ArrowRight className="w-5 h-5 ml-2" strokeWidth={2} />
           </Button>
         </motion.div>
 
@@ -146,7 +148,7 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
           <Button
             onClick={onRegisterClick}
             variant="outline"
-            className="w-full h-12 rounded-xl font-semibold text-base border-white/20 hover:bg-muted/50 transition-all"
+            className="w-full h-14 rounded-xl font-semibold text-base border-white/20 hover:bg-muted/50 transition-all"
           >
             Crear Cuenta
           </Button>
@@ -155,7 +157,7 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
 
       {/* Footer */}
       <motion.p
-        className="absolute bottom-8 text-xs text-muted-foreground text-center"
+        className="absolute bottom-8 text-xs text-muted-foreground text-center px-6"
         variants={itemVariants}
       >
         Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad
