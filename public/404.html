@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lettora</title>
+    <script>
+        // GitHub Pages SPA routing fix
+        // This script redirects 404s to the index.html with the path preserved
+        const path = window.location.pathname;
+        const pathWithoutBase = path.replace('/lettora-verse-app', '');
+        
+        // Only redirect if it's not a real file (doesn't have an extension)
+        if (!pathWithoutBase.includes('.') && pathWithoutBase !== '/') {
+            // Store the path and redirect to index.html
+            sessionStorage.redirect = pathWithoutBase;
+            window.location.href = '/lettora-verse-app/';
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>

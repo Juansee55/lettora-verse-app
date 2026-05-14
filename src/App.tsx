@@ -184,7 +184,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.MODE === 'production' ? '/lettora-verse-app' : '/'}>
             <BrowserProvider>
               <UpdateBanner />
               <VersionUpdateBanner />
