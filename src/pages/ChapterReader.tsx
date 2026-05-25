@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useReadingSettings } from "@/hooks/useReadingSettings";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ReadingSettingsSheet } from "@/components/reader/ReadingSettingsSheet";
 import { PageTransition } from "@/components/reader/PageTransition";
 import PDFViewer from "@/components/reader/PDFViewer";
@@ -54,6 +55,16 @@ const ChapterReaderPage = () => {
   const { settings, updateSetting, resetSettings, getThemeStyles, getFontFamily, getMarginClass } = useReadingSettings();
   const { isOnline, getOfflineBook, isBookDownloaded, saveBookOffline } = useOfflineStorage();
   
+  // Get user ID for reading progress sync
+  const [userId, setUserId] = useState<string | undefined>();
+  const { progress, debouncedSaveProgress } = useReadingProgress(userId, bookId);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id);
+    });
+  }, []);
+  
   const [chapter, setChapter] = useState<ChapterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
@@ -77,19 +88,24 @@ const ChapterReaderPage = () => {
   const themeStyles = getThemeStyles();
   const currentNum = parseInt(chapterNumber || "1");
 
-  // Scroll progress tracking
+  // Scroll progress tracking and sync
   useEffect(() => {
     const handleScroll = () => {
       if (contentRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        const progress = (scrollTop / (scrollHeight - clientHeight)) * 100;
-        setScrollProgress(Math.min(100, Math.max(0, progress)));
+        const scrollPercentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
+        setScrollProgress(Math.min(100, Math.max(0, scrollPercentage)));
+        
+        // Sync reading progress to all devices
+        if (currentNum && userId) {
+          debouncedSaveProgress(currentNum, scrollPercentage);
+        }
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [currentNum, userId, debouncedSaveProgress]);
 
   // Keep screen on
   useEffect(() => {
@@ -262,11 +278,21 @@ const ChapterReaderPage = () => {
       }
 
       setLoading(false);
+      
+      // Restore scroll position if available
+      if (progress && progress.chapter_number === parseInt(chapterNumber)) {
+        setTimeout(() => {
+          const scrollPercentage = progress.scroll_percentage || 0;
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const targetScroll = (scrollPercentage / 100) * scrollHeight;
+          window.scrollTo(0, targetScroll);
+        }, 100);
+      }
     };
 
     setLoading(true);
     fetchChapter();
-  }, [bookId, chapterNumber, navigate, isOnline, getOfflineBook, isBookDownloaded, toast]);
+  }, [bookId, chapterNumber, navigate, isOnline, getOfflineBook, isBookDownloaded, toast, progress]);
 
   const handleLike = async () => {
     const { data: { user } } = await supabase.auth.getUser();
