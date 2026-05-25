@@ -22,6 +22,8 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import QRCodeModal from "@/components/qr/QRCodeModal";
+import AccountSwitcher from "@/components/account/AccountSwitcher";
+import { useMultiAccount } from "@/hooks/useMultiAccount";
 
 
 interface Profile {
@@ -83,6 +85,7 @@ const ProfilePage = () => {
   const [currentEmail, setCurrentEmail] = useState<string>("");
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
+  const { savedAccounts: multiAccounts, removeAccount } = useMultiAccount();
 
   useEffect(() => {
     fetchProfileData();
@@ -682,6 +685,16 @@ const ProfilePage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Account Switcher */}
+      <AccountSwitcher
+        isOpen={showAccountSwitcher}
+        onClose={() => setShowAccountSwitcher(false)}
+        savedAccounts={multiAccounts}
+        currentEmail={currentEmail}
+        onRemoveAccount={removeAccount}
+        onAddAccount={() => setShowAccountSwitcher(false)}
+      />
 
       <IOSBottomNav />
     </div>

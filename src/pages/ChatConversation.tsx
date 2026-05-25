@@ -11,6 +11,8 @@ import MessageActionsSheet from "@/components/chat/MessageActionsSheet";
 import DirectChatSheet from "@/components/chat/DirectChatSheet";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import { useNameColors } from "@/hooks/useNameColors";
+import VoiceMessageRecorder from "@/components/chat/VoiceMessageRecorder";
+import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
 interface Message {
   id: string;
@@ -19,6 +21,7 @@ interface Message {
   created_at: string;
   media_url?: string | null;
   media_type?: string;
+  voice_duration?: number | null;
 }
 
 interface Participant {
@@ -432,6 +435,13 @@ const ChatConversationPage = () => {
               <Camera className="w-[18px] h-[18px]" />
             </button>
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+            <VoiceMessageRecorder
+              onSendVoice={async (audioBlob, duration) => {
+                // TODO: Implementar envío de mensaje de voz
+                console.log("Sending voice message:", audioBlob, duration);
+              }}
+              disabled={!!inputDisabled}
+            />
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
