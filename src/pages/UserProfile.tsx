@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import BottomNav from "@/components/navigation/BottomNav";
+import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import FloatingHearts from "@/components/valentines/FloatingHearts";
@@ -311,174 +311,181 @@ const UserProfilePage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <FloatingHearts />
-      {/* Cover + Navigation */}
-      <div className="relative">
-        <div
-          className="h-44 bg-gradient-hero"
+      
+      {/* iOS 26 Header */}
+      <header className="ios-header">
+        <div className="flex items-center justify-between px-4 h-[52px]">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-[17px] font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              @{profile?.username || "usuario"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowQR(true)}>
+              <QrCode className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowShare(true)}>
+              <Share2 className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowMore(true)}>
+              <MoreHorizontal className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Profile Cover / Background */}
+      {equippedItems.background ? (
+        <div className={`h-24 ${equippedItems.background}`} />
+      ) : (
+        <div 
+          className="h-32 bg-gradient-hero"
           style={profile.cover_url ? {
             backgroundImage: `url(${profile.cover_url})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           } : {}}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-            <Button variant="ghost" size="icon" className="bg-black/30 backdrop-blur-sm text-white hover:bg-black/50" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="bg-black/30 backdrop-blur-sm text-white hover:bg-black/50" onClick={() => setShowMore(true)}>
-              <MoreHorizontal className="w-5 h-5" />
-            </Button>
+        />
+      )}
+
+      {/* Profile Info */}
+      <div className={`px-4 ${equippedItems.background || profile.cover_url ? "pt-0 -mt-10" : "pt-5"}`}>
+        <div className="flex items-start gap-5">
+          {/* Avatar with Frame */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`relative ${
+              targetUserRole === "admin" ? "admin-frame-premium" : targetUserRole === "moderator" ? "mod-frame" : ""
+            }`}
+          >
+            <div className={`w-20 h-20 rounded-full overflow-hidden ring-2 ring-background ${equippedItems.frame || "bg-gradient-hero"}`}>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-primary-foreground">
+                  {profile?.display_name?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </div>
+            {equippedItems.frame && !targetUserRole && (
+              <div className={`absolute -inset-1 rounded-full ${equippedItems.frame} pointer-events-none`} />
+            )}
+          </motion.div>
+
+          {/* Stats */}
+          <div className="flex-1 flex justify-around pt-2">
+            <div className="text-center" onClick={() => { setFollowersListType("followers"); setShowFollowersList(true); }}>
+              <p className="text-[20px] font-bold">{followersCount}</p>
+              <p className="text-[13px] text-muted-foreground">Seguidores</p>
+            </div>
+            <div className="text-center" onClick={() => { setFollowersListType("following"); setShowFollowersList(true); }}>
+              <p className="text-[20px] font-bold">{followingCount}</p>
+              <p className="text-[13px] text-muted-foreground">Siguiendo</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[20px] font-bold">{totalLikes}</p>
+              <p className="text-[13px] text-muted-foreground">Me gusta</p>
+            </div>
           </div>
         </div>
 
-        {/* Profile Card */}
-        <div className="px-4 -mt-16 relative z-10">
-          <div className="ios-section p-5">
-            <div className="flex items-end gap-4 mb-4">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200 }}
-                className={`relative w-24 h-24 rounded-2xl bg-gradient-hero border-4 border-card shadow-lg overflow-hidden flex-shrink-0 -mt-16 ${
-                  targetUserRole === "admin" ? "admin-frame-square" : targetUserRole === "moderator" ? "mod-frame" : equippedItems.frame || ""
-                }`}
-              >
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl font-display font-bold text-primary-foreground">
-                    {profile.display_name?.[0] || "?"}
-                  </div>
-                )}
-              </motion.div>
-              <div className="flex-1 min-w-0 pb-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h1 className={`text-xl font-display font-bold truncate ${
-                    targetUserRole === "admin" ? "admin-name-gold" : equippedItems.nameColor || ""
-                  }`}>{profile.display_name || "Usuario"}</h1>
-                  {adminTitle && (
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                      targetUserRole === "admin"
-                        ? "bg-amber-500/15 text-amber-500"
-                        : "bg-slate-400/15 text-slate-400"
-                    }`}>
-                      {adminTitle}
-                    </span>
-                  )}
-                  {targetUserRole && (
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                      targetUserRole === "admin"
-                        ? "bg-amber-500/20 text-amber-500"
-                        : "bg-slate-400/20 text-slate-400"
-                    }`}>
-                      {targetUserRole}
-                    </span>
-                  )}
-                  {premiumData.isPremium && <PremiumBadge compact />}
-                  <UserBadges userId={profile.id} size="md" />
-                  <VerifiedBadge userId={profile.id} size="md" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[15px] text-muted-foreground">@{profile.username || "user"}</p>
-                  {profile.is_private && (
-                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  {levelData && <LevelBadge levelData={levelData} compact />}
-                  {isMutual && !isOwnProfile && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-semibold rounded-full">
-                      <Users className="w-3 h-3" /> Mutuos
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            {!isOwnProfile && (
-              <>
-              <div className="flex gap-2 mb-4">
-                <Button
-                  variant={isFollowing ? "outline" : "ios"}
-                  size="ios-md"
-                  className="flex-1"
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? (
-                    <><UserCheck className="w-4 h-4 mr-1.5" /> Siguiendo</>
-                  ) : (
-                    <><UserPlus className="w-4 h-4 mr-1.5" /> Seguir</>
-                  )}
-                </Button>
-                <Button variant="ios-secondary" size="ios-md" onClick={startConversation}>
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-                <Button variant="ios-secondary" size="ios-md" onClick={() => setShowShare(true)}>
-                  <Share2 className="w-4 h-4" />
-                </Button>
-                <Button variant="ios-secondary" size="ios-md" onClick={() => setShowQR(true)}>
-                  <QrCode className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 mb-4">
-                <WriterSubscribeButton writerId={userId!} />
-                <span className="text-[12px] text-muted-foreground">Recibe notificaciones</span>
-              </div>
-              </>
-            )}
-
-            {/* Bio */}
-            {profile.bio && (
-              <p className="text-[15px] leading-relaxed mb-4">{profile.bio}</p>
-            )}
-
-            {/* Info pills */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {profile.location && (
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-muted/60 rounded-full text-[13px] text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5" /> {profile.location}
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-muted/60 rounded-full text-[13px] text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5" /> Desde {formatDate(profile.created_at)}
+        {/* Name & Bio */}
+        <div className="mt-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className={`text-[15px] font-semibold ${equippedItems.nameColor || ""}`}>
+              {profile?.display_name || "Usuario"}
+            </h2>
+            {adminTitle && (
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                targetUserRole === "admin"
+                  ? "bg-amber-500/15 text-amber-500"
+                  : "bg-slate-400/15 text-slate-400"
+              }`}>
+                {adminTitle}
               </span>
-              {profile.website && (
-                <a
-                  href={profile.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 rounded-full text-[13px] text-primary font-medium"
-                >
-                  <LinkIcon className="w-3.5 h-3.5" /> {profile.website.replace(/^https?:\/\//, "").slice(0, 25)}
-                </a>
-              )}
-            </div>
+            )}
+            {targetUserRole && (
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                targetUserRole === "admin"
+                  ? "bg-amber-500/20 text-amber-500"
+                  : "bg-slate-400/20 text-slate-400"
+              }`}>
+                {targetUserRole}
+              </span>
+            )}
+            <VerifiedBadge userId={userId!} size="sm" />
+            {premiumData.isPremium && <PremiumBadge compact />}
+          </div>
+          {profile?.bio && (
+            <p className="text-[15px] text-muted-foreground mt-1 leading-snug">{profile.bio}</p>
+          )}
 
-            {/* Stats */}
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { label: "Libros", value: books.length, onClick: undefined },
-                { label: "Seguidores", value: followersCount, onClick: () => { setFollowersListType("followers"); setShowFollowersList(true); } },
-                { label: "Siguiendo", value: followingCount, onClick: () => { setFollowersListType("following"); setShowFollowersList(true); } },
-                { label: "Lecturas", value: books.reduce((a, b) => a + (b.reads_count || 0), 0), onClick: undefined },
-              ].map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`text-center py-2 ${stat.onClick ? "cursor-pointer active:bg-muted/50 rounded-xl" : ""}`}
-                  onClick={stat.onClick}
-                >
-                  <p className="font-bold text-lg">{stat.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{stat.label}</p>
-                </motion.div>
-              ))}
-            </div>
+          {/* Info pills */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {profile?.location && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted/60 rounded-full text-[12px] text-muted-foreground">
+                <MapPin className="w-3 h-3" /> {profile.location}
+              </span>
+            )}
+            {profile?.created_at && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted/60 rounded-full text-[12px] text-muted-foreground">
+                <Calendar className="w-3 h-3" /> Desde {new Date(profile.created_at).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}
+              </span>
+            )}
+            {profile?.website && (
+              <a href={profile.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 rounded-full text-[12px] text-primary font-medium">
+                <LinkIcon className="w-3 h-3" /> {profile.website.replace(/^https?:\/\//, "").slice(0, 20)}
+              </a>
+            )}
           </div>
         </div>
+
+        {/* Level + Badges */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          {levelData && <LevelBadge levelData={levelData} compact />}
+          <UserBadges userId={userId!} />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 mt-5">
+          {!isOwnProfile && (
+            <>
+              <Button
+                variant={isFollowing ? "ios-secondary" : "ios"}
+                className="flex-1 h-10 rounded-xl font-semibold text-[14px]"
+                onClick={handleFollow}
+              >
+                {isFollowing ? (
+                  <span className="flex items-center gap-2"><UserCheck className="w-4 h-4" /> Siguiendo</span>
+                ) : (
+                  <span className="flex items-center gap-2"><UserPlus className="w-4 h-4" /> Seguir</span>
+                )}
+              </Button>
+              <Button
+                variant="ios-secondary"
+                className="flex-1 h-10 rounded-xl font-semibold text-[14px]"
+                onClick={startConversation}
+              >
+                <span className="flex items-center gap-2"><MessageCircle className="w-4 h-4" /> Mensaje</span>
+              </Button>
+            </>
+          )}
+          {isOwnProfile && (
+            <Button
+              variant="ios-secondary"
+              className="flex-1 h-10 rounded-xl font-semibold text-[14px]"
+              onClick={() => navigate("/edit-profile")}
+            >
+              Editar perfil
+            </Button>
+          )}
+        </div>
+        
+        {!isOwnProfile && <WriterSubscribeButton writerId={userId!} className="mt-3 w-full" />}
       </div>
 
       {isPrivateAndLocked ? (
@@ -720,7 +727,7 @@ const UserProfilePage = () => {
         isFollower={isFollowing}
       />
 
-      <BottomNav />
+      <IOSBottomNav />
     </div>
   );
 };
