@@ -13,6 +13,11 @@ import ReportContentModal from "@/components/reports/ReportContentModal";
 import { useNameColors } from "@/hooks/useNameColors";
 import VoiceMessageRecorder from "@/components/chat/VoiceMessageRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import EnhancedChatHeader from "@/components/chat/EnhancedChatHeader";
+import CallInterface from "@/components/call/CallInterface";
+import IncomingCallModal from "@/components/call/IncomingCallModal";
+import { useWebRTCCall } from "@/hooks/useWebRTCCall";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 interface Message {
   id: string;
@@ -67,6 +72,9 @@ const ChatConversationPage = () => {
   const nameColors = useNameColors(senderIds);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration } = useWebRTCCall();
+  const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId);
 
   useEffect(() => { checkUserAndFetch(); }, [conversationId]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -294,54 +302,42 @@ const ChatConversationPage = () => {
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="ios-header">
-        <div className="flex items-center gap-1 px-2 py-2 min-h-[48px]">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/chats")} className="rounded-full h-9 px-2 gap-0.5 text-primary font-medium">
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-[15px]" style={{ fontFamily: "'DM Sans', sans-serif" }}>Chats</span>
-          </Button>
+      <EnhancedChatHeader
+        title={displayName}
+        subtitle={convInfo?.is_group ? `${Object.keys(participantsMap).length} miembros` : undefined}
+        avatarUrl={!convInfo?.is_group ? otherUser?.avatar_url : undefined}
+        isTyping={otherIsTyping}
+        onBack={() => navigate("/chats")}
+        onMore={() => {
+          if (convInfo?.is_group) setShowGroupInfo(true);
+          else setShowDirectInfo(true);
+        }}
+        onCall={!convInfo?.is_group && otherUser ? () => startCall(otherUser.id, false) : undefined}
+        onVideoCall={!convInfo?.is_group && otherUser ? () => startCall(otherUser.id, true) : undefined}
+      />
 
-          <div
-            className="flex items-center gap-2.5 flex-1 justify-center cursor-pointer -ml-12"
-            onClick={() => {
-              if (convInfo?.is_group) setShowGroupInfo(true);
-              else if (otherUser) navigate(`/user/${otherUser.id}`);
-            }}
-          >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/70 to-primary flex items-center justify-center text-primary-foreground text-sm font-semibold overflow-hidden shadow-sm">
-              {!convInfo?.is_group && otherUser?.avatar_url ? (
-                <img src={otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : convInfo?.is_group ? (
-                <Users className="w-4 h-4" />
-              ) : <span>{avatarInitial}</span>}
-            </div>
-            <div className="text-center">
-              <h1 className="text-[16px] font-semibold leading-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                {displayName}
-              </h1>
-              {convInfo?.is_group && (
-                <p className="text-[11px] text-muted-foreground/70 leading-tight">
-                  {Object.keys(participantsMap).length} miembros
-                  {convInfo.slow_mode_seconds > 0 && " · 🐢"}
-                  {convInfo.admin_only_messages && " · 🔒"}
-                </p>
-              )}
-            </div>
-          </div>
+      {/* Call Interfaces */}
+      <CallInterface
+        isActive={callState.isCallActive}
+        isVideo={callState.isVideoEnabled}
+        isMuted={callState.isMuted}
+        isVideoEnabled={callState.isVideoEnabled}
+        duration={formatCallDuration(callState.callDuration)}
+        remoteUserName={otherUser?.display_name || otherUser?.username || "Usuario"}
+        remoteUserAvatar={otherUser?.avatar_url}
+        onEndCall={endCall}
+        onToggleMute={toggleMute}
+        onToggleVideo={toggleVideo}
+      />
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full h-9 w-9"
-            onClick={() => {
-              if (convInfo?.is_group) setShowGroupInfo(true);
-              else setShowDirectInfo(true);
-            }}
-          >
-            <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-          </Button>
-        </div>
-      </div>
+      <IncomingCallModal
+        isOpen={callState.isCallIncoming}
+        callerName={otherUser?.display_name || otherUser?.username || "Usuario"}
+        callerAvatar={otherUser?.avatar_url}
+        isVideo={callState.isVideoEnabled}
+        onAccept={() => acceptCall({} as any)} // Simplificado para UI
+        onReject={rejectCall}
+      />
 
       {/* Pinned message bar */}
       {pinnedMessage && (
@@ -390,6 +386,7 @@ const ChatConversationPage = () => {
                   isOwn={message.sender_id === currentUserId}
                   mediaUrl={message.media_url}
                   mediaType={message.media_type}
+                  voiceDuration={message.voice_duration}
                   senderName={participantsMap[message.sender_id]?.display_name || participantsMap[message.sender_id]?.username}
                   senderNameColorClass={nameColors[message.sender_id]}
                   senderAvatarUrl={participantsMap[message.sender_id]?.avatar_url}
@@ -447,7 +444,10 @@ const ChatConversationPage = () => {
                 ref={inputRef}
                 placeholder={convInfo?.slow_mode_seconds ? `Mensaje (🐢 ${convInfo.slow_mode_seconds}s)` : "Mensaje"}
                 value={newMessage}
-                onChange={handleTextareaInput}
+                onChange={(e) => {
+                  handleTextareaInput(e);
+                  notifyTyping();
+                }}
                 onKeyDown={handleKeyDown}
                 rows={1}
                 disabled={!!inputDisabled}
