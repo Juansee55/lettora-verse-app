@@ -2,18 +2,14 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
-
-env:
-  JAVA_VERSION: 21 # Mantener Java 21 como se configuró previamente
-  NODE_VERSION: 20.x
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,45 +17,67 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
+          node-version: '20'
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: '21'
 
-      - name: Create Keystore file
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Sync Capacitor
         run: |
-          echo $KEYSTORE_BASE64 | base64 --decode > android-release-key.keystore
+          npx cap add android || true
+          npx cap sync android
 
-      - name: Build Android Release APK and AAB
+      - name: Build Android APK and Bundle
         run: |
           cd android
-          # Crear un archivo gradle.properties temporal para la firma
-          echo "storeFile=../../android-release-key.keystore" > gradle.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> gradle.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> gradle.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
-          
-          # Ejecutar las tareas de Gradle para construir y firmar
-          ./gradlew bundleRelease
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease bundleRelease
+        env:
+          # Pasamos los secretos como variables de entorno para que Gradle los use si está configurado
+          ORG_GRADLE_PROJECT_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload APK artifact
+      - name: Sign APK
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Sign AAB
+        id: sign_aab
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
 
-      - name: Upload AAB artifact
+      - name: Upload Release AAB
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          path: ${{ steps.sign_aab.outputs.signedReleaseFile }}
