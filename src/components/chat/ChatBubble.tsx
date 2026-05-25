@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Check, CheckCheck } from "lucide-react";
+import VoiceMessagePlayer from "./VoiceMessagePlayer";
 
 interface ChatBubbleProps {
   content: string;
@@ -8,6 +9,7 @@ interface ChatBubbleProps {
   isOwn: boolean;
   mediaUrl?: string | null;
   mediaType?: string;
+  voiceDuration?: number | null;
   senderName?: string | null;
   senderNameColorClass?: string;
   senderAvatarUrl?: string | null;
@@ -16,9 +18,10 @@ interface ChatBubbleProps {
   onAvatarClick?: () => void;
 }
 
-const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", senderName, senderNameColorClass, senderAvatarUrl, showSender, onLongPress, onAvatarClick }: ChatBubbleProps) => {
+const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", voiceDuration, senderName, senderNameColorClass, senderAvatarUrl, showSender, onLongPress, onAvatarClick }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMedia = mediaType === "image" || mediaType === "video";
+  const isVoice = mediaType === "voice" && mediaUrl;
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTouchStart = useCallback(() => {
@@ -91,6 +94,18 @@ const ChatBubble = ({ content, time, isOwn, mediaUrl, mediaType = "text", sender
         {mediaUrl && mediaType === "video" && (
           <div className="rounded-[16px] overflow-hidden mb-1.5">
             <video src={mediaUrl} controls className="max-w-full max-h-[280px] rounded-[16px]" preload="metadata" />
+          </div>
+        )}
+
+        {isVoice && voiceDuration && (
+          <div className="mb-1.5">
+            <VoiceMessagePlayer
+              audioUrl={mediaUrl}
+              duration={voiceDuration}
+              sender={senderName || "Usuario"}
+              timestamp={time}
+              isOwn={isOwn}
+            />
           </div>
         )}
 
