@@ -18,6 +18,7 @@ import CreateNewsModal from "@/components/admin/CreateNewsModal";
 import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
 import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
 import CreateBadgeModal from "@/components/admin/CreateBadgeModal";
+import AdminWalletManager from "@/components/admin/AdminWalletManager";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -43,7 +44,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -322,6 +323,7 @@ const AdminPage = () => {
             { key: "events" as const, icon: Trophy, label: "Eventos" },
             { key: "bday" as const, icon: Cake, label: "Bday" },
             { key: "badges" as const, icon: Award, label: "Insignias" },
+            { key: "wallet" as const, icon: DollarSign, label: "Wallet" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -894,6 +896,11 @@ const AdminPage = () => {
         onClose={() => setShowBadgeModal(false)}
         onCreated={fetchBadges}
       />
+      {activeTab === "wallet" && (
+        <div className="px-4 py-6">
+          <AdminWalletManager />
+        </div>
+      )}
     </div>
   );
 };
