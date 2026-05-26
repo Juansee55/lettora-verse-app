@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Send, Loader2, MoreHorizontal, Image, X, Users, Pin, Camera } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Send, Loader2, X, Users, Pin, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -12,7 +11,6 @@ import DirectChatSheet from "@/components/chat/DirectChatSheet";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import { useNameColors } from "@/hooks/useNameColors";
 import VoiceMessageRecorder from "@/components/chat/VoiceMessageRecorder";
-import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import EnhancedChatHeader from "@/components/chat/EnhancedChatHeader";
 import CallInterface from "@/components/call/CallInterface";
 import IncomingCallModal from "@/components/call/IncomingCallModal";
@@ -144,7 +142,7 @@ const ChatConversationPage = () => {
 
     const { data: messagesData, error } = await supabase
       .from("messages")
-      .select("id, content, sender_id, created_at, media_url, media_type")
+      .select("id, content, sender_id, created_at, media_url, media_type, voice_duration")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 
@@ -154,7 +152,7 @@ const ChatConversationPage = () => {
     if (conv?.pinned_message_id) {
       const { data: pinned } = await supabase
         .from("messages")
-        .select("id, content, sender_id, created_at, media_url, media_type")
+        .select("id, content, sender_id, created_at, media_url, media_type, voice_duration")
         .eq("id", conv.pinned_message_id)
         .single();
       if (pinned) setPinnedMessage(pinned);
@@ -190,6 +188,26 @@ const ChatConversationPage = () => {
     const path = `${currentUserId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (error) { toast.error("Error al subir archivo"); return null; }
+    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+  };
+
+  const uploadVoiceMessage = async (audioBlob: Blob): Promise<string | null> => {
+    if (!currentUserId) return null;
+    const safeId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
+    const path = `${currentUserId}/voice-${safeId}.webm`;
+    const file = new File([audioBlob], `voice-${safeId}.webm`, { type: audioBlob.type || "audio/webm" });
+
+    const { error } = await supabase.storage.from("chat-media").upload(path, file, {
+      contentType: file.type || "audio/webm",
+      upsert: false,
+    });
+
+    if (error) {
+      console.error("Error subiendo audio:", error);
+      toast.error("No se pudo subir el audio");
+      return null;
+    }
+
     return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
   };
 
@@ -236,6 +254,43 @@ const ChatConversationPage = () => {
     }
     setSending(false);
     setUploading(false);
+  };
+
+  const handleVoiceSend = async (audioBlob: Blob, duration: number) => {
+    if (!currentUserId || !conversationId || sending) return;
+    if (!canSendMessage()) return;
+
+    setSending(true);
+    setUploading(true);
+
+    try {
+      const mediaUrl = await uploadVoiceMessage(audioBlob);
+      if (!mediaUrl) return;
+
+      const voiceMessagePayload = {
+        conversation_id: conversationId,
+        sender_id: currentUserId,
+        content: "",
+        media_url: mediaUrl,
+        media_type: "voice",
+        voice_duration: Math.max(0, Math.round(duration)),
+      } as any;
+
+      const { error } = await (supabase.from("messages") as any).insert(voiceMessagePayload);
+
+      if (error) {
+        console.error("Error enviando audio:", error);
+        toast.error("Error al enviar audio");
+        return;
+      }
+
+      setLastSentTime(Date.now());
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+      toast.success("Audio enviado");
+    } finally {
+      setSending(false);
+      setUploading(false);
+    }
   };
 
   const handlePinMessage = async (messageId: string) => {
@@ -291,7 +346,13 @@ const ChatConversationPage = () => {
 
   const avatarInitial = displayName[0]?.toUpperCase() || "?";
   const isAdminOrOwner = currentRole === "owner" || currentRole === "admin";
-  const inputDisabled = sending || (convInfo?.is_group && convInfo.admin_only_messages && !isAdminOrOwner);
+  const inputDisabled = sending || uploading || (convInfo?.is_group && convInfo.admin_only_messages && !isAdminOrOwner);
+  const incomingCaller = callState.incomingCall?.fromUserId
+    ? participantsMap[callState.incomingCall.fromUserId] || otherUser
+    : otherUser;
+  const callRemoteUser = callState.remoteUserId
+    ? participantsMap[callState.remoteUserId] || otherUser
+    : otherUser;
 
   const scrollToPinnedMessage = () => {
     if (!pinnedMessage) return;
@@ -319,23 +380,25 @@ const ChatConversationPage = () => {
       {/* Call Interfaces */}
       <CallInterface
         isActive={callState.isCallActive}
-        isVideo={callState.isVideoEnabled}
+        isVideo={callState.isVideoCall}
         isMuted={callState.isMuted}
         isVideoEnabled={callState.isVideoEnabled}
         duration={formatCallDuration(callState.callDuration)}
-        remoteUserName={otherUser?.display_name || otherUser?.username || "Usuario"}
-        remoteUserAvatar={otherUser?.avatar_url}
+        remoteUserName={callRemoteUser?.display_name || callRemoteUser?.username || "Usuario"}
+        remoteUserAvatar={callRemoteUser?.avatar_url}
         onEndCall={endCall}
         onToggleMute={toggleMute}
         onToggleVideo={toggleVideo}
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
       />
 
       <IncomingCallModal
         isOpen={callState.isCallIncoming}
-        callerName={otherUser?.display_name || otherUser?.username || "Usuario"}
-        callerAvatar={otherUser?.avatar_url}
-        isVideo={callState.isVideoEnabled}
-        onAccept={() => acceptCall({} as any)} // Simplificado para UI
+        callerName={incomingCaller?.display_name || incomingCaller?.username || "Usuario"}
+        callerAvatar={incomingCaller?.avatar_url}
+        isVideo={callState.incomingCall?.isVideo ?? callState.isVideoCall}
+        onAccept={acceptCall}
         onReject={rejectCall}
       />
 
@@ -433,10 +496,7 @@ const ChatConversationPage = () => {
             </button>
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
             <VoiceMessageRecorder
-              onSendVoice={async (audioBlob, duration) => {
-                // TODO: Implementar envío de mensaje de voz
-                console.log("Sending voice message:", audioBlob, duration);
-              }}
+              onSendVoice={handleVoiceSend}
               disabled={!!inputDisabled}
             />
             <div className="flex-1 relative">
