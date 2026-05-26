@@ -74,8 +74,25 @@ const ChatConversationPage = () => {
   const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration } = useWebRTCCall();
   const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId);
 
-  useEffect(() => { checkUserAndFetch(); }, [conversationId]);
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    let mounted = true;
+    const checkUserAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted) return;
+      if (!user) { navigate("/auth"); return; }
+      setCurrentUserId(user.id);
+      await fetchConversationData(user.id);
+      await updateLastRead(user.id);
+    };
+    checkUserAndFetch();
+    return () => { mounted = false; };
+  }, [conversationId]);
+
+  useEffect(() => { 
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
+    }
+  }, [messages.length]);
 
   useEffect(() => {
     if (!conversationId || !currentUserId) return;
@@ -84,7 +101,10 @@ const ChatConversationPage = () => {
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
-      }, (payload) => setMessages(prev => [...prev, payload.new as Message]))
+      }, (payload) => setMessages(prev => {
+        if (prev.find(m => m.id === (payload.new as Message).id)) return prev;
+        return [...prev, payload.new as Message];
+      }))
       .on("postgres_changes", {
         event: "DELETE", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
@@ -93,73 +113,49 @@ const ChatConversationPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [conversationId, currentUserId]);
 
-  const checkUserAndFetch = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth"); return; }
-    setCurrentUserId(user.id);
-    await fetchConversationData(user.id);
-    await updateLastRead(user.id);
-  };
-
   const fetchConversationData = async (userId: string) => {
     setLoading(true);
+    try {
+      // Parallel fetch to speed up
+      const [convRes, participantsRes, messagesRes] = await Promise.all([
+        supabase.from("conversations").select("*").eq("id", conversationId).single(),
+        supabase.from("conversation_participants").select("user_id, role").eq("conversation_id", conversationId),
+        supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true })
+      ]);
 
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("is_group, name, description, pinned_message_id, slow_mode_seconds, admin_only_messages")
-      .eq("id", conversationId)
-      .single();
+      if (convRes.data) setConvInfo(convRes.data as ConvInfo);
+      if (messagesRes.data) setMessages(messagesRes.data || []);
 
-    if (conv) setConvInfo(conv as ConvInfo);
+      if (participantsRes.data) {
+        const participants = participantsRes.data;
+        const myPart = participants.find(p => p.user_id === userId);
+        if (myPart) setCurrentRole(myPart.role);
 
-    const { data: participants } = await supabase
-      .from("conversation_participants")
-      .select("user_id, role")
-      .eq("conversation_id", conversationId);
+        const allUserIds = participants.map(p => p.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url")
+          .in("id", allUserIds);
 
-    if (participants && participants.length > 0) {
-      const myPart = participants.find(p => p.user_id === userId);
-      if (myPart) setCurrentRole(myPart.role);
-
-      const userIds = participants.map(p => p.user_id).filter(id => id !== userId);
-      const allUserIds = participants.map(p => p.user_id);
-
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, display_name, username, avatar_url")
-        .in("id", allUserIds);
-
-      if (profiles) {
-        const map: Record<string, Participant> = {};
-        profiles.forEach(p => { map[p.id] = p; });
-        setParticipantsMap(map);
-        if (!conv?.is_group && userIds.length > 0) {
-          const other = profiles.find(p => p.id === userIds[0]);
-          if (other) setOtherUser(other);
+        if (profiles) {
+          const map: Record<string, Participant> = {};
+          profiles.forEach(p => { map[p.id] = p; });
+          setParticipantsMap(map);
+          if (!convRes.data?.is_group) {
+            const otherId = allUserIds.find(id => id !== userId);
+            if (otherId) setOtherUser(map[otherId]);
+          }
         }
       }
+    } catch (err) {
+      console.error("Error loading chat data:", err);
+      toast.error("Error al cargar la conversación");
+    } finally {
+      setLoading(false);
     }
-
-    const { data: messagesData, error } = await supabase
-      .from("messages")
-      .select("id, content, sender_id, created_at, media_url, media_type, voice_duration")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
-
-    if (error) toast.error("Error al cargar mensajes");
-    else setMessages(messagesData || []);
-
-    if (conv?.pinned_message_id) {
-      const { data: pinned } = await supabase
-        .from("messages")
-        .select("id, content, sender_id, created_at, media_url, media_type, voice_duration")
-        .eq("id", conv.pinned_message_id)
-        .single();
-      if (pinned) setPinnedMessage(pinned);
-    } else setPinnedMessage(null);
-
-    setLoading(false);
   };
+
+
 
   const updateLastRead = async (userId: string) => {
     await supabase.from("conversation_participants")

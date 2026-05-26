@@ -184,7 +184,19 @@ const LettoWalletPage = () => {
         </div>
         <div className="p-8 space-y-4">
           <div className="flex justify-center gap-2 mb-4">{introSlides.map((_, i) => <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentSlide ? "w-8 bg-primary" : "w-2 bg-muted"}`} />)}</div>
-          <Button className="w-full h-14 rounded-2xl text-lg font-bold" onClick={() => currentSlide < introSlides.length - 1 ? setCurrentSlide(s => s + 1) : (localStorage.setItem(`lettora_wallet_intro_${wallet.user_id}`, "true"), setShowIntro(false))}>
+          <Button 
+            className="w-full h-14 rounded-2xl text-lg font-bold" 
+            onClick={() => {
+              if (currentSlide < introSlides.length - 1) {
+                setCurrentSlide(s => s + 1);
+              } else {
+                if (wallet?.user_id) {
+                  localStorage.setItem(`lettora_wallet_intro_${wallet.user_id}`, "true");
+                }
+                setShowIntro(false);
+              }
+            }}
+          >
             {currentSlide === introSlides.length - 1 ? "Empezar" : "Siguiente"}
           </Button>
         </div>

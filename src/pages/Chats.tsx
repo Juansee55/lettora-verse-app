@@ -40,15 +40,17 @@ const ChatsPage = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
+    let mounted = true;
+    const checkUserAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted) return;
+      if (!user) { navigate("/auth"); return; }
+      setCurrentUserId(user.id);
+      fetchConversations(user.id);
+    };
     checkUserAndFetch();
+    return () => { mounted = false; };
   }, []);
-
-  const checkUserAndFetch = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth"); return; }
-    setCurrentUserId(user.id);
-    fetchConversations(user.id);
-  };
 
   const fetchConversations = async (userId: string) => {
     setLoading(true);

@@ -89,13 +89,18 @@ const AdminPage = () => {
       return;
     }
     setIsAdmin(true);
-    fetchUsers();
-    fetchAdminRoles();
-    fetchContracts();
-    fetchNews();
-    fetchEvents();
-    fetchStaffBdays();
-    fetchBadges();
+    // Fetch critical data first
+    await fetchUsers();
+    
+    // Fetch others in background to avoid blocking the main view
+    Promise.all([
+      fetchAdminRoles(),
+      fetchContracts(),
+      fetchNews(),
+      fetchEvents(),
+      fetchStaffBdays(),
+      fetchBadges()
+    ]).catch(err => console.error("Error loading secondary admin data:", err));
   };
 
   const fetchBadges = async () => {
