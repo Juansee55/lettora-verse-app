@@ -1,45 +1,67 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
     <title>Lettora</title>
-    <meta name="description" content="Lettora App is a platform for writers and readers to create, share, and discover literary content, with enhanced offline capabilities and installable PWA featur">
-    <meta name="author" content="Lovable" />
-
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c790e1b0-e6f3-49d5-9374-7d2abe2e2c6e/id-preview-42506c33--3d8168a2-008e-4b35-a665-b65a1b408743.lovable.app-1773546788502.png">
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c790e1b0-e6f3-49d5-9374-7d2abe2e2c6e/id-preview-42506c33--3d8168a2-008e-4b35-a665-b65a1b408743.lovable.app-1773546788502.png">
-    <link rel="manifest" href="/lettora-verse-app/manifest.json" />
-    <meta name="theme-color" content="#7C3AED" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Lettora" />
-  <meta property="og:title" content="Lettora">
-  <meta name="twitter:title" content="Lettora">
-  <meta property="og:description" content="Lettora App is a platform for writers and readers to create, share, and discover literary content, with enhanced offline capabilities and installable PWA featur">
-  <meta name="twitter:description" content="Lettora App is a platform for writers and readers to create, share, and discover literary content, with enhanced offline capabilities and installable PWA featur">
-  <script type="module" crossorigin src="/lettora-verse-app/assets/index-XXfwqVlo.js"></script>
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/vendor-react-D-cZ6Gep.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/vendor-ui-B6B-tjR5.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/vendor-animations-CNJc1dHk.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/vendor-supabase-BGcTRcz8.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/pages-auth-SpdUgwGd.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/pages-reader-CB-_Knkt.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/pages-write-BSbJSnBe.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/pages-social-DzUdv100.js">
-  <link rel="modulepreload" crossorigin href="/lettora-verse-app/assets/vendor-query-BT87ooFi.js">
-  <link rel="stylesheet" crossorigin href="/lettora-verse-app/assets/index-BBMBahNh.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        .loading {
+            text-align: center;
+            color: #fff;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        // GitHub Pages SPA routing fix
+        // Redirect 404s to the index.html with the path preserved
+        (function() {
+            const path = window.location.pathname;
+            
+            // Extract the base path (should be /lettora-verse-app)
+            const basePath = '/lettora-verse-app';
+            
+            // Get the path after the base
+            let redirectPath = path;
+            if (path.startsWith(basePath)) {
+                redirectPath = path.substring(basePath.length);
+            }
+            
+            // Only redirect if it's not the root and not a file
+            if (redirectPath && redirectPath !== '/' && !redirectPath.includes('.')) {
+                // Store the original path to restore after page load
+                sessionStorage.redirect = redirectPath;
+                // Redirect to index.html
+                window.location.href = basePath + '/';
+            }
+        })();
+    </script>
 </head>
-
-  <body>
-    <div id="root"></div>
-  </body>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando Lettora...</p>
+    </div>
+</body>
 </html>
