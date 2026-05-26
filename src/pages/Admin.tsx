@@ -19,6 +19,7 @@ import AdminFollowersModal from "@/components/admin/AdminFollowersModal";
 import CreateStaffBdayModal from "@/components/admin/CreateStaffBdayModal";
 import CreateBadgeModal from "@/components/admin/CreateBadgeModal";
 import AdminWalletManager from "@/components/admin/AdminWalletManager";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -903,9 +904,11 @@ const AdminPage = () => {
       />
       {activeTab === "wallet" && (
         <div className="px-4 py-6">
-          <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
-            <AdminWalletManager />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+              <AdminWalletManager />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       )}
     </div>

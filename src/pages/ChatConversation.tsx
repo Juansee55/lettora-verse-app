@@ -570,7 +570,8 @@ const ChatConversationPage = () => {
           contentType="message"
         />
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 

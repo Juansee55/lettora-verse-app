@@ -8,6 +8,7 @@ import BottomNav from "@/components/navigation/BottomNav";
 import NewConversationModal from "@/components/chat/NewConversationModal";
 import CreateGroupModal from "@/components/chat/CreateGroupModal";
 import ChatListItem from "@/components/chat/ChatListItem";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -167,7 +168,8 @@ const ChatsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-background pb-20">
       {/* iOS Header */}
       <div className="ios-header">
         <div className="px-4 pt-3 pb-2">
@@ -277,7 +279,8 @@ const ChatsPage = () => {
       <NewConversationModal isOpen={showNewConversation} onClose={() => setShowNewConversation(false)} />
       <CreateGroupModal isOpen={showCreateGroup} onClose={() => setShowCreateGroup(false)} />
       <BottomNav />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 

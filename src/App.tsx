@@ -9,6 +9,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import PageLoader from "@/components/PageLoader";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
@@ -126,8 +127,9 @@ const AppContent = () => {
   return (
     <>
       <OfflineOverlay isOffline={isOffline} />
-      <Suspense fallback={<PageLoader />}>
-      <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
       <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : <Navigate to="/home" replace />} />
       <Route path="/index" element={<Navigate to="/home" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
@@ -174,8 +176,9 @@ const AppContent = () => {
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
-    </Routes>
-    </Suspense>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </>
   );
 };
