@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Loader2, DollarSign, Send, User, AlertTriangle } from "lucide-react";
+import { Search, Loader2, DollarSign, Send, User, AlertTriangle, Plus, Minus } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,7 +133,7 @@ const AdminWalletManager = () => {
                 onClick={() => handleAdjust(true)}
                 disabled={processing || !amount}
               >
-                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-2" /> Añadir</>}
+                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="flex items-center"><Plus className="w-4 h-4 mr-2" /> Añadir</div>}
               </Button>
               <Button 
                 variant="destructive" 
@@ -140,7 +141,7 @@ const AdminWalletManager = () => {
                 onClick={() => handleAdjust(false)}
                 disabled={processing || !amount}
               >
-                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Minus className="w-4 h-4 mr-2" /> Descontar</>}
+                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="flex items-center"><Minus className="w-4 h-4 mr-2" /> Descontar</div>}
               </Button>
             </div>
           </motion.div>

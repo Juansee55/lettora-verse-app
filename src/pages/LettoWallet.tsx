@@ -311,11 +311,11 @@ const LettoWalletPage = () => {
                   <div className="space-y-8 text-center">
                     <div className="space-y-4">
                       <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center overflow-hidden">
-                        {targetUser.avatar_url ? <img src={targetUser.avatar_url} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-primary" />}
+                        {targetUser?.avatar_url ? <img src={targetUser.avatar_url} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-primary" />}
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold">{targetUser.display_name}</h3>
-                        <p className="text-muted-foreground">@{targetUser.username} • {targetUser.alias}</p>
+                        <h3 className="text-2xl font-bold">{targetUser?.display_name || "Usuario"}</h3>
+                        <p className="text-muted-foreground">@{targetUser?.username || "usuario"} • {targetUser?.alias || "N/A"}</p>
                       </div>
                       <div className="bg-primary/5 py-4 rounded-2xl">
                         <p className="text-sm text-muted-foreground">Vas a enviar</p>
@@ -342,7 +342,7 @@ const LettoWalletPage = () => {
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold">¡Envío Exitoso!</h3>
-                      <p className="text-muted-foreground">Se han enviado {amount} LettoPays a {targetUser.display_name}</p>
+                      <p className="text-muted-foreground">Se han enviado {amount} LettoPays a {targetUser?.display_name || "el destinatario"}</p>
                     </div>
                     <div className="space-y-3">
                       <Button className="w-full h-14 rounded-2xl font-bold bg-primary" onClick={() => (setShowTransfer(false), setTransferStep("search"), setIdentifier(""), setAmount(""))}>Listo</Button>
@@ -393,18 +393,18 @@ const LettoWalletPage = () => {
               
               <div className="p-8 space-y-6">
                 <div className="space-y-4">
-                  <div className="flex justify-between text-sm"><span className="text-slate-400 font-medium">Fecha</span><span className="font-bold">{new Date(selectedTx.created_at).toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-slate-400 font-medium">Tipo</span><span className="font-bold uppercase text-primary">{selectedTx.transaction_type}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-400 font-medium">Fecha</span><span className="font-bold">{selectedTx?.created_at ? new Date(selectedTx.created_at).toLocaleString() : "N/A"}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-400 font-medium">Tipo</span><span className="font-bold uppercase text-primary">{selectedTx?.transaction_type || "TRANSFERENCIA"}</span></div>
                   <div className="h-px bg-slate-100 w-full" />
                   <div className="space-y-1">
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Origen</p>
-                    <p className="font-bold text-slate-700">{selectedTx.sender?.wallets?.profiles?.display_name || "Sistema"}</p>
-                    <p className="text-xs text-slate-400">{selectedTx.sender?.alias || "N/A"}</p>
+                    <p className="font-bold text-slate-700">{selectedTx?.sender?.wallets?.profiles?.display_name || selectedTx?.sender?.alias || "Sistema"}</p>
+                    <p className="text-xs text-slate-400">{selectedTx?.sender?.alias || "N/A"}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Destino</p>
-                    <p className="font-bold text-slate-700">{selectedTx.receiver?.wallets?.profiles?.display_name || "Usuario"}</p>
-                    <p className="text-xs text-slate-400">{selectedTx.receiver?.alias || "N/A"}</p>
+                    <p className="font-bold text-slate-700">{selectedTx?.receiver?.wallets?.profiles?.display_name || selectedTx?.receiver?.alias || "Usuario"}</p>
+                    <p className="text-xs text-slate-400">{selectedTx?.receiver?.alias || "N/A"}</p>
                   </div>
                 </div>
                 
