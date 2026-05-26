@@ -5,7 +5,7 @@ import {
   ArrowLeft, BookOpen, Users, Heart, Eye, MapPin,
   Link as LinkIcon, Calendar, MoreHorizontal, UserPlus,
   UserCheck, MessageCircle, Share2, Flag, QrCode,
-  Shield, X, Copy, Check, Sparkles, Ban, Lock,
+  Shield, X, Copy, Check, Sparkles, Ban, Lock, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,9 @@ interface UserProfileData {
   is_verified: boolean;
   is_private: boolean;
   created_at: string;
+  tips_enabled?: boolean;
+  tip_paypal_url?: string;
+  tip_stripe_url?: string;
 }
 
 interface Book {
@@ -472,6 +475,18 @@ const UserProfilePage = () => {
               >
                 <span className="flex items-center gap-2"><MessageCircle className="w-4 h-4" /> Mensaje</span>
               </Button>
+              {profile?.tips_enabled && (profile?.tip_paypal_url || profile?.tip_stripe_url) && (
+                <Button
+                  variant="ios-secondary"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  onClick={() => {
+                    const url = profile.tip_paypal_url || profile.tip_stripe_url;
+                    if (url) window.open(url, "_blank");
+                  }}
+                >
+                  <DollarSign className="w-5 h-5 text-green-500" />
+                </Button>
+              )}
             </>
           )}
           {isOwnProfile && (

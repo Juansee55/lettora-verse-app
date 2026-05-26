@@ -7,7 +7,7 @@ import {
   ChevronRight, Wifi, Heart, Check, X, Users, Cake, FileText, Newspaper,
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
   MessageCircleHeart, BookHeart, UserPlus2, Swords, Trophy, Type, Zap,
-  ShoppingBag,
+  ShoppingBag, DollarSign, Wallet,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -353,13 +353,27 @@ const SettingsPage = () => {
               subtitle={readingTheme.charAt(0).toUpperCase() + readingTheme.slice(1)}
               onClick={() => setShowReadingThemePicker(true)}
             />
-            <IOSSettingItem
-              icon={<Globe className="w-4 h-4" />}
-              iconBg="bg-cyan-500"
-              title={t("language")}
-              value={languageNames[language]}
-              onClick={() => setShowLanguagePicker(true)}
-            />
+<IOSSettingItem
+	              icon={<Globe className="w-4 h-4" />}
+	              iconBg="bg-cyan-500"
+	              title={t("language")}
+	              value={languageNames[language]}
+	              onClick={() => setShowLanguagePicker(true)}
+	            />
+	            <IOSSettingItem
+	              icon={<DollarSign className="w-4 h-4" />}
+	              iconBg="bg-green-500"
+	              title="Propinas"
+	              subtitle="Configura PayPal o Stripe"
+	              onClick={() => navigate("/settings/tips")}
+	            />
+	            <IOSSettingItem
+	              icon={<Wallet className="w-4 h-4" />}
+	              iconBg="bg-blue-600"
+	              title="LettoWallet"
+	              subtitle="Gestiona tus LettoPays"
+	              onClick={() => navigate("/settings/wallet")}
+	            />
           </IOSSettingSection>
         </motion.div>
 
