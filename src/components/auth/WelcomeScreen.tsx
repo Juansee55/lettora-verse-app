@@ -82,9 +82,8 @@ const WelcomeScreen = ({ onLoginClick, onRegisterClick }: WelcomeScreenProps) =>
       >
         <motion.div
           className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30"
-          variants={itemVariants}
-          animate="animate"
           variants={floatingVariants}
+          animate="animate"
         >
           <BookOpen className="w-10 h-10 text-white" strokeWidth={1.5} />
         </motion.div>
