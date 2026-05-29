@@ -1,6 +1,12 @@
 /* Lettora Service Worker - production only, iframe-safe */
 const CACHE = "lettora-v1";
-const APP_SHELL = ["/", "/home", "/manifest.json", "/favicon.ico"];
+const BASE_PATH = "/lettora-verse-app";
+const APP_SHELL = [
+  BASE_PATH + "/",
+  BASE_PATH + "/home",
+  BASE_PATH + "/manifest.json",
+  BASE_PATH + "/favicon.ico"
+];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -32,7 +38,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/home")))
+        .catch(() => caches.match(req).then((r) => r || caches.match(BASE_PATH + "/home")))
     );
     return;
   }
@@ -63,9 +69,9 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Lettora";
   const options = {
     body: data.body || data.message || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
-    data: { url: data.url || data.link || "/home" },
+    icon: BASE_PATH + "/icon-192.png",
+    badge: BASE_PATH + "/icon-192.png",
+    data: { url: data.url || data.link || BASE_PATH + "/home" },
     tag: data.tag || "lettora-notification",
     renotify: true,
   };
@@ -74,7 +80,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/home";
+  const url = (event.notification.data && event.notification.data.url) || BASE_PATH + "/home";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const client of list) {
