@@ -44,7 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
             <RefreshCcw className="w-4 h-4" />
             Recargar aplicación
           </Button>
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <pre className="mt-4 p-4 bg-muted rounded-lg text-left text-xs overflow-auto max-w-full">
               {this.state.error?.toString()}
             </pre>
@@ -53,7 +53,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.children;
+    return this.props.children;
   }
 }
 
