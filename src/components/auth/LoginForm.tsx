@@ -35,12 +35,12 @@ const LoginForm = ({ onSubmit, onBack, loading }: LoginFormProps) => {
     exit: { opacity: 0, x: -100 },
   };
 
-  const itemVariants = {
+  const itemVariants: import("framer-motion").Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4, ease: "easeOut" },
+      transition: { duration: 0.4, ease: "easeOut" as const },
     },
   };
 
