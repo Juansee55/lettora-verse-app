@@ -11,6 +11,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout code
@@ -53,8 +55,6 @@ jobs:
       - name: Sign APK
         id: sign_app
         if: ${{ env.HAS_KEYSTORE == 'true' }}
-        env:
-          HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/apk/release
@@ -68,8 +68,6 @@ jobs:
       - name: Sign AAB
         id: sign_aab
         if: ${{ env.HAS_KEYSTORE == 'true' }}
-        env:
-          HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/bundle/release
