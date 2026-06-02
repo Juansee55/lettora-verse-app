@@ -59,7 +59,7 @@ const WriterSubscribeButton = ({ writerId, compact = false, className }: Props) 
 
   if (loading) {
     return (
-      <button disabled className={`flex items-center gap-1.5 ${compact ? "px-3 py-1.5" : "px-4 py-2"} rounded-full bg-muted`}>
+      <button disabled className={`flex items-center gap-1.5 ${compact ? "px-3 py-1.5" : "px-4 py-2"} rounded-full bg-muted ${className ?? ""}`}>
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
       </button>
     );
@@ -68,7 +68,7 @@ const WriterSubscribeButton = ({ writerId, compact = false, className }: Props) 
   return (
     <button
       onClick={toggleSubscription}
-      className={`flex items-center gap-1.5 ${compact ? "px-3 py-1.5 text-[12px]" : "px-4 py-2 text-[13px]"} rounded-full font-semibold transition-colors ${
+      className={`flex items-center gap-1.5 ${compact ? "px-3 py-1.5 text-[12px]" : "px-4 py-2 text-[13px]"} rounded-full font-semibold transition-colors ${className ?? ""} ${
         subscribed
           ? "bg-primary/10 text-primary"
           : "bg-primary text-primary-foreground"
