@@ -5,7 +5,7 @@ import {
   ArrowLeft, Wallet, ArrowUpRight, ArrowDownLeft, 
   History, Info, Loader2, Copy, Check, Send, 
   ChevronRight, QrCode, Sparkles, Edit2, AlertTriangle,
-  X, Search, User, FileText, Download, Share2
+  X, Search, User, FileText, Download, Share2, DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +67,7 @@ const LettoWalletPage = () => {
     }
 
     setWallet(walletData);
-    setNewAlias(walletData?.alias || "");
+    setNewAlias((walletData as any)?.alias || "");
 
     if (walletData) {
       const { data: txs } = await supabase
@@ -77,7 +77,7 @@ const LettoWalletPage = () => {
           sender:sender_wallet_id(id, user_id, alias, profiles(username, display_name, avatar_url)),
           receiver:receiver_wallet_id(id, user_id, alias, profiles(username, display_name, avatar_url))
         `)
-        .or(`sender_wallet_id.eq.${walletData.id},receiver_wallet_id.eq.${walletData.id}`)
+        .or(`sender_wallet_id.eq.${(walletData as any).id},receiver_wallet_id.eq.${(walletData as any).id}`)
         .order("created_at", { ascending: false });
       setTransactions(txs || []);
     }
@@ -94,7 +94,7 @@ const LettoWalletPage = () => {
   const handleSearchUser = async () => {
     if (!identifier) return;
     setSearching(true);
-    const { data, error } = await supabase.rpc("find_wallet_by_identifier", { p_identifier: identifier });
+    const { data, error } = await (supabase.rpc as any)("find_wallet_by_identifier", { p_identifier: identifier });
     setSearching(false);
     
     if (data && data.length > 0) {
@@ -119,7 +119,7 @@ const LettoWalletPage = () => {
 
     setProcessing(true);
     try {
-      const { error } = await supabase.rpc("transfer_lettopays", {
+      const { error } = await (supabase.rpc as any)("transfer_lettopays", {
         p_sender_id: wallet.user_id,
         p_receiver_id: targetUser.user_id,
         p_amount: parseFloat(amount),

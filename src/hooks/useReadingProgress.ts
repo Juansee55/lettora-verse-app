@@ -15,7 +15,7 @@ export const useReadingProgress = (userId: string | undefined, bookId: string | 
   const [progress, setProgress] = useState<ReadingProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const syncTimeoutRef = useRef<NodeJS.Timeout>();
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Fetch current reading progress
   const fetchProgress = useCallback(async () => {
@@ -37,7 +37,7 @@ export const useReadingProgress = (userId: string | undefined, bookId: string | 
         throw fetchError;
       }
 
-      setProgress(data || null);
+      setProgress((data as any) || null);
       setError(null);
     } catch (err) {
       console.error('Error fetching reading progress:', err);
@@ -69,7 +69,7 @@ export const useReadingProgress = (userId: string | undefined, bookId: string | 
           .single();
 
         if (upsertError) throw upsertError;
-        setProgress(data);
+        setProgress(data as any);
         setError(null);
       } catch (err) {
         console.error('Error saving reading progress:', err);

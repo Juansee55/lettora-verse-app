@@ -71,7 +71,7 @@ const ChatConversationPage = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration } = useWebRTCCall();
+  const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration, localVideoRef, remoteVideoRef } = useWebRTCCall();
   const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId);
 
   useEffect(() => {

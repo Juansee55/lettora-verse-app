@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 interface Props {
   writerId: string;
   compact?: boolean;
+  className?: string;
 }
 
-const WriterSubscribeButton = ({ writerId, compact = false }: Props) => {
+const WriterSubscribeButton = ({ writerId, compact = false, className }: Props) => {
   const { toast } = useToast();
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
