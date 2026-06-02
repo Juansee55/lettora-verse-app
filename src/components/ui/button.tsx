@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl shadow-sm",
+        default: "aurora-surface aurora-glow text-white rounded-xl",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl",
-        outline: "border border-border bg-background hover:bg-muted rounded-xl",
+        outline: "border border-primary/30 bg-background/60 backdrop-blur-md text-foreground hover:bg-primary/5 rounded-xl",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-xl",
         ghost: "hover:bg-muted/60 rounded-xl",
         link: "text-primary underline-offset-4 hover:underline",
-        gradient: "bg-gradient-hero text-primary-foreground hover:opacity-90 rounded-xl shadow-sm",
+        gradient: "aurora-surface aurora-glow text-white rounded-xl",
         glass: "bg-card/70 backdrop-blur-xl border border-border/30 text-foreground hover:bg-card/90 rounded-xl",
-        hero: "bg-gradient-hero text-primary-foreground shadow-glow hover:shadow-large font-semibold rounded-2xl",
-        ios: "bg-primary text-primary-foreground font-semibold rounded-[14px] shadow-sm hover:bg-primary/90",
+        hero: "aurora-surface aurora-glow text-white font-semibold rounded-2xl",
+        ios: "aurora-surface aurora-glow text-white font-semibold rounded-[14px]",
         "ios-secondary": "bg-secondary text-primary font-semibold rounded-[14px]",
         "ios-ghost": "bg-transparent text-primary font-medium rounded-[14px] hover:bg-muted/40",
         "ios-destructive": "bg-destructive/10 text-destructive font-semibold rounded-[14px] hover:bg-destructive/20",
