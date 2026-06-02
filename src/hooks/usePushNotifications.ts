@@ -72,7 +72,7 @@ export const usePushNotifications = () => {
       data?: Record<string, any>
     ) => {
       try {
-        const { error } = await supabase.from("push_notifications").insert({
+        const { error } = await (supabase.from as any)("push_notifications").insert({
           user_id: userId,
           type,
           title,

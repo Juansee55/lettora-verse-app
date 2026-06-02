@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useTypingIndicator = (conversationId: string, userId: string | null) => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Notificar que el usuario está escribiendo
   const notifyTyping = useCallback(async () => {

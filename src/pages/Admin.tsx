@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Shield, Users, BadgeCheck, Search,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
-  Trophy, BarChart3, Cake, UserPlus2, UserMinus, Award,
+  Trophy, BarChart3, Cake, UserPlus2, UserMinus, Award, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";

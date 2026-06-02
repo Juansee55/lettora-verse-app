@@ -20,7 +20,7 @@ export const useVoiceMessage = () => {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
   const startRecording = useCallback(async () => {

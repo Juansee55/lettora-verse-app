@@ -29,9 +29,9 @@ const TipSettingsPage = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("tips_enabled, tip_paypal_url, tip_stripe_url")
+        .select("tips_enabled, tip_paypal_url, tip_stripe_url" as any)
         .eq("id", user.id)
-        .maybeSingle();
+        .maybeSingle() as any;
 
       if (profile) {
         setTipsEnabled(profile.tips_enabled || false);

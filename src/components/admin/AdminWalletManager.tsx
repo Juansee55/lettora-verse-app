@@ -50,7 +50,7 @@ const AdminWalletManager = () => {
     setProcessing(true);
     const { data: { user: adminUser } } = await supabase.auth.getUser();
     
-    const { error } = await supabase.rpc("admin_adjust_balance", {
+    const { error } = await (supabase.rpc as any)("admin_adjust_balance", {
       p_target_user_id: user.id,
       p_amount: finalAmount,
       p_description: description || (isDeposit ? "Depósito administrativo" : "Ajuste administrativo"),
