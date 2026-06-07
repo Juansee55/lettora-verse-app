@@ -13,6 +13,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import PageLoader from "@/components/PageLoader";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useAutoCleanup } from "@/hooks/useAutoCleanup";
+import { useSmartTV } from "@/hooks/useSmartTV";
 import { BrowserProvider } from "@/components/browser/BrowserProvider";
 import UpdateBanner from "@/components/UpdateBanner";
 import VersionUpdateBanner from "@/components/VersionUpdateBanner";
@@ -67,6 +68,11 @@ const AppBuildsPage = lazy(() => import("./pages/AppBuilds"));
 const AppVersionsPage = lazy(() => import("./pages/AppVersions"));
 const TipSettingsPage = lazy(() => import("./pages/TipSettings"));
 const LettoWalletPage = lazy(() => import("./pages/LettoWallet"));
+const TVHomePage = lazy(() => import("./pages/TVHome"));
+const TVBookPage = lazy(() => import("./pages/TVBook"));
+const TVReaderPage = lazy(() => import("./pages/TVReader"));
+const TVSearchPage = lazy(() => import("./pages/TVSearch"));
+const TVSettingsPage = lazy(() => import("./pages/TVSettings"));
 const queryClient = new QueryClient();
 
 const AppContent = () => {
@@ -76,6 +82,7 @@ const AppContent = () => {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
 
   useAutoCleanup();
+  const isTV = useSmartTV();
   useDailyCheckIn();
   useLinkInterceptor();
   
@@ -124,12 +131,27 @@ const AppContent = () => {
     return <LoadingScreen />;
   }
 
+  // Redirección automática a la interfaz Smart TV.
+  if (
+    isTV &&
+    typeof window !== "undefined" &&
+    !window.location.pathname.startsWith("/tv")
+  ) {
+    return <Navigate to="/tv" replace />;
+  }
+
   return (
     <>
       <OfflineOverlay isOffline={isOffline} />
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
+      {/* Smart TV */}
+      <Route path="/tv" element={<TVHomePage />} />
+      <Route path="/tv/search" element={<TVSearchPage />} />
+      <Route path="/tv/settings" element={<TVSettingsPage />} />
+      <Route path="/tv/book/:id" element={<TVBookPage />} />
+      <Route path="/tv/book/:bookId/chapter/:chapterNumber" element={<TVReaderPage />} />
       <Route path="/" element={!hasSeenOnboarding ? <Onboarding onComplete={markOnboardingSeen} /> : <Navigate to="/home" replace />} />
       <Route path="/index" element={<Navigate to="/home" replace />} />
       <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <Auth />} />
