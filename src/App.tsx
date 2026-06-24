@@ -68,6 +68,7 @@ const AppBuildsPage = lazy(() => import("./pages/AppBuilds"));
 const AppVersionsPage = lazy(() => import("./pages/AppVersions"));
 const TipSettingsPage = lazy(() => import("./pages/TipSettings"));
 const LettoWalletPage = lazy(() => import("./pages/LettoWallet"));
+const WorldCup2026Page = lazy(() => import("./pages/WorldCup2026"));
 const TVHomePage = lazy(() => import("./pages/TVHome"));
 const TVBookPage = lazy(() => import("./pages/TVBook"));
 const TVReaderPage = lazy(() => import("./pages/TVReader"));
@@ -197,6 +198,7 @@ const AppContent = () => {
       <Route path="/app-versions" element={user ? <AppVersionsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/worldcup" element={<WorldCup2026Page />} />
       <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
