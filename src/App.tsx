@@ -23,6 +23,7 @@ import { usePWA } from "@/hooks/usePWA";
 import { useLinkInterceptor } from "@/hooks/useLinkInterceptor";
 import { useOfflineMode } from "@/hooks/useOfflineMode";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
 import OfflineOverlay from "@/components/pwa/OfflineOverlay";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -69,6 +70,7 @@ const AppVersionsPage = lazy(() => import("./pages/AppVersions"));
 const TipSettingsPage = lazy(() => import("./pages/TipSettings"));
 const LettoWalletPage = lazy(() => import("./pages/LettoWallet"));
 const WorldCup2026Page = lazy(() => import("./pages/WorldCup2026"));
+const AccountsCenterPage = lazy(() => import("./pages/AccountsCenter"));
 const TVHomePage = lazy(() => import("./pages/TVHome"));
 const TVBookPage = lazy(() => import("./pages/TVBook"));
 const TVReaderPage = lazy(() => import("./pages/TVReader"));
@@ -86,6 +88,7 @@ const AppContent = () => {
   const isTV = useSmartTV();
   useDailyCheckIn();
   useLinkInterceptor();
+  useSessionTracker();
   
   const { isOffline } = useOfflineMode();
   useRealtimeNotifications(user?.id || null);
@@ -198,6 +201,7 @@ const AppContent = () => {
       <Route path="/app-versions" element={user ? <AppVersionsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/accounts-center" element={user ? <AccountsCenterPage /> : <Navigate to="/auth" replace />} />
       <Route path="/worldcup" element={<WorldCup2026Page />} />
       <Route path="*" element={<NotFound />} />
           </Routes>
