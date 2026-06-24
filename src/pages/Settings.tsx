@@ -332,6 +332,18 @@ const SettingsPage = () => {
 
         {/* Appearance */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <IOSSettingSection>
+            <IOSSettingItem
+              icon={<Users className="w-4 h-4" />}
+              iconBg="bg-gradient-to-br from-primary to-purple-500"
+              title="Centro de cuentas"
+              subtitle="Cuentas, dispositivos y seguridad"
+              onClick={() => navigate("/accounts-center")}
+            />
+          </IOSSettingSection>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <IOSSettingSection title={t("appearance")}>
             <IOSSettingItem
               icon={theme === "dark" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
