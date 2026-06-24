@@ -201,6 +201,7 @@ const AppContent = () => {
       <Route path="/app-versions" element={user ? <AppVersionsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/accounts-center" element={user ? <AccountsCenterPage /> : <Navigate to="/auth" replace />} />
       <Route path="/worldcup" element={<WorldCup2026Page />} />
       <Route path="*" element={<NotFound />} />
           </Routes>
