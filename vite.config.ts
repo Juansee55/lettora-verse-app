@@ -10,7 +10,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/lettora-verse-app/",
+  base: process.env.DEPLOY_TARGET === "gh-pages" ? "/lettora-verse-app/" : "/",
   server: {
     host: "::",
     port: 8080,
