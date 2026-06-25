@@ -6,10 +6,8 @@ import "./index.css";
 if (sessionStorage.redirect) {
   const redirect = sessionStorage.redirect;
   delete sessionStorage.redirect;
-  // Restore the original path with the base path
-  const basePath = '/lettora-verse-app';
-  const fullPath = basePath + redirect;
-  window.history.replaceState(null, '', fullPath);
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  window.history.replaceState(null, '', basePath + redirect);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
