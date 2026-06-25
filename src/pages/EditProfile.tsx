@@ -25,7 +25,6 @@ const EditProfilePage = () => {
     website: "",
     avatar_url: "",
     cover_url: "",
-    birth_date: "",
     is_private: false,
     followers_visibility: "all",
   });
@@ -56,7 +55,6 @@ const EditProfilePage = () => {
           website: data.website || "",
           avatar_url: data.avatar_url || "",
           cover_url: data.cover_url || "",
-          birth_date: data.birth_date || "",
           is_private: data.is_private || false,
           followers_visibility: data.followers_visibility || "all",
         });
@@ -109,7 +107,6 @@ const EditProfilePage = () => {
         website: profile.website,
         avatar_url: profile.avatar_url,
         cover_url: profile.cover_url,
-        birth_date: profile.birth_date || null,
         is_private: profile.is_private,
         followers_visibility: profile.followers_visibility as any,
       })
@@ -195,10 +192,6 @@ const EditProfilePage = () => {
               <label className="text-[13px] font-medium text-muted-foreground mb-1 block">Bio</label>
               <Textarea value={profile.bio} onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))} placeholder="Cuéntanos sobre ti..." className="rounded-xl min-h-[80px]" maxLength={160} />
               <span className="text-[11px] text-muted-foreground">{profile.bio.length}/160</span>
-            </div>
-            <div>
-              <label className="text-[13px] font-medium text-muted-foreground mb-1 block">Fecha de nacimiento</label>
-              <Input type="date" value={profile.birth_date} onChange={(e) => setProfile(prev => ({ ...prev, birth_date: e.target.value }))} className="rounded-xl" />
             </div>
           </div>
         </IOSSettingSection>

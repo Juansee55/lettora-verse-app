@@ -27,6 +27,15 @@ function categoryFor(type: string): "chat" | "social" | "announcements" {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Internal-only endpoint: require shared secret (set by DB trigger and admin tooling)
+  const expected = Deno.env.get("INTERNAL_PUSH_SECRET");
+  const provided = req.headers.get("x-internal-secret");
+  if (!expected || provided !== expected) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const payload = await req.json();
     const { user_id, type, title, message, link } = payload;
