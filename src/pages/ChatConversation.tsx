@@ -204,7 +204,10 @@ const ChatConversationPage = () => {
       return null;
     }
 
-    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+    const { data: signed } = await supabase.storage
+      .from("chat-media")
+      .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 año
+    return signed?.signedUrl ?? null;
   };
 
   const canSendMessage = (): boolean => {
