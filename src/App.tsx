@@ -69,7 +69,8 @@ const AppBuildsPage = lazy(() => import("./pages/AppBuilds"));
 const AppVersionsPage = lazy(() => import("./pages/AppVersions"));
 const TipSettingsPage = lazy(() => import("./pages/TipSettings"));
 const LettoWalletPage = lazy(() => import("./pages/LettoWallet"));
-const WorldCup2026Page = lazy(() => import("./pages/WorldCup2026"));
+const FreeBooksPage = lazy(() => import("./pages/FreeBooks"));
+const FreeBookReaderPage = lazy(() => import("./pages/FreeBookReader"));
 const AccountsCenterPage = lazy(() => import("./pages/AccountsCenter"));
 const TVHomePage = lazy(() => import("./pages/TVHome"));
 const TVBookPage = lazy(() => import("./pages/TVBook"));
@@ -202,7 +203,8 @@ const AppContent = () => {
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
       <Route path="/accounts-center" element={user ? <AccountsCenterPage /> : <Navigate to="/auth" replace />} />
-      <Route path="/worldcup" element={<WorldCup2026Page />} />
+      <Route path="/free-books" element={<FreeBooksPage />} />
+      <Route path="/free-books/:id" element={<FreeBookReaderPage />} />
       <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

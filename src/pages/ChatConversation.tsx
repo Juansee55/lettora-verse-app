@@ -184,7 +184,10 @@ const ChatConversationPage = () => {
     const path = `${currentUserId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("chat-media").upload(path, file);
     if (error) { toast.error("Error al subir archivo"); return null; }
-    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+    const { data: signed } = await supabase.storage
+      .from("chat-media")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    return signed?.signedUrl ?? null;
   };
 
   const uploadVoiceMessage = async (audioBlob: Blob): Promise<string | null> => {
@@ -204,7 +207,10 @@ const ChatConversationPage = () => {
       return null;
     }
 
-    return supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+    const { data: signed } = await supabase.storage
+      .from("chat-media")
+      .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 año
+    return signed?.signedUrl ?? null;
   };
 
   const canSendMessage = (): boolean => {
