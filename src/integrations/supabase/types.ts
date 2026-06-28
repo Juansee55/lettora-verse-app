@@ -1065,6 +1065,107 @@ export type Database = {
         }
         Relationships: []
       }
+      free_book_ratings: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_book_ratings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "free_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      free_books: {
+        Row: {
+          added_week: string | null
+          author: string
+          content: string | null
+          content_url: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          external_id: string | null
+          genre: string | null
+          id: string
+          is_featured: boolean | null
+          language: string | null
+          rating_avg: number | null
+          ratings_count: number | null
+          reads_count: number | null
+          source: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          added_week?: string | null
+          author: string
+          content?: string | null
+          content_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          genre?: string | null
+          id?: string
+          is_featured?: boolean | null
+          language?: string | null
+          rating_avg?: number | null
+          ratings_count?: number | null
+          reads_count?: number | null
+          source?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          added_week?: string | null
+          author?: string
+          content?: string | null
+          content_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          genre?: string | null
+          id?: string
+          is_featured?: boolean | null
+          language?: string | null
+          rating_avg?: number | null
+          ratings_count?: number | null
+          reads_count?: number | null
+          source?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gang_allies: {
         Row: {
           allied_gang_id: string
