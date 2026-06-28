@@ -218,12 +218,12 @@ const Home = () => {
 
           <section className="px-4">
             <motion.button
-              onClick={() => navigate("/worldcup")}
+              onClick={() => navigate("/free-books")}
               whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="relative w-full overflow-hidden rounded-2xl p-4 text-left border border-white/10"
-              style={{ background: "linear-gradient(135deg, hsl(220 90% 30%), hsl(280 70% 35%) 50%, hsl(0 80% 40%))" }}
+              style={{ background: "linear-gradient(135deg, hsl(270 80% 35%), hsl(290 70% 45%) 50%, hsl(320 70% 45%))" }}
             >
               <motion.div
                 className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-white/15 blur-2xl"
@@ -231,11 +231,11 @@ const Home = () => {
                 transition={{ duration: 4, repeat: Infinity }}
               />
               <div className="relative flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-2xl">🏆</div>
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-2xl">📚</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-white/80 font-bold">FIFA World Cup</div>
-                  <div className="text-white font-black text-lg leading-tight">Mundial 2026</div>
-                  <div className="text-white/80 text-xs">Equipos · Resultados en vivo · Sedes</div>
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-white/80 font-bold">Biblioteca libre</div>
+                  <div className="text-white font-black text-lg leading-tight">Libros gratuitos</div>
+                  <div className="text-white/80 text-xs">Clásicos de dominio público · Nuevos cada semana</div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-white/80" />
               </div>
