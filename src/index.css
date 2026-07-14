@@ -240,12 +240,47 @@
       inset 0 1px 0 hsl(0 0% 100% / 0.15);
   }
 
+  /* iOS 27 refractive sheen */
+  .liquid-glass { position: relative; isolation: isolate; }
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      hsl(0 0% 100% / 0.35) 0%,
+      hsl(0 0% 100% / 0.05) 30%,
+      hsl(0 0% 100% / 0) 55%,
+      hsl(0 0% 100% / 0.12) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .liquid-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(120% 80% at 20% 0%, hsl(0 0% 100% / 0.18), transparent 60%),
+                radial-gradient(120% 80% at 80% 100%, hsl(var(--primary) / 0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* descendants naturally paint above ::before/::after in the same stacking context */
+
   .dark .liquid-glass {
     background: hsl(var(--background) / 0.45);
     border-color: hsl(0 0% 100% / 0.08);
     box-shadow:
       0 1px 3px hsl(0 0% 0% / 0.3),
       inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  }
+  .dark .liquid-glass::after {
+    background: radial-gradient(120% 80% at 20% 0%, hsl(0 0% 100% / 0.08), transparent 60%),
+                radial-gradient(120% 80% at 80% 100%, hsl(var(--primary) / 0.14), transparent 60%);
   }
 
   .liquid-glass-strong {
@@ -267,6 +302,47 @@
       0 2px 8px hsl(0 0% 0% / 0.2),
       inset 0 1px 0 hsl(0 0% 100% / 0.06);
   }
+
+  /* iOS 27 motion utilities */
+  @keyframes ios-appear {
+    0% { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(6px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+  @keyframes ios-shine {
+    0% { transform: translateX(-120%) skewX(-20deg); }
+    100% { transform: translateX(220%) skewX(-20deg); }
+  }
+  @keyframes ios-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  .ios-appear { animation: ios-appear 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .ios-appear-stagger > * { animation: ios-appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .ios-appear-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+  .ios-appear-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+  .ios-appear-stagger > *:nth-child(3) { animation-delay: 0.13s; }
+  .ios-appear-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+  .ios-appear-stagger > *:nth-child(5) { animation-delay: 0.23s; }
+  .ios-appear-stagger > *:nth-child(6) { animation-delay: 0.28s; }
+  .ios-appear-stagger > *:nth-child(7) { animation-delay: 0.33s; }
+  .ios-appear-stagger > *:nth-child(8) { animation-delay: 0.38s; }
+  .ios-appear-stagger > *:nth-child(n+9) { animation-delay: 0.42s; }
+
+  .ios-tap { transition: transform 220ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms ease; }
+  .ios-tap:active { transform: scale(0.96); }
+
+  .ios-lift { transition: transform 300ms cubic-bezier(0.22,1,0.36,1), box-shadow 300ms ease; }
+  .ios-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 32px hsl(var(--primary) / 0.18); }
+
+  .ios-shine { position: relative; overflow: hidden; }
+  .ios-shine::after {
+    content: "";
+    position: absolute; top: 0; left: 0; bottom: 0; width: 40%;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.35), transparent);
+    animation: ios-shine 2.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .ios-float { animation: ios-float 3.5s ease-in-out infinite; }
 
   .ios-header {
     @apply sticky top-0 z-50;

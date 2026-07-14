@@ -41,7 +41,7 @@ export const IOSHeader = ({
         "sticky top-0 z-50 transition-all",
         transparent
           ? "bg-transparent"
-          : "liquid-glass border-b border-white/10",
+          : "liquid-glass liquid-glass-strong border-b border-white/10",
         className
       )}
     >
