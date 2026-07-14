@@ -72,11 +72,12 @@ const VoiceMessagePlayer = ({
   const progress = (currentTime / duration) * 100;
 
   return (
-    <div
-      className={`flex items-center gap-3 p-3 rounded-2xl ${
-        isOwn
-          ? "bg-primary/20 rounded-br-none"
-          : "bg-muted/60 rounded-bl-none"
+    <motion.div
+      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 320, damping: 24 }}
+      className={`liquid-glass flex items-center gap-3 p-3 rounded-2xl min-w-[220px] ${
+        isOwn ? "rounded-br-md" : "rounded-bl-md"
       }`}
     >
       <audio ref={audioRef} src={audioUrl} />
@@ -127,7 +128,7 @@ const VoiceMessagePlayer = ({
       >
         <Download className="w-4 h-4" />
       </Button>
-    </div>
+    </motion.div>
   );
 };
 
