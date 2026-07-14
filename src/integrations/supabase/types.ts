@@ -1578,6 +1578,7 @@ export type Database = {
           media_url: string | null
           read_at: string | null
           sender_id: string
+          voice_duration: number | null
         }
         Insert: {
           content: string
@@ -1588,6 +1589,7 @@ export type Database = {
           media_url?: string | null
           read_at?: string | null
           sender_id: string
+          voice_duration?: number | null
         }
         Update: {
           content?: string
@@ -1598,6 +1600,7 @@ export type Database = {
           media_url?: string | null
           read_at?: string | null
           sender_id?: string
+          voice_duration?: number | null
         }
         Relationships: [
           {
