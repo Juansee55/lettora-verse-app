@@ -269,7 +269,7 @@
     pointer-events: none;
     z-index: 0;
   }
-  .liquid-glass > * { position: relative; z-index: 2; }
+  /* descendants naturally paint above ::before/::after in the same stacking context */
 
   .dark .liquid-glass {
     background: hsl(var(--background) / 0.45);
