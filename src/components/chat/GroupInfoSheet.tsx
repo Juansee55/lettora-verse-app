@@ -477,6 +477,14 @@ const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSett
               <div className="p-4 space-y-4">
                 <h3 className="text-[13px] font-medium text-muted-foreground mb-1">Configuración</h3>
 
+                {/* Wallpaper */}
+                {onWallpaperChange && (
+                  <div className="p-3 rounded-xl bg-muted/30 space-y-2">
+                    <div className="text-sm font-medium">Fondo del chat</div>
+                    <ChatWallpaperPicker userId={currentUserId} currentValue={wallpaperValue ?? null} onChange={onWallpaperChange} />
+                  </div>
+                )}
+
                 {/* Public/Private */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
                   <div className="flex items-center gap-3">
