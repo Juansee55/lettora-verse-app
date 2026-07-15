@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Pin, Flag, Trash2, Copy, X, Ban } from "lucide-react";
+import { Pin, Flag, Trash2, Copy, X, Ban, Reply, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { REACTION_EMOJIS } from "@/lib/chatWallpapers";
 
 interface MessageActionsSheetProps {
   isOpen: boolean;
@@ -15,11 +16,16 @@ interface MessageActionsSheetProps {
   onPin?: (messageId: string) => void;
   onReport?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
+  onReply?: (messageId: string) => void;
+  onEdit?: (messageId: string) => void;
+  onReact?: (messageId: string, emoji: string) => void;
+  canEdit?: boolean;
 }
 
 const MessageActionsSheet = ({
   isOpen, onClose, messageContent, messageId,
-  isOwn, isAdmin, isGroup, senderId, onPin, onReport, onDelete
+  isOwn, isAdmin, isGroup, senderId, onPin, onReport, onDelete,
+  onReply, onEdit, onReact, canEdit,
 }: MessageActionsSheetProps) => {
   if (!isOpen) return null;
 
@@ -52,6 +58,20 @@ const MessageActionsSheet = ({
   };
 
   const actions = [
+    {
+      icon: Reply,
+      label: "Responder",
+      show: !!onReply,
+      onClick: () => { onReply?.(messageId); onClose(); },
+      destructive: false,
+    },
+    {
+      icon: Pencil,
+      label: "Editar mensaje",
+      show: !!canEdit && isOwn && !!messageContent,
+      onClick: () => { onEdit?.(messageId); onClose(); },
+      destructive: false,
+    },
     {
       icon: Copy,
       label: "Copiar texto",
@@ -106,6 +126,27 @@ const MessageActionsSheet = ({
           onClick={e => e.stopPropagation()}
           className="bg-card rounded-t-2xl w-full max-w-md overflow-hidden pb-safe"
         >
+          {/* Reactions row */}
+          {onReact && (
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-1">
+              {REACTION_EMOJIS.map((emoji, i) => (
+                <motion.button
+                  key={emoji}
+                  initial={{ scale: 0, y: 12 }}
+                  animate={{ scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 18, delay: 0.03 * i }}
+                  whileTap={{ scale: 0.75 }}
+                  whileHover={{ scale: 1.2, y: -4 }}
+                  onClick={() => { onReact(messageId, emoji); onClose(); }}
+                  className="text-2xl w-11 h-11 rounded-full flex items-center justify-center hover:bg-muted/60 active:bg-muted"
+                  aria-label={`Reaccionar con ${emoji}`}
+                >
+                  {emoji}
+                </motion.button>
+              ))}
+            </div>
+          )}
+
           {/* Preview */}
           {messageContent && (
             <div className="px-4 pt-4 pb-2">

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ChatWallpaperPicker from "./ChatWallpaperPicker";
 
 interface GroupInfoSheetProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface GroupInfoSheetProps {
   conversationId: string;
   currentUserId: string;
   onSettingsChanged?: () => void;
+  wallpaperValue?: string | null;
+  onWallpaperChange?: (v: string) => void;
 }
 
 interface ParticipantInfo {
@@ -49,7 +52,7 @@ const SLOW_MODE_OPTIONS = [
   { label: "15 min", value: 900 },
 ];
 
-const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSettingsChanged }: GroupInfoSheetProps) => {
+const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSettingsChanged, wallpaperValue, onWallpaperChange }: GroupInfoSheetProps) => {
   const [settings, setSettings] = useState<GroupSettings>({
     name: "", description: "", is_public: false,
     slow_mode_seconds: 0, admin_only_messages: false, pinned_message_id: null,
@@ -474,6 +477,14 @@ const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSett
             {activeSection === "settings" && isAdmin && (
               <div className="p-4 space-y-4">
                 <h3 className="text-[13px] font-medium text-muted-foreground mb-1">Configuración</h3>
+
+                {/* Wallpaper */}
+                {onWallpaperChange && (
+                  <div className="p-3 rounded-xl bg-muted/30 space-y-2">
+                    <div className="text-sm font-medium">Fondo del chat</div>
+                    <ChatWallpaperPicker userId={currentUserId} currentValue={wallpaperValue ?? null} onChange={onWallpaperChange} />
+                  </div>
+                )}
 
                 {/* Public/Private */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">

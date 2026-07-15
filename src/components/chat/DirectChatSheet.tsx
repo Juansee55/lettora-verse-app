@@ -4,6 +4,7 @@ import { User, BellOff, Bell, Trash2, Ban, Flag, Eye, X, Loader2 } from "lucide-
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ChatWallpaperPicker from "./ChatWallpaperPicker";
 
 interface DirectChatSheetProps {
   isOpen: boolean;
@@ -13,9 +14,11 @@ interface DirectChatSheetProps {
   currentUserId: string;
   onCleared?: () => void;
   onReport?: () => void;
+  wallpaperValue?: string | null;
+  onWallpaperChange?: (v: string) => void;
 }
 
-const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUserId, onCleared, onReport }: DirectChatSheetProps) => {
+const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUserId, onCleared, onReport, wallpaperValue, onWallpaperChange }: DirectChatSheetProps) => {
   const navigate = useNavigate();
   const [muted, setMuted] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -124,6 +127,14 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
           <p className="px-5 pt-4 pb-1.5 text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
             Configuración del chat
           </p>
+
+          {/* Wallpaper */}
+          {onWallpaperChange && (
+            <div className="px-5 pb-3">
+              <p className="text-[13px] font-semibold mb-2">Fondo del chat</p>
+              <ChatWallpaperPicker userId={currentUserId} currentValue={wallpaperValue ?? null} onChange={onWallpaperChange} />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="px-2 py-1">
