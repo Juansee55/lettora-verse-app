@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Send, Loader2, X, Users, Pin, Camera } from "lucide-react";
+import { Send, Loader2, X, Users, Pin, Camera, CornerUpLeft, Check as CheckIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -16,6 +16,8 @@ import CallInterface from "@/components/call/CallInterface";
 import IncomingCallModal from "@/components/call/IncomingCallModal";
 import { useWebRTCCall } from "@/hooks/useWebRTCCall";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { resolveWallpaperBackground } from "@/lib/chatWallpapers";
+import type { ReactionSummary } from "@/components/chat/ReactionsBar";
 
 interface Message {
   id: string;
@@ -25,6 +27,9 @@ interface Message {
   media_url?: string | null;
   media_type?: string;
   voice_duration?: number | null;
+  reply_to_id?: string | null;
+  edited_at?: string | null;
+  is_deleted?: boolean | null;
 }
 
 interface Participant {
@@ -65,6 +70,10 @@ const ChatConversationPage = () => {
   const [showMessageActions, setShowMessageActions] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportMessageId, setReportMessageId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
+  const [wallpaper, setWallpaper] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const senderIds = [...new Set(messages.map(m => m.sender_id))];
   const nameColors = useNameColors(senderIds);
@@ -83,6 +92,13 @@ const ChatConversationPage = () => {
       setCurrentUserId(user.id);
       await fetchConversationData(user.id);
       await updateLastRead(user.id);
+      // Load wallpaper preference
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("chat_wallpaper" as any)
+        .eq("id", user.id)
+        .maybeSingle();
+      if (mounted && profile) setWallpaper((profile as any).chat_wallpaper ?? null);
     };
     checkUserAndFetch();
     return () => { mounted = false; };
@@ -106,12 +122,88 @@ const ChatConversationPage = () => {
         return [...prev, payload.new as Message];
       }))
       .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "messages",
+        filter: `conversation_id=eq.${conversationId}`,
+      }, (payload) => setMessages(prev => prev.map(m => m.id === (payload.new as any).id ? { ...m, ...(payload.new as Message) } : m)))
+      .on("postgres_changes", {
         event: "DELETE", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id)))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [conversationId, currentUserId]);
+
+  // Reactions realtime + initial load
+  useEffect(() => {
+    if (!conversationId) return;
+    let cancelled = false;
+    const load = async () => {
+      const ids = messages.map(m => m.id);
+      if (!ids.length) { setReactions({}); return; }
+      const { data } = await (supabase.from("message_reactions") as any)
+        .select("message_id, emoji, user_id")
+        .in("message_id", ids);
+      if (cancelled || !data) return;
+      const map: Record<string, { emoji: string; user_id: string }[]> = {};
+      (data as any[]).forEach(r => {
+        (map[r.message_id] ||= []).push({ emoji: r.emoji, user_id: r.user_id });
+      });
+      setReactions(map);
+    };
+    load();
+    const channel = supabase
+      .channel(`reactions:${conversationId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_reactions" }, (payload) => {
+        const r = payload.new as any;
+        setReactions(prev => {
+          const arr = prev[r.message_id] || [];
+          if (arr.some(x => x.user_id === r.user_id && x.emoji === r.emoji)) return prev;
+          return { ...prev, [r.message_id]: [...arr, { emoji: r.emoji, user_id: r.user_id }] };
+        });
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "message_reactions" }, (payload) => {
+        const r = payload.old as any;
+        setReactions(prev => {
+          const arr = prev[r.message_id];
+          if (!arr) return prev;
+          return { ...prev, [r.message_id]: arr.filter(x => !(x.user_id === r.user_id && x.emoji === r.emoji)) };
+        });
+      })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [conversationId, messages.length]);
+
+  const summarizeReactions = (msgId: string): ReactionSummary[] => {
+    const arr = reactions[msgId] || [];
+    const grouped: Record<string, { count: number; mine: boolean }> = {};
+    arr.forEach(r => {
+      const g = (grouped[r.emoji] ||= { count: 0, mine: false });
+      g.count += 1;
+      if (r.user_id === currentUserId) g.mine = true;
+    });
+    return Object.entries(grouped).map(([emoji, v]) => ({ emoji, count: v.count, mine: v.mine }));
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!currentUserId) return;
+    const arr = reactions[messageId] || [];
+    const existing = arr.find(r => r.user_id === currentUserId && r.emoji === emoji);
+    if (existing) {
+      // Optimistic
+      setReactions(prev => ({ ...prev, [messageId]: (prev[messageId] || []).filter(x => !(x.user_id === currentUserId && x.emoji === emoji)) }));
+      await (supabase.from("message_reactions") as any)
+        .delete()
+        .eq("message_id", messageId).eq("user_id", currentUserId).eq("emoji", emoji);
+    } else {
+      setReactions(prev => ({ ...prev, [messageId]: [...(prev[messageId] || []), { emoji, user_id: currentUserId }] }));
+      const { error } = await (supabase.from("message_reactions") as any)
+        .insert({ message_id: messageId, user_id: currentUserId, emoji });
+      if (error && error.code !== "23505") {
+        toast.error("No se pudo reaccionar");
+        setReactions(prev => ({ ...prev, [messageId]: (prev[messageId] || []).filter(x => !(x.user_id === currentUserId && x.emoji === emoji)) }));
+      }
+    }
+  };
 
   const fetchConversationData = async (userId: string) => {
     setLoading(true);
@@ -228,6 +320,22 @@ const ChatConversationPage = () => {
     if ((!newMessage.trim() && !mediaPreview) || !currentUserId || sending) return;
     if (!canSendMessage()) return;
 
+    // Handle edit flow
+    if (editingId) {
+      const content = newMessage.trim();
+      setSending(true);
+      const { error } = await (supabase.from("messages") as any)
+        .update({ content, edited_at: new Date().toISOString() })
+        .eq("id", editingId);
+      setSending(false);
+      if (error) { toast.error("Error al editar"); return; }
+      setMessages(prev => prev.map(m => m.id === editingId ? { ...m, content, edited_at: new Date().toISOString() } : m));
+      setEditingId(null);
+      setNewMessage("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      return;
+    }
+
     setSending(true);
     setUploading(!!mediaPreview);
     const content = newMessage.trim();
@@ -244,14 +352,17 @@ const ChatConversationPage = () => {
       if (!mediaUrl && !content) { setSending(false); setUploading(false); return; }
     }
 
-    const { error } = await supabase.from("messages").insert({
+    const payload: any = {
       conversation_id: conversationId!, sender_id: currentUserId,
       content: content || "", media_url: mediaUrl, media_type: mediaType,
-    });
+    };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    const { error } = await (supabase.from("messages") as any).insert(payload);
 
     if (error) { toast.error("Error al enviar mensaje"); setNewMessage(content); }
     else {
       setLastSentTime(Date.now());
+      setReplyTo(null);
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     }
     setSending(false);
@@ -307,16 +418,42 @@ const ChatConversationPage = () => {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    const { error } = await supabase.from("messages").delete().eq("id", messageId);
+    // Soft-delete: keep placeholder in thread
+    const { error } = await (supabase.from("messages") as any)
+      .update({ is_deleted: true, content: "", media_url: null })
+      .eq("id", messageId);
     if (error) toast.error("Error al eliminar");
     else {
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true, content: "", media_url: null } : m));
       if (pinnedMessage?.id === messageId) {
         setPinnedMessage(null);
         await supabase.from("conversations").update({ pinned_message_id: null }).eq("id", conversationId);
       }
       toast.success("Mensaje eliminado");
     }
+  };
+
+  const handleReplyTo = (messageId: string) => {
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return;
+    setReplyTo(msg);
+    setEditingId(null);
+    inputRef.current?.focus();
+  };
+
+  const handleEditStart = (messageId: string) => {
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg || msg.is_deleted) return;
+    setEditingId(messageId);
+    setNewMessage(msg.content || "");
+    setReplyTo(null);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const cancelEditOrReply = () => {
+    setEditingId(null);
+    setReplyTo(null);
+    if (editingId) setNewMessage("");
   };
 
   const handleReportMessage = (messageId: string) => {
@@ -361,6 +498,17 @@ const ChatConversationPage = () => {
     const el = document.getElementById(`msg-${pinnedMessage.id}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
+
+  const scrollToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const messagesById = useMemo(() => {
+    const m: Record<string, Message> = {};
+    messages.forEach(x => { m[x.id] = x; });
+    return m;
+  }, [messages]);
 
   return (
     <div className="h-screen bg-background flex flex-col">
@@ -419,7 +567,10 @@ const ChatConversationPage = () => {
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div
+        className="flex-1 overflow-y-auto px-3 py-4"
+        style={{ background: resolveWallpaperBackground(wallpaper) }}
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-7 h-7 animate-spin text-primary/50" />
@@ -458,6 +609,18 @@ const ChatConversationPage = () => {
                   showSender={convInfo?.is_group || false}
                   onAvatarClick={() => navigate(`/user/${message.sender_id}`)}
                   onLongPress={() => { setSelectedMessage(message); setShowMessageActions(true); }}
+                  onDoubleTap={() => toggleReaction(message.id, "❤️")}
+                  reactions={summarizeReactions(message.id)}
+                  onToggleReaction={(emoji) => toggleReaction(message.id, emoji)}
+                  isEdited={!!message.edited_at}
+                  isDeleted={!!message.is_deleted}
+                  replyPreview={message.reply_to_id && messagesById[message.reply_to_id] ? {
+                    author: participantsMap[messagesById[message.reply_to_id].sender_id]?.display_name
+                      || participantsMap[messagesById[message.reply_to_id].sender_id]?.username
+                      || "Usuario",
+                    content: messagesById[message.reply_to_id].content || "",
+                    onJump: () => scrollToMessage(message.reply_to_id!),
+                  } : null}
                 />
               </div>
             ))}
@@ -484,6 +647,23 @@ const ChatConversationPage = () => {
 
       {/* Input bar */}
       <div className="border-t border-border/30 bg-background/80 backdrop-blur-2xl px-3 py-2 pb-safe">
+        {/* Reply / Edit banner */}
+        {(replyTo || editingId) && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20">
+            <div className="w-1 h-8 rounded-full bg-primary" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-primary leading-tight">
+                {editingId ? "Editando mensaje" : `Respondiendo a ${participantsMap[replyTo!.sender_id]?.display_name || participantsMap[replyTo!.sender_id]?.username || "Usuario"}`}
+              </p>
+              <p className="text-[12px] text-muted-foreground truncate">
+                {(editingId ? messages.find(m => m.id === editingId)?.content : replyTo?.content) || "📎 adjunto"}
+              </p>
+            </div>
+            <button onClick={cancelEditOrReply} className="w-7 h-7 rounded-full bg-muted/60 flex items-center justify-center">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {inputDisabled && convInfo?.admin_only_messages ? (
           <div className="text-center py-3">
             <p className="text-[13px] text-muted-foreground/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>Solo los administradores pueden enviar mensajes</p>
@@ -522,7 +702,7 @@ const ChatConversationPage = () => {
               disabled={(!newMessage.trim() && !mediaPreview) || sending}
               className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all mb-[2px] shadow-sm shadow-primary/20"
             >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground ml-0.5" />}
+              {sending ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : editingId ? <CheckIcon className="w-4 h-4 text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground ml-0.5" />}
             </button>
           </div>
         )}
@@ -536,6 +716,8 @@ const ChatConversationPage = () => {
           conversationId={conversationId!}
           currentUserId={currentUserId}
           onSettingsChanged={() => fetchConversationData(currentUserId)}
+          wallpaperValue={wallpaper}
+          onWallpaperChange={setWallpaper}
         />
       )}
 
@@ -549,6 +731,8 @@ const ChatConversationPage = () => {
           currentUserId={currentUserId}
           onCleared={() => setMessages([])}
           onReport={() => { setReportMessageId(conversationId!); setShowReportModal(true); }}
+          wallpaperValue={wallpaper}
+          onWallpaperChange={setWallpaper}
         />
       )}
 
@@ -565,6 +749,10 @@ const ChatConversationPage = () => {
         onPin={handlePinMessage}
         onReport={handleReportMessage}
         onDelete={handleDeleteMessage}
+        onReply={handleReplyTo}
+        onEdit={handleEditStart}
+        onReact={(id, emoji) => toggleReaction(id, emoji)}
+        canEdit={!selectedMessage?.is_deleted && !selectedMessage?.media_url}
       />
 
       {/* Report Modal */}
