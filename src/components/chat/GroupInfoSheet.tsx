@@ -18,6 +18,8 @@ interface GroupInfoSheetProps {
   conversationId: string;
   currentUserId: string;
   onSettingsChanged?: () => void;
+  wallpaperValue?: string | null;
+  onWallpaperChange?: (v: string) => void;
 }
 
 interface ParticipantInfo {
@@ -49,7 +51,7 @@ const SLOW_MODE_OPTIONS = [
   { label: "15 min", value: 900 },
 ];
 
-const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSettingsChanged }: GroupInfoSheetProps) => {
+const GroupInfoSheet = ({ isOpen, onClose, conversationId, currentUserId, onSettingsChanged, wallpaperValue, onWallpaperChange }: GroupInfoSheetProps) => {
   const [settings, setSettings] = useState<GroupSettings>({
     name: "", description: "", is_public: false,
     slow_mode_seconds: 0, admin_only_messages: false, pinned_message_id: null,
