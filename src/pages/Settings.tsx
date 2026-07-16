@@ -9,6 +9,7 @@ import {
   MessageCircleHeart, BookHeart, UserPlus2, Swords, Trophy, Type, Zap,
   ShoppingBag, DollarSign, Wallet,
 } from "lucide-react";
+import lettoiaLogo from "@/assets/lettoia-logo.png";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -386,6 +387,19 @@ const SettingsPage = () => {
 	              subtitle="Gestiona tus LettoPays"
 	              onClick={() => navigate("/settings/wallet")}
 	            />
+          </IOSSettingSection>
+        </motion.div>
+
+        {/* LettoIA */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <IOSSettingSection title="Inteligencia Artificial" footer="Historias, personajes, nombres, tramas y chat creativo con IA.">
+            <IOSSettingItem
+              icon={<img src={lettoiaLogo} alt="LettoIA" className="w-6 h-6 object-contain" />}
+              iconBg="bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-500"
+              title="LettoIA"
+              subtitle="Tu compañera creativa impulsada por IA"
+              onClick={() => navigate("/lettoia")}
+            />
           </IOSSettingSection>
         </motion.div>
 
