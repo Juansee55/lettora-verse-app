@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, BookOpen, Users, Wand2, Type, MessageCircle, Loader2, Copy, Check } from "lucide-react";
 import { IOSHeader } from "@/components/ios/IOSHeader";
-import { BackButton } from "@/components/navigation/BackButton";
+import BackButton from "@/components/navigation/BackButton";
 import { toast } from "sonner";
 import lettoiaLogo from "@/assets/lettoia-logo.png";
 import ReactMarkdown from "react-markdown";
