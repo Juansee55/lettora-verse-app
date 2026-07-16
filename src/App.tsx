@@ -72,6 +72,7 @@ const LettoWalletPage = lazy(() => import("./pages/LettoWallet"));
 const FreeBooksPage = lazy(() => import("./pages/FreeBooks"));
 const FreeBookReaderPage = lazy(() => import("./pages/FreeBookReader"));
 const AccountsCenterPage = lazy(() => import("./pages/AccountsCenter"));
+const LettoIAPage = lazy(() => import("./pages/LettoIA"));
 const TVHomePage = lazy(() => import("./pages/TVHome"));
 const TVBookPage = lazy(() => import("./pages/TVBook"));
 const TVReaderPage = lazy(() => import("./pages/TVReader"));
@@ -203,6 +204,7 @@ const AppContent = () => {
       <Route path="/settings/tips" element={user ? <TipSettingsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings/wallet" element={user ? <LettoWalletPage /> : <Navigate to="/auth" replace />} />
       <Route path="/accounts-center" element={user ? <AccountsCenterPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/lettoia" element={user ? <LettoIAPage /> : <Navigate to="/auth" replace />} />
       <Route path="/free-books" element={<FreeBooksPage />} />
       <Route path="/free-books/:id" element={<FreeBookReaderPage />} />
       <Route path="*" element={<NotFound />} />
