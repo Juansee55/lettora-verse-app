@@ -3333,6 +3333,19 @@ export type Database = {
         Returns: boolean
       }
       leave_base: { Args: { p_base_id: string }; Returns: Json }
+      lookup_group_invite: {
+        Args: { _code: string }
+        Returns: {
+          conversation_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          invite_code: string
+          invited_by: string
+          max_uses: number
+          uses_count: number
+        }[]
+      }
       purchase_shop_item: { Args: { p_item_id: string }; Returns: Json }
       record_daily_check_in: { Args: never; Returns: Json }
       send_notification: {
