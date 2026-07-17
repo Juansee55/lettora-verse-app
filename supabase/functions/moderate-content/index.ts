@@ -51,8 +51,8 @@ serve(async (req) => {
       await sb.from("notifications").insert({
         user_id: userId,
         type: "moderation",
-        content: `Un bot administrador eliminó tu ${contentType} por incumplir las reglas (${reason}).`,
-        from_user_id: actorId,
+        title: "Contenido eliminado por moderación",
+        message: `Un bot administrador eliminó tu ${contentType} por incumplir las reglas (${reason}).`,
       });
     };
 
