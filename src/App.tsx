@@ -24,6 +24,7 @@ import { useLinkInterceptor } from "@/hooks/useLinkInterceptor";
 import { useOfflineMode } from "@/hooks/useOfflineMode";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { useSectionAnalytics } from "@/hooks/useSectionAnalytics";
 import OfflineOverlay from "@/components/pwa/OfflineOverlay";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -91,6 +92,7 @@ const AppContent = () => {
   useDailyCheckIn();
   useLinkInterceptor();
   useSessionTracker();
+  useSectionAnalytics();
   
   const { isOffline } = useOfflineMode();
   useRealtimeNotifications(user?.id || null);
