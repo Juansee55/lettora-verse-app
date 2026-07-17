@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          section: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          section: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          section?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       announcement_dismissals: {
         Row: {
           announcement_id: string
@@ -133,6 +160,27 @@ export type Database = {
           release_notes?: string | null
           released_at?: string
           version?: string
+        }
+        Relationships: []
+      }
+      banned_words: {
+        Row: {
+          created_at: string
+          id: string
+          severity: number
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          severity?: number
+          word: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          severity?: number
+          word?: string
         }
         Relationships: []
       }
@@ -2062,6 +2110,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          bot_type: string | null
           chat_wallpaper: string | null
           cover_url: string | null
           created_at: string | null
@@ -2071,6 +2120,7 @@ export type Database = {
           followers_visibility: string
           id: string
           is_banned: boolean | null
+          is_bot: boolean
           is_premium: boolean
           is_private: boolean | null
           is_verified: boolean | null
@@ -2084,6 +2134,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          bot_type?: string | null
           chat_wallpaper?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -2093,6 +2144,7 @@ export type Database = {
           followers_visibility?: string
           id: string
           is_banned?: boolean | null
+          is_bot?: boolean
           is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
@@ -2106,6 +2158,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          bot_type?: string | null
           chat_wallpaper?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -2115,6 +2168,7 @@ export type Database = {
           followers_visibility?: string
           id?: string
           is_banned?: boolean | null
+          is_bot?: boolean
           is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
