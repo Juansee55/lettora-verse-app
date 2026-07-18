@@ -405,13 +405,13 @@ const SettingsPage = () => {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <IOSSettingSection title="Explorar más" footer="Nuevas formas de crear, coleccionar y conectar en Lettora.">
-            <IOSSettingItem title="Universos y glosarios" subtitle="Agrupa libros y crea fichas de personajes/lugares" onClick={() => navigate("/universes")} />
-            <IOSSettingItem title="Blogs" subtitle="Publica entradas largas tipo bitácora" onClick={() => navigate("/blogs")} />
-            <IOSSettingItem title="Cartas coleccionables" subtitle="Tu colección de cartas por rareza" onClick={() => navigate("/cards")} />
-            <IOSSettingItem title="Lectores BETA" subtitle="Invita lectores privados a tus borradores" onClick={() => navigate("/beta-readers")} />
-            <IOSSettingItem title="Webcómics" subtitle="Historias por paneles" onClick={() => navigate("/webcomics")} />
-            <IOSSettingItem title="Preventa de libros" subtitle="Reserva libros antes de su lanzamiento" onClick={() => navigate("/preorders")} />
-            <IOSSettingItem title="Programa de embajadores" subtitle="Únete al equipo de la comunidad" onClick={() => navigate("/ambassadors")} />
+            <IOSSettingItem icon={<Globe2 className="w-4 h-4" />} iconBg="bg-violet-500" title="Universos y glosarios" subtitle="Agrupa libros y crea fichas" onClick={() => navigate("/universes")} />
+            <IOSSettingItem icon={<PenLine className="w-4 h-4" />} iconBg="bg-blue-500" title="Blogs" subtitle="Entradas largas tipo bitácora" onClick={() => navigate("/blogs")} />
+            <IOSSettingItem icon={<Sparkles className="w-4 h-4" />} iconBg="bg-fuchsia-500" title="Cartas coleccionables" subtitle="Tu colección por rareza" onClick={() => navigate("/cards")} />
+            <IOSSettingItem icon={<UserPlus className="w-4 h-4" />} iconBg="bg-emerald-500" title="Lectores BETA" subtitle="Invita lectores privados" onClick={() => navigate("/beta-readers")} />
+            <IOSSettingItem icon={<ImageIcon className="w-4 h-4" />} iconBg="bg-pink-500" title="Webcómics" subtitle="Historias por paneles" onClick={() => navigate("/webcomics")} />
+            <IOSSettingItem icon={<CalendarClock className="w-4 h-4" />} iconBg="bg-amber-500" title="Preventa de libros" subtitle="Reserva antes del lanzamiento" onClick={() => navigate("/preorders")} />
+            <IOSSettingItem icon={<Award className="w-4 h-4" />} iconBg="bg-orange-500" title="Programa de embajadores" subtitle="Únete al equipo comunitario" onClick={() => navigate("/ambassadors")} />
           </IOSSettingSection>
         </motion.div>
 
