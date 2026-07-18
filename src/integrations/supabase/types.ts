@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      ambassador_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          points_reward: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      ambassadors: {
+        Row: {
+          bio: string | null
+          id: string
+          is_active: boolean
+          joined_at: string
+          points: number
+          region: string | null
+          tier: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          points?: number
+          region?: string | null
+          tier?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          points?: number
+          region?: string | null
+          tier?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -163,6 +223,48 @@ export type Database = {
         }
         Relationships: []
       }
+      author_blogs: {
+        Row: {
+          author_id: string
+          content: string
+          cover_url: string | null
+          created_at: string
+          id: string
+          is_published: boolean
+          likes_count: number
+          tags: string[] | null
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author_id: string
+          content: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          likes_count?: number
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          likes_count?: number
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       banned_words: {
         Row: {
           created_at: string
@@ -262,6 +364,92 @@ export type Database = {
           },
         ]
       }
+      beta_feedback: {
+        Row: {
+          book_id: string
+          chapter_id: string | null
+          content: string
+          created_at: string
+          id: string
+          rating: number | null
+          reader_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          reader_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          reader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_feedback_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beta_feedback_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beta_invitations: {
+        Row: {
+          author_id: string
+          book_id: string
+          created_at: string
+          id: string
+          message: string | null
+          reader_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          author_id: string
+          book_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reader_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          author_id?: string
+          book_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          reader_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_invitations_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_collaborators: {
         Row: {
           accepted_at: string | null
@@ -300,6 +488,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_preorders: {
+        Row: {
+          amount_cents: number | null
+          book_id: string
+          created_at: string
+          id: string
+          release_date: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          book_id: string
+          created_at?: string
+          id?: string
+          release_date?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          book_id?: string
+          created_at?: string
+          id?: string
+          release_date?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_preorders_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
             referencedColumns: ["id"]
           },
         ]
@@ -404,10 +630,13 @@ export type Database = {
           description: string | null
           genre: string | null
           id: string
+          is_preorder: boolean
           is_saga: boolean | null
           likes_count: number | null
           parent_saga_id: string | null
+          preorder_price_cents: number | null
           reads_count: number | null
+          release_date: string | null
           saga_order: number | null
           status: string | null
           tags: string[] | null
@@ -425,10 +654,13 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          is_preorder?: boolean
           is_saga?: boolean | null
           likes_count?: number | null
           parent_saga_id?: string | null
+          preorder_price_cents?: number | null
           reads_count?: number | null
+          release_date?: string | null
           saga_order?: number | null
           status?: string | null
           tags?: string[] | null
@@ -446,10 +678,13 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          is_preorder?: boolean
           is_saga?: boolean | null
           likes_count?: number | null
           parent_saga_id?: string | null
+          preorder_price_cents?: number | null
           reads_count?: number | null
+          release_date?: string | null
           saga_order?: number | null
           status?: string | null
           tags?: string[] | null
@@ -648,6 +883,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      collectible_cards: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          rarity: string
+          related_book_id: string | null
+          related_universe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          rarity?: string
+          related_book_id?: string | null
+          related_universe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          related_book_id?: string | null
+          related_universe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collectible_cards_related_book_id_fkey"
+            columns: ["related_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collectible_cards_related_universe_id_fkey"
+            columns: ["related_universe_id"]
+            isOneToOne: false
+            referencedRelation: "universes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
@@ -1438,6 +1727,50 @@ export type Database = {
           photo_url?: string | null
         }
         Relationships: []
+      }
+      glossary_entries: {
+        Row: {
+          aliases: string[] | null
+          created_at: string
+          description: string | null
+          entry_type: string
+          id: string
+          image_url: string | null
+          name: string
+          universe_id: string
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[] | null
+          created_at?: string
+          description?: string | null
+          entry_type: string
+          id?: string
+          image_url?: string | null
+          name: string
+          universe_id: string
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[] | null
+          created_at?: string
+          description?: string | null
+          entry_type?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          universe_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glossary_entries_universe_id_fkey"
+            columns: ["universe_id"]
+            isOneToOne: false
+            referencedRelation: "universes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_invitations: {
         Row: {
@@ -2734,6 +3067,92 @@ export type Database = {
         }
         Relationships: []
       }
+      story_choices: {
+        Row: {
+          created_at: string
+          from_node_id: string
+          id: string
+          label: string
+          position: number
+          to_node_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_node_id: string
+          id?: string
+          label: string
+          position?: number
+          to_node_id: string
+        }
+        Update: {
+          created_at?: string
+          from_node_id?: string
+          id?: string
+          label?: string
+          position?: number
+          to_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_choices_from_node_id_fkey"
+            columns: ["from_node_id"]
+            isOneToOne: false
+            referencedRelation: "story_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_choices_to_node_id_fkey"
+            columns: ["to_node_id"]
+            isOneToOne: false
+            referencedRelation: "story_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_nodes: {
+        Row: {
+          chapter_id: string
+          content: string
+          created_at: string
+          id: string
+          is_ending: boolean
+          is_start: boolean
+          position: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          chapter_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_ending?: boolean
+          is_start?: boolean
+          position?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chapter_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_ending?: boolean
+          is_start?: boolean
+          position?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_nodes_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_views: {
         Row: {
           id: string
@@ -2812,6 +3231,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      universe_books: {
+        Row: {
+          added_at: string
+          book_id: string
+          position: number
+          universe_id: string
+        }
+        Insert: {
+          added_at?: string
+          book_id: string
+          position?: number
+          universe_id: string
+        }
+        Update: {
+          added_at?: string
+          book_id?: string
+          position?: number
+          universe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "universe_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "universe_books_universe_id_fkey"
+            columns: ["universe_id"]
+            isOneToOne: false
+            referencedRelation: "universes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      universes: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_badges: {
         Row: {
@@ -2925,6 +3413,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_collectible_cards: {
+        Row: {
+          card_id: string
+          id: string
+          is_displayed: boolean
+          obtained_at: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          id?: string
+          is_displayed?: boolean
+          obtained_at?: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          id?: string
+          is_displayed?: boolean
+          obtained_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_collectible_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "collectible_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_equipped_badges: {
         Row: {
@@ -3292,6 +3812,86 @@ export type Database = {
           name?: string
           price?: number
           rarity?: string
+        }
+        Relationships: []
+      }
+      webcomic_episodes: {
+        Row: {
+          created_at: string
+          episode_number: number
+          id: string
+          is_published: boolean
+          panel_urls: string[]
+          title: string
+          updated_at: string
+          webcomic_id: string
+        }
+        Insert: {
+          created_at?: string
+          episode_number?: number
+          id?: string
+          is_published?: boolean
+          panel_urls?: string[]
+          title: string
+          updated_at?: string
+          webcomic_id: string
+        }
+        Update: {
+          created_at?: string
+          episode_number?: number
+          id?: string
+          is_published?: boolean
+          panel_urls?: string[]
+          title?: string
+          updated_at?: string
+          webcomic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webcomic_episodes_webcomic_id_fkey"
+            columns: ["webcomic_id"]
+            isOneToOne: false
+            referencedRelation: "webcomics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webcomics: {
+        Row: {
+          author_id: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          genre: string | null
+          id: string
+          is_published: boolean
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          author_id: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_published?: boolean
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          author_id?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_published?: boolean
+          title?: string
+          updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }
