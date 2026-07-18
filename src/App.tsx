@@ -74,6 +74,15 @@ const FreeBooksPage = lazy(() => import("./pages/FreeBooks"));
 const FreeBookReaderPage = lazy(() => import("./pages/FreeBookReader"));
 const AccountsCenterPage = lazy(() => import("./pages/AccountsCenter"));
 const LettoIAPage = lazy(() => import("./pages/LettoIA"));
+const UniversesPage = lazy(() => import("./pages/Universes"));
+const UniverseDetailPage = lazy(() => import("./pages/UniverseDetail"));
+const AuthorBlogsPage = lazy(() => import("./pages/AuthorBlogs"));
+const CollectibleCardsPage = lazy(() => import("./pages/CollectibleCards"));
+const AmbassadorsPage = lazy(() => import("./pages/Ambassadors"));
+const BetaReadersPage = lazy(() => import("./pages/BetaReaders"));
+const WebcomicsPage = lazy(() => import("./pages/Webcomics"));
+const PreordersPage = lazy(() => import("./pages/Preorders"));
+const InteractiveStoryPage = lazy(() => import("./pages/InteractiveStory"));
 const TVHomePage = lazy(() => import("./pages/TVHome"));
 const TVBookPage = lazy(() => import("./pages/TVBook"));
 const TVReaderPage = lazy(() => import("./pages/TVReader"));
@@ -209,6 +218,15 @@ const AppContent = () => {
       <Route path="/lettoia" element={user ? <LettoIAPage /> : <Navigate to="/auth" replace />} />
       <Route path="/free-books" element={<FreeBooksPage />} />
       <Route path="/free-books/:id" element={<FreeBookReaderPage />} />
+      <Route path="/universes" element={user ? <UniversesPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/universes/:id" element={user ? <UniverseDetailPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/blogs" element={user ? <AuthorBlogsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/cards" element={user ? <CollectibleCardsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/ambassadors" element={user ? <AmbassadorsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/beta-readers" element={user ? <BetaReadersPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/webcomics" element={<WebcomicsPage />} />
+      <Route path="/preorders" element={user ? <PreordersPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/interactive/:chapterId" element={user ? <InteractiveStoryPage /> : <Navigate to="/auth" replace />} />
       <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
