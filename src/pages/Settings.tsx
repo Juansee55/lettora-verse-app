@@ -403,6 +403,18 @@ const SettingsPage = () => {
           </IOSSettingSection>
         </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
+          <IOSSettingSection title="Explorar más" footer="Nuevas formas de crear, coleccionar y conectar en Lettora.">
+            <IOSSettingItem title="Universos y glosarios" subtitle="Agrupa libros y crea fichas de personajes/lugares" onClick={() => navigate("/universes")} />
+            <IOSSettingItem title="Blogs" subtitle="Publica entradas largas tipo bitácora" onClick={() => navigate("/blogs")} />
+            <IOSSettingItem title="Cartas coleccionables" subtitle="Tu colección de cartas por rareza" onClick={() => navigate("/cards")} />
+            <IOSSettingItem title="Lectores BETA" subtitle="Invita lectores privados a tus borradores" onClick={() => navigate("/beta-readers")} />
+            <IOSSettingItem title="Webcómics" subtitle="Historias por paneles" onClick={() => navigate("/webcomics")} />
+            <IOSSettingItem title="Preventa de libros" subtitle="Reserva libros antes de su lanzamiento" onClick={() => navigate("/preorders")} />
+            <IOSSettingItem title="Programa de embajadores" subtitle="Únete al equipo de la comunidad" onClick={() => navigate("/ambassadors")} />
+          </IOSSettingSection>
+        </motion.div>
+
         {/* Notifications */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <IOSSettingSection title={t("notifications")}>
