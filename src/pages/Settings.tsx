@@ -8,6 +8,7 @@ import {
   MessageSquare, Crown, Ban, KeyRound, UserX, AlertTriangle,
   MessageCircleHeart, BookHeart, UserPlus2, Swords, Trophy, Type, Zap,
   ShoppingBag, DollarSign, Wallet,
+  Globe2, PenLine, Sparkles, UserPlus, Image as ImageIcon, CalendarClock, Award,
 } from "lucide-react";
 import lettoiaLogo from "@/assets/lettoia-logo.png";
 import { Switch } from "@/components/ui/switch";
