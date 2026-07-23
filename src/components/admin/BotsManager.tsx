@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, Shield, Sparkles, Loader2, Trash2, Play } from "lucide-react";
+import { Bot, Shield, Sparkles, Loader2, Trash2, Play, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -55,10 +55,16 @@ const BotsManager = () => {
     fetchBots();
   };
 
-  const runAction = async (fn: "moderate-content" | "bot-user-actions", label: string) => {
-    setRunning(fn);
+  const runAction = async (
+    fn: "moderate-content" | "bot-user-actions",
+    label: string,
+    body: Record<string, unknown> = { action: "cycle" },
+    key?: string,
+  ) => {
+    const runKey = key || fn;
+    setRunning(runKey);
     try {
-      const { data, error } = await supabase.functions.invoke(fn, { body: { action: "cycle" } });
+      const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) throw error;
       toast({ title: `${label} ejecutado`, description: JSON.stringify((data as any)?.stats ?? data) });
     } catch (e: any) {
@@ -111,6 +117,16 @@ const BotsManager = () => {
           <span className="text-[13px]">Ciclo de bots</span>
         </Button>
       </div>
+
+      <Button
+        onClick={() => runAction("bot-user-actions", "Bots siguiendo usuarios", { action: "follow" }, "bot-follow")}
+        variant="outline"
+        disabled={running !== null}
+        className="rounded-2xl h-12 w-full"
+      >
+        {running === "bot-follow" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
+        <span className="text-[13px]">Que los bots sigan usuarios</span>
+      </Button>
 
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
