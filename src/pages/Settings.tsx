@@ -804,6 +804,39 @@ const SettingsPage = () => {
             />
           </IOSSettingSection>
         </motion.div>
+
+        {/* Asteria Labs branding */}
+        <motion.a
+          href="https://asterialabs.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          whileTap={{ scale: 0.97 }}
+          className="mx-auto mt-6 mb-2 flex flex-col items-center gap-2 py-4 px-6 select-none group"
+        >
+          <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 text-foreground"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z" />
+            </svg>
+            <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-foreground/80">
+              From Asteria Labs
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground/60 tracking-wide">
+            Part of the Asteria Labs ecosystem
+          </span>
+        </motion.a>
       </main>
 
       <IOSBottomNav />
