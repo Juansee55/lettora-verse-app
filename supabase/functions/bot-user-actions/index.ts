@@ -53,6 +53,7 @@ serve(async (req) => {
     }
 
     const stats = { reads: 0, likes: 0, microstories: 0, books: 0 };
+    const followStats = { follows: 0 };
 
     // 1. READ BOOKS — every bot increments reads on 1-3 random books
     if (action === "cycle" || action === "read") {
@@ -68,6 +69,33 @@ serve(async (req) => {
               const { error } = await sb.from("likes").insert({ user_id: bot.id, likeable_type: "book", likeable_id: b.id });
               if (!error) stats.likes++;
             }
+          }
+        }
+      }
+    }
+
+    // 1b. FOLLOW USERS — bots follow random real (non-bot) users
+    if (action === "cycle" || action === "follow") {
+      const { data: targets } = await sb
+        .from("profiles")
+        .select("id")
+        .eq("is_bot", false)
+        .limit(500);
+      if (targets && targets.length) {
+        const perBot = action === "follow" ? 5 : 2;
+        for (const bot of bots) {
+          // In cycle mode only ~50% of bots follow someone this run
+          if (action === "cycle" && Math.random() > 0.5) continue;
+          const picks = new Set<string>();
+          while (picks.size < Math.min(perBot, targets.length)) {
+            const t: any = targets[Math.floor(Math.random() * targets.length)];
+            if (t.id !== bot.id) picks.add(t.id);
+          }
+          for (const target of picks) {
+            const { error } = await sb
+              .from("followers")
+              .insert({ follower_id: bot.id, following_id: target });
+            if (!error) followStats.follows++;
           }
         }
       }
@@ -127,7 +155,7 @@ El género debe ser uno de: ${GENRES.join(", ")}. La descripción máximo 200 ch
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, stats, bots: bots.length }), {
+    return new Response(JSON.stringify({ ok: true, stats: { ...stats, ...followStats }, bots: bots.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

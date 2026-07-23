@@ -6,8 +6,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const READER_NAMES = ["Lucía","Mateo","Sofía","Diego","Valentina","Sebastián","Camila","Nicolás","Isabella","Emiliano","Renata","Julián","Martina","Thiago","Antonella","Bruno","Regina","Facundo","Alma","Iker"];
-const WRITER_LAST = ["Aurora","Vela","Rojas","Nocturno","Aldana","Luna","Cardoza","Solar","Vega","Estrella","Rivas","Cielo","Prisma","Fenix","Zafiro"];
+const READER_NAMES = [
+  "Lucía","Mateo","Sofía","Diego","Valentina","Sebastián","Camila","Nicolás","Isabella","Emiliano",
+  "Renata","Julián","Martina","Thiago","Antonella","Bruno","Regina","Facundo","Alma","Iker",
+  "Aitana","Amaia","Noa","Vera","Elena","Paula","Daniela","Ariana","Lía","Ainhoa",
+  "Emma","Chloé","Iris","Mila","Nora","Zoe","Elsa","Uma","Yara","Sasha",
+  "Adrián","Álvaro","Hugo","Leo","Marco","Enzo","Dante","Ciro","Luca","Iván",
+  "Rafael","Andrés","Tomás","Lautaro","Benjamín","Joaquín","Gael","Axel","Bastián","Isaac",
+  "Xime","Fátima","Aurora","Bianca","Constanza","Delfina","Emilia","Florencia","Guadalupe","Helena",
+  "Ingrid","Josefina","Karina","Ludmila","Milagros","Ofelia","Priscila","Rosalía","Salomé","Tamara",
+  "Ulises","Valentino","Wallace","Ximeno","Yago","Zenón","Néstor","Óscar","Pablo","Quique",
+  "Ramiro","Simón","Teodoro","Uriel","Vicente","Wenceslao","Ezequiel","Yamil","Zaid","Amaru",
+];
+const WRITER_LAST = [
+  "Aurora","Vela","Rojas","Nocturno","Aldana","Luna","Cardoza","Solar","Vega","Estrella",
+  "Rivas","Cielo","Prisma","Fenix","Zafiro","Ámbar","Ónix","Cristal","Ébano","Marfil",
+  "Nebulosa","Cometa","Eclipse","Boreal","Austral","Ártico","Tempest","Ocaso","Alba","Aurea",
+  "Verano","Otoño","Invierno","Primavera","Sombra","Reflejo","Neblina","Tormenta","Trueno","Relámpago",
+  "Piedra","Roble","Sauce","Ceibo","Junco","Pino","Cedro","Loto","Nardo","Jazmín",
+  "Halcón","Lince","Zorro","Corvo","Búho","Águila","Fénix","Kraken","Tigre","Lobo",
+];
 const ADMIN_PREFIX = ["Guardia","Vigía","Centinela","Custodio","Árbitro"];
 const BIOS_USER = ["Ávido lector de novelas.","Escribo cuando la noche llama.","Historias cortas, emociones grandes.","Cazador de metáforas.","Fan de la fantasía y el misterio."];
 const BIOS_ADMIN = ["🛡️ Bot moderador oficial de Lettora.","🤖 Vigilando el contenido 24/7.","Protejo la comunidad lectora."];
@@ -45,9 +63,10 @@ serve(async (req) => {
       const displayName = botType === "admin"
         ? `${rand(ADMIN_PREFIX)} ${last}`
         : `${first} ${last}`;
+      const suffix = Math.floor(Math.random() * 99999).toString(36);
       const baseUser = botType === "admin"
-        ? `bot_admin_${slug(last)}_${Math.floor(Math.random()*9999)}`
-        : `bot_${slug(first)}${slug(last)}_${Math.floor(Math.random()*9999)}`;
+        ? `bot_admin_${slug(last)}_${suffix}`
+        : `bot_${slug(first)}${slug(last)}_${suffix}`;
       const email = `${baseUser}@bots.lettora.local`;
       const password = crypto.randomUUID() + crypto.randomUUID();
 
