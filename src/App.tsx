@@ -26,6 +26,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useSectionAnalytics } from "@/hooks/useSectionAnalytics";
 import OfflineOverlay from "@/components/pwa/OfflineOverlay";
+import OnboardingManager from "@/components/onboarding/OnboardingManager";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -160,6 +161,7 @@ const AppContent = () => {
   return (
     <>
       <OfflineOverlay isOffline={isOffline} />
+      <OnboardingManager userId={user?.id ?? null} />
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
