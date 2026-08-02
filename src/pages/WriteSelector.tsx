@@ -142,7 +142,7 @@ const WriteSelectorPage = () => {
           <p className="text-[15px] text-muted-foreground mt-1">Elige el formato que mejor se adapte a tu historia</p>
         </motion.div>
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="publish">
           {writeOptions.map((option, i) => (
             <motion.button
               key={option.id}
