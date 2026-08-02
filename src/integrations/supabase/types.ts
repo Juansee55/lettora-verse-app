@@ -3182,6 +3182,42 @@ export type Database = {
           },
         ]
       }
+      survey_responses: {
+        Row: {
+          created_at: string
+          hardest_to_understand: string | null
+          id: string
+          improvements: string | null
+          most_used_feature: string | null
+          nps: number | null
+          user_id: string
+          user_type: string | null
+          wishes: string | null
+        }
+        Insert: {
+          created_at?: string
+          hardest_to_understand?: string | null
+          id?: string
+          improvements?: string | null
+          most_used_feature?: string | null
+          nps?: number | null
+          user_id: string
+          user_type?: string | null
+          wishes?: string | null
+        }
+        Update: {
+          created_at?: string
+          hardest_to_understand?: string | null
+          id?: string
+          improvements?: string | null
+          most_used_feature?: string | null
+          nps?: number | null
+          user_id?: string
+          user_type?: string | null
+          wishes?: string | null
+        }
+        Relationships: []
+      }
       territory_bases: {
         Row: {
           base_number: number
@@ -3568,6 +3604,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_onboarding: {
+        Row: {
+          created_at: string
+          first_seen_at: string
+          survey_completed: boolean
+          survey_completed_at: string | null
+          tutorial_completed: boolean
+          tutorial_completed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string
+          survey_completed?: boolean
+          survey_completed_at?: string | null
+          tutorial_completed?: boolean
+          tutorial_completed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string
+          survey_completed?: boolean
+          survey_completed_at?: string | null
+          tutorial_completed?: boolean
+          tutorial_completed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
