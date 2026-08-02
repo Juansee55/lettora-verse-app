@@ -1,7 +1,7 @@
 {
   "name": "lettora-verse",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.1",
   "type": "module",
   "homepage": "https://Juansee55.github.io/lettora-verse-app",
   "scripts": {

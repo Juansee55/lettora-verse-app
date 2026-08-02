@@ -217,7 +217,7 @@ const ProfilePage = () => {
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => setShowShare(true)}>
               <Share2 className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => navigate("/settings")}>
+            <Button data-tour="settings" variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => navigate("/settings")}>
               <Settings className="w-5 h-5" />
             </Button>
           </div>
@@ -383,6 +383,7 @@ const ProfilePage = () => {
         {/* Action Buttons */}
         <div className="flex gap-2 mt-4">
           <Button
+            data-tour="edit-profile"
             variant="outline"
             size="sm"
             className="flex-1 rounded-xl h-9 text-[13px]"

@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 const navItems = [
-  { path: "/home", icon: Home, label: "Inicio" },
-  { path: "/explore", icon: Search, label: "Explorar" },
-  { path: "/community", icon: Users, label: "Comunidad" },
-  { path: "/library", icon: BookOpen, label: "Biblioteca" },
-  { path: "/profile", icon: User, label: "Perfil" },
+  { path: "/home", icon: Home, label: "Inicio", tour: "nav-home" },
+  { path: "/explore", icon: Search, label: "Explorar", tour: "nav-explore" },
+  { path: "/community", icon: Users, label: "Comunidad", tour: "nav-community" },
+  { path: "/library", icon: BookOpen, label: "Biblioteca", tour: "nav-library" },
+  { path: "/profile", icon: User, label: "Perfil", tour: "nav-profile" },
 ];
 
 const IOSBottomNav = () => {
@@ -24,11 +24,12 @@ const IOSBottomNav = () => {
         className="liquid-glass-strong liquid-glass rounded-[26px] mx-auto max-w-md overflow-hidden"
       >
         <div className="flex items-center justify-around h-[60px] px-1.5">
-          {navItems.map(({ path, icon: Icon, label }) => {
+          {navItems.map(({ path, icon: Icon, label, tour }) => {
             const isActive = location.pathname === path;
             return (
               <motion.button
                 key={path}
+                data-tour={tour}
                 onClick={() => navigate(path)}
                 whileTap={{ scale: 0.88 }}
                 transition={{ type: "spring", stiffness: 500, damping: 22 }}
