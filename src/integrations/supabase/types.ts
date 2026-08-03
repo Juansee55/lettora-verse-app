@@ -3640,24 +3640,39 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          admin_bio: string | null
           admin_title: string | null
+          birth_date: string | null
           created_at: string
           id: string
+          is_active: boolean
+          left_at: string | null
           role: Database["public"]["Enums"]["app_role"]
+          role_since: string | null
           user_id: string
         }
         Insert: {
+          admin_bio?: string | null
           admin_title?: string | null
+          birth_date?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
+          left_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
+          role_since?: string | null
           user_id: string
         }
         Update: {
+          admin_bio?: string | null
           admin_title?: string | null
+          birth_date?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
+          left_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_since?: string | null
           user_id?: string
         }
         Relationships: []
