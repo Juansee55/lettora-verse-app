@@ -174,8 +174,22 @@ const VerificationPage = () => {
         </div>
       )}
 
-      {/* Plans */}
+      {/* Plans — visible only to administrators */}
+      {!isAdmin ? (
+        <div className="mx-4">
+          <div className="bg-card rounded-2xl border border-border/50 p-5 text-center">
+            <Crown className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+            <p className="text-[14px] font-semibold">Verificación por invitación</p>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              Por ahora las insignias se otorgan directamente por el equipo de Lettora. No hay compra disponible.
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="px-4 space-y-4">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-1">
+          Solo administradores
+        </p>
         {plans.map((plan, i) => {
           const Icon = plan.icon;
           const isActive = currentVerification?.status === "active" && currentVerification?.verification_type === plan.type;
@@ -237,6 +251,7 @@ const VerificationPage = () => {
           );
         })}
       </div>
+      )}
 
       {/* FAQ */}
       <div className="px-4 mt-8 mb-4">
