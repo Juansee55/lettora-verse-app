@@ -737,3 +737,48 @@
     0 0 0 1px hsl(280 80% 70% / 0.25) inset,
     0 1px 0 hsl(280 90% 85% / 0.35) inset;
 }
+
+/* ═══════ Level Cosmetics: Frames (lv-frame-*) ═══════ */
+
+@keyframes lv-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes lv-frame-glow {
+  0%, 100% { box-shadow: 0 0 0 2px hsl(var(--frame-c1) / 0.55), 0 0 10px hsl(var(--frame-c1) / 0.35); }
+  50% { box-shadow: 0 0 0 2px hsl(var(--frame-c1) / 0.9), 0 0 20px hsl(var(--frame-c1) / 0.6); }
+}
+
+.lv-frame {
+  position: relative;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(from 0deg, hsl(var(--frame-c1)), hsl(var(--frame-c2)), hsl(var(--frame-c1)));
+  box-shadow: 0 0 0 1px hsl(var(--frame-c1) / 0.25), 0 4px 14px hsl(var(--frame-c1) / 0.28);
+}
+.lv-frame > * { border-radius: 9999px; }
+
+.lv-frame-reader     { --frame-c1: 158 70% 48%; --frame-c2: 174 65% 55%; }
+.lv-frame-author     { --frame-c1: 217 85% 60%; --frame-c2: 199 85% 62%; }
+.lv-frame-ink        { --frame-c1: 262 78% 62%; --frame-c2: 288 70% 62%; }
+.lv-frame-creator    { --frame-c1: 42 95% 55%;  --frame-c2: 28 92% 58%; }
+.lv-frame-stellar    { --frame-c1: 12 88% 58%;  --frame-c2: 45 95% 58%; animation: lv-frame-glow 3.2s ease-in-out infinite; }
+.lv-frame-master     { --frame-c1: 48 100% 58%; --frame-c2: 36 96% 52%; animation: lv-frame-glow 2.4s ease-in-out infinite; }
+
+/* ═══════ Level Cosmetics: Name colors (lv-name-*) ═══════ */
+
+.lv-name {
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: lv-shimmer 4s linear infinite;
+  font-weight: 700;
+}
+
+.lv-name-emerald { background-image: linear-gradient(90deg, hsl(158 70% 42%), hsl(168 72% 52%), hsl(158 70% 42%)); }
+.lv-name-azure   { background-image: linear-gradient(90deg, hsl(217 85% 52%), hsl(199 90% 60%), hsl(217 85% 52%)); }
+.lv-name-gold    { background-image: linear-gradient(90deg, hsl(42 95% 48%), hsl(50 100% 62%), hsl(42 95% 48%)); }
+.lv-name-flame   { background-image: linear-gradient(90deg, hsl(14 90% 52%), hsl(35 96% 58%), hsl(14 90% 52%)); }
+.lv-name-prism   { background-image: linear-gradient(90deg, hsl(0 85% 60%), hsl(45 95% 58%), hsl(150 70% 50%), hsl(210 90% 60%), hsl(280 75% 62%), hsl(0 85% 60%)); animation: lv-shimmer 6s linear infinite; }
