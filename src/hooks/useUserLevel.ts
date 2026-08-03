@@ -27,6 +27,15 @@ export const getRankForLevel = (level: number) => {
 
 const XP_THRESHOLDS = [0, 60, 120, 180, 240, 300, 440, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
 
+/** Mirrors the database calculate_level() function so UI and DB never disagree. */
+export const getLevelFromXp = (xp: number): number => {
+  const safeXp = Math.max(0, xp || 0);
+  if (safeXp >= 2000) return 21;
+  if (safeXp >= 1000) return 11 + Math.floor((safeXp - 1000) / 100);
+  if (safeXp >= 300) return 6 + Math.floor((safeXp - 300) / 140);
+  return 1 + Math.floor(safeXp / 60);
+};
+
 export const getXpForNextLevel = (level: number): number => {
   if (level >= 21) return Infinity;
   return XP_THRESHOLDS[level] || 2000;
@@ -52,13 +61,18 @@ export const useUserLevel = (userId?: string | null) => {
         .maybeSingle();
 
       if (data) {
-        const rank = getRankForLevel(data.level);
-        const currentLevelXp = getXpForCurrentLevel(data.level);
-        const nextLevelXp = getXpForNextLevel(data.level);
-        const progress = nextLevelXp === Infinity ? 100 : Math.min(100, ((data.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100);
+        const xp = Math.max(0, data.xp ?? 0);
+        const level = Math.max(data.level ?? 1, getLevelFromXp(xp));
+        const rank = getRankForLevel(level);
+        const currentLevelXp = getXpForCurrentLevel(level);
+        const nextLevelXp = getXpForNextLevel(level);
+        const progress =
+          nextLevelXp === Infinity
+            ? 100
+            : Math.min(100, Math.max(0, ((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100));
         setLevelData({
-          xp: data.xp,
-          level: data.level,
+          xp,
+          level,
           rank: rank.label,
           nextLevelXp,
           progress,
