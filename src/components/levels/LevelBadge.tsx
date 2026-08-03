@@ -1,6 +1,7 @@
 import { getRankForLevel } from "@/hooks/useUserLevel";
 import type { UserLevelData } from "@/hooks/useUserLevel";
 import { Progress } from "@/components/ui/progress";
+import LevelIcon from "./LevelIcon";
 
 interface LevelBadgeProps {
   levelData: UserLevelData;
@@ -13,8 +14,9 @@ const LevelBadge = ({ levelData, compact = false, showProgress = false }: LevelB
 
   if (compact) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-[11px] font-semibold text-primary">
-        {rank.emoji} Nv.{levelData.level}
+      <span className="inline-flex items-center gap-1 pl-1 pr-2 py-0.5 bg-primary/10 rounded-full text-[11px] font-semibold text-primary">
+        <LevelIcon rank={rank.key} size={16} level={levelData.level} />
+        Nv.{levelData.level}
       </span>
     );
   }
@@ -23,7 +25,7 @@ const LevelBadge = ({ levelData, compact = false, showProgress = false }: LevelB
     <div className="bg-card rounded-xl p-3">
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{rank.emoji}</span>
+          <LevelIcon rank={rank.key} size={30} level={levelData.level} />
           <div>
             <p className="text-[13px] font-semibold">{rank.label}</p>
             <p className="text-[11px] text-muted-foreground">Nivel {levelData.level} · {levelData.xp} XP</p>

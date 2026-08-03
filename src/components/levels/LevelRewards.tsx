@@ -101,11 +101,13 @@ const LevelRewards = ({ currentLevel, userId }: LevelRewardsProps) => {
                     }`}
                   >
                     {/* Preview */}
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-background relative">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center bg-background relative">
                       {reward.item_type === "frame" ? (
-                        <div className={`w-9 h-9 rounded-full ${reward.css_value || ""}`} />
+                        <div className={`w-10 h-10 ${reward.css_value || ""}`}>
+                          <div className="w-full h-full rounded-full bg-muted" />
+                        </div>
                       ) : (
-                        <span className={`text-[13px] font-bold ${reward.css_value || ""}`}>Aa</span>
+                        <span className={`text-[15px] font-bold ${reward.css_value || ""}`}>Aa</span>
                       )}
                       {!unlocked && (
                         <div className="absolute inset-0 rounded-full bg-background/60 flex items-center justify-center">
