@@ -62,6 +62,7 @@ const VerificationPage = () => {
   const [currentVerification, setCurrentVerification] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadVerification();
@@ -70,6 +71,9 @@ const VerificationPage = () => {
   const loadVerification = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
+
+    const { data: adminFlag } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    setIsAdmin(Boolean(adminFlag));
 
     const { data } = await (supabase
       .from("user_verifications" as any)
