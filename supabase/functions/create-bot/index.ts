@@ -27,11 +27,34 @@ const WRITER_LAST = [
   "Halcón","Lince","Zorro","Corvo","Búho","Águila","Fénix","Kraken","Tigre","Lobo",
 ];
 const ADMIN_PREFIX = ["Guardia","Vigía","Centinela","Custodio","Árbitro"];
-const BIOS_USER = ["Ávido lector de novelas.","Escribo cuando la noche llama.","Historias cortas, emociones grandes.","Cazador de metáforas.","Fan de la fantasía y el misterio."];
+const BIOS_USER = [
+  "Ávido lector de novelas. Siempre con un libro en la mochila.",
+  "Escribo cuando la noche llama 🌙 Fantasía y realismo mágico.",
+  "Historias cortas, emociones grandes.",
+  "Cazador de metáforas y coleccionista de primeras frases.",
+  "Fan de la fantasía, el misterio y el café frío.",
+  "Leo más de lo que duermo. Reseñas honestas siempre.",
+  "Autor independiente 📚 publico un capítulo cada semana.",
+  "Ciencia ficción, distopías y finales que duelen.",
+  "Entre páginas encontré mi lugar favorito.",
+  "Escribo microrrelatos en el metro camino al trabajo.",
+  "Romance lento, personajes rotos y segundas oportunidades.",
+  "Mi TBR es más alto que yo 😅",
+  "Poesía, thriller y todo lo que se lea de una sentada.",
+  "Contando historias desde 2019. Aquí para leerte.",
+  "Lectora voraz · Reseñista amateur · Amante del terror.",
+];
 const BIOS_ADMIN = ["🛡️ Bot moderador oficial de Lettora.","🤖 Vigilando el contenido 24/7.","Protejo la comunidad lectora."];
 
 const rand = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+
+// Deterministic, realistic-looking generated avatars (no external account needed).
+const AVATAR_STYLES = ["avataaars", "adventurer", "lorelei", "notionists", "personas", "micah"];
+const avatarFor = (seed: string, isAdmin: boolean) =>
+  isAdmin
+    ? `https://api.dicebear.com/7.x/bottts-neutral/png?seed=${encodeURIComponent(seed)}&size=256`
+    : `https://api.dicebear.com/7.x/${rand(AVATAR_STYLES)}/png?seed=${encodeURIComponent(seed)}&size=256`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -87,6 +110,7 @@ serve(async (req) => {
         username: baseUser,
         display_name: displayName,
         bio: botType === "admin" ? rand(BIOS_ADMIN) : rand(BIOS_USER),
+        avatar_url: avatarFor(baseUser, botType === "admin"),
         is_verified: botType === "admin",
         is_bot: true,
         bot_type: botType,
