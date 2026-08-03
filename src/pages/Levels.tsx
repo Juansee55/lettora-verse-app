@@ -6,13 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserLevel, getRankForLevel } from "@/hooks/useUserLevel";
 import LevelBadge from "@/components/levels/LevelBadge";
 import LevelRewards from "@/components/levels/LevelRewards";
+import LevelIcon from "@/components/levels/LevelIcon";
 import { Progress } from "@/components/ui/progress";
 
 const ranks = [
-  { min: 1, max: 5, emoji: "📖", label: "Lector", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  { min: 6, max: 10, emoji: "✍️", label: "Autor", color: "text-blue-500", bg: "bg-blue-500/10" },
-  { min: 11, max: 20, emoji: "🌟", label: "Creador", color: "text-amber-500", bg: "bg-amber-500/10" },
-  { min: 21, max: 99, emoji: "🏆", label: "Maestro Narrativo", color: "text-purple-500", bg: "bg-purple-500/10" },
+  { min: 1, max: 5, key: "reader", label: "Lector", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { min: 6, max: 10, key: "author", label: "Autor", color: "text-blue-500", bg: "bg-blue-500/10" },
+  { min: 11, max: 20, key: "creator", label: "Creador", color: "text-amber-500", bg: "bg-amber-500/10" },
+  { min: 21, max: 99, key: "master", label: "Maestro Narrativo", color: "text-purple-500", bg: "bg-purple-500/10" },
 ];
 
 const xpActions = [
@@ -74,8 +75,8 @@ const LevelsPage = () => {
             className="bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 rounded-2xl p-5 border border-primary/20"
           >
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center text-3xl">
-                {currentRank?.emoji}
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <LevelIcon rank={currentRank?.key || "reader"} size={46} level={levelData.level} />
               </div>
               <div className="flex-1">
                 <p className="text-[12px] text-muted-foreground uppercase tracking-wide font-medium">Tu rango actual</p>
@@ -120,8 +121,8 @@ const LevelsPage = () => {
                     : "border-border/30 bg-muted/30 opacity-60"
                 }`}
               >
-                <div className={`w-10 h-10 rounded-full ${rank.bg} flex items-center justify-center text-lg`}>
-                  {rank.emoji}
+                <div className={`w-10 h-10 rounded-full ${rank.bg} flex items-center justify-center`}>
+                  <LevelIcon rank={rank.key} size={28} locked={!isUnlocked} />
                 </div>
                 <div className="flex-1">
                   <p className="text-[14px] font-semibold">{rank.label}</p>
