@@ -919,3 +919,137 @@ input, textarea, [contenteditable="true"], .allow-select {
   .pbg-nebula::before, .pbg-nebula::after, .pbg-ocean, .pbg-ocean::before,
   .pbg-sunset, .pbg-sunset::before, .pbg-matrix::before { animation: none !important; }
 }
+
+/* ═══════════════ Shop Avatar Frames (pf-frame-*) ═══════════════ */
+
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+@keyframes pf-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes pf-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+@keyframes pf-orbit { to { transform: rotate(360deg) translateX(0); } }
+
+.pf-frame {
+  position: relative;
+  border-radius: 9999px;
+  pointer-events: none;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 2px hsl(var(--pf1) / 0.9),
+    0 0 12px hsl(var(--pf1) / 0.45),
+    inset 0 0 8px hsl(var(--pf2) / 0.35);
+}
+/* rotating conic ring */
+.pf-frame::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(from 0deg,
+    hsl(var(--pf1)), hsl(var(--pf2)), hsl(var(--pf3, var(--pf1))), hsl(var(--pf1)));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: pf-spin 6s linear infinite;
+}
+/* soft halo */
+.pf-frame::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 50%, transparent 58%, hsl(var(--pf2) / 0.30) 72%, transparent 82%);
+  animation: pf-pulse 3.2s ease-in-out infinite;
+}
+
+/* ── 15 marcos estándar ── */
+.pf-frame-aurora    { --pf1: 168 80% 55%; --pf2: 200 90% 62%; --pf3: 280 80% 68%; }
+.pf-frame-oro       { --pf1: 45 95% 55%;  --pf2: 32 92% 52%;  --pf3: 52 100% 72%; }
+.pf-frame-neon      { --pf1: 186 100% 55%; --pf2: 210 100% 62%; --pf3: 165 100% 60%; }
+.pf-frame-sakura    { --pf1: 337 85% 72%; --pf2: 320 80% 78%; --pf3: 350 90% 82%; }
+.pf-frame-esmeralda { --pf1: 152 75% 45%; --pf2: 168 70% 52%; --pf3: 140 80% 60%; }
+.pf-frame-solar     { --pf1: 18 95% 56%;  --pf2: 40 98% 58%;  --pf3: 5 90% 55%; }
+.pf-frame-artico    { --pf1: 196 85% 72%; --pf2: 212 90% 78%; --pf3: 185 70% 88%; }
+.pf-frame-amatista  { --pf1: 275 80% 62%; --pf2: 295 75% 66%; --pf3: 258 85% 70%; }
+.pf-frame-cobre     { --pf1: 24 65% 48%;  --pf2: 35 55% 58%;  --pf3: 18 60% 42%; }
+.pf-frame-rayo      { --pf1: 55 100% 60%; --pf2: 190 100% 60%; --pf3: 265 95% 65%; }
+.pf-frame-bosque    { --pf1: 130 55% 40%; --pf2: 95 60% 50%;  --pf3: 160 50% 45%; }
+.pf-frame-coral     { --pf1: 12 90% 65%;  --pf2: 340 85% 68%; --pf3: 30 95% 70%; }
+.pf-frame-lunar     { --pf1: 220 20% 80%; --pf2: 230 30% 92%; --pf3: 210 25% 70%; }
+.pf-frame-carmesi   { --pf1: 352 85% 50%; --pf2: 0 80% 40%;   --pf3: 340 90% 58%; }
+.pf-frame-tinta     { --pf1: 245 45% 35%; --pf2: 262 60% 55%; --pf3: 225 40% 28%; }
+
+/* ── 3 marcos ULTRA RAROS ── */
+
+/* Nebulosa Eterna: doble anillo + polvo estelar */
+.pf-frame-nebulosa {
+  --pf1: 268 90% 66%; --pf2: 320 90% 68%; --pf3: 195 95% 62%;
+  box-shadow:
+    0 0 0 2px hsl(var(--pf1) / 0.95),
+    0 0 18px hsl(var(--pf2) / 0.6),
+    0 0 36px hsl(var(--pf3) / 0.35),
+    inset 0 0 12px hsl(var(--pf2) / 0.4);
+}
+.pf-frame-nebulosa::before { animation: pf-spin 4s linear infinite; inset: -4px; padding: 2.5px; }
+.pf-frame-nebulosa::after {
+  inset: -9px;
+  background:
+    radial-gradient(circle at 50% 0%, hsl(var(--pf2) / 0.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 100% 50%, hsl(var(--pf3) / 0.9) 0 1.5px, transparent 3px),
+    radial-gradient(circle at 50% 100%, hsl(var(--pf1) / 0.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 0% 50%, hsl(var(--pf2) / 0.8) 0 1.5px, transparent 3px),
+    radial-gradient(circle, transparent 58%, hsl(var(--pf1) / 0.28) 70%, transparent 84%);
+  animation: pf-spin-rev 9s linear infinite;
+}
+
+/* Fénix Inmortal: llamas ascendentes */
+.pf-frame-fenix {
+  --pf1: 28 100% 55%; --pf2: 8 95% 52%; --pf3: 48 100% 66%;
+  box-shadow:
+    0 0 0 2px hsl(var(--pf3) / 0.95),
+    0 0 16px hsl(var(--pf1) / 0.7),
+    0 0 40px hsl(var(--pf2) / 0.45),
+    inset 0 0 14px hsl(var(--pf1) / 0.5);
+}
+.pf-frame-fenix::before { animation: pf-spin 3s linear infinite; inset: -4px; padding: 3px; }
+.pf-frame-fenix::after {
+  inset: -10px;
+  background:
+    conic-gradient(from 0deg, transparent 0deg, hsl(var(--pf1) / 0.55) 25deg, transparent 60deg,
+      transparent 180deg, hsl(var(--pf3) / 0.5) 205deg, transparent 240deg);
+  filter: blur(3px);
+  animation: pf-spin 2.4s linear infinite;
+}
+
+/* Prisma Cuántico: arcoíris holográfico */
+.pf-frame-prisma {
+  --pf1: 190 100% 60%; --pf2: 300 100% 70%; --pf3: 60 100% 62%;
+  box-shadow:
+    0 0 0 2px hsl(0 0% 100% / 0.7),
+    0 0 20px hsl(var(--pf1) / 0.6),
+    0 0 40px hsl(var(--pf2) / 0.4),
+    inset 0 0 12px hsl(var(--pf3) / 0.35);
+}
+.pf-frame-prisma::before {
+  inset: -4px;
+  padding: 3px;
+  background: conic-gradient(from 0deg,
+    hsl(0 100% 65%), hsl(45 100% 62%), hsl(90 100% 58%), hsl(160 100% 55%),
+    hsl(200 100% 60%), hsl(260 100% 68%), hsl(320 100% 68%), hsl(0 100% 65%));
+  animation: pf-spin 2.8s linear infinite;
+}
+.pf-frame-prisma::after {
+  inset: -8px;
+  background:
+    conic-gradient(from 90deg, transparent 0 40deg, hsl(0 0% 100% / 0.55) 55deg, transparent 75deg,
+      transparent 220deg, hsl(0 0% 100% / 0.4) 235deg, transparent 255deg);
+  filter: blur(2px);
+  animation: pf-spin-rev 4.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-frame::before, .pf-frame::after { animation: none !important; }
+}

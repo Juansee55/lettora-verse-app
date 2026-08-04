@@ -180,6 +180,10 @@ const ShopPage = () => {
             >
               {item.category === "profile_background" && item.profile_items?.css_value ? (
                 <div className={`h-16 -mx-1 mb-2 rounded-xl ${item.profile_items.css_value}`} />
+              ) : item.category === "avatar_frame" && item.profile_items?.css_value ? (
+                <div className="h-16 mb-2 flex items-center justify-center">
+                  <div className={`w-11 h-11 rounded-full bg-muted ${item.profile_items.css_value}`} />
+                </div>
               ) : (
                 <div className="text-3xl mb-2">{item.emoji || "🎁"}</div>
               )}
