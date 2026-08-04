@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag, Coins, Loader2, Sparkles, Check, X, AlertTriangle,
-  Crown, Palette, Zap, Award, Type,
+  Crown, Palette, Zap, Award, Type, Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ interface ShopItem {
   category: string;
   emoji: string | null;
   is_active: boolean;
+  profile_items?: { css_value: string | null } | null;
 }
 
 const categoryIcons: Record<string, any> = {
@@ -31,6 +32,7 @@ const categoryIcons: Record<string, any> = {
   theme: Palette,
   effect: Zap,
   title: Type,
+  profile_background: ImageIcon,
 };
 
 const categoryLabels: Record<string, string> = {
@@ -39,6 +41,7 @@ const categoryLabels: Record<string, string> = {
   theme: "Temas",
   effect: "Efectos",
   title: "Títulos",
+  profile_background: "Fondos",
 };
 
 const ShopPage = () => {
