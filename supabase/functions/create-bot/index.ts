@@ -88,9 +88,9 @@ serve(async (req) => {
         : `${first} ${last}`;
       const suffix = Math.floor(Math.random() * 99999).toString(36);
       const baseUser = botType === "admin"
-        ? `bot_admin_${slug(last)}_${suffix}`
-        : `bot_${slug(first)}${slug(last)}_${suffix}`;
-      const email = `${baseUser}@bots.lettora.local`;
+        ? `${slug(last)}_${suffix}`
+        : `${slug(first)}${slug(last)}_${suffix}`;
+      const email = `u_${baseUser}@bots.lettora.local`;
       const password = crypto.randomUUID() + crypto.randomUUID();
 
       const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
