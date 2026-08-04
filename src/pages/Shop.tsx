@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag, Coins, Loader2, Sparkles, Check, X, AlertTriangle,
-  Crown, Palette, Zap, Award, Type,
+  Crown, Palette, Zap, Award, Type, Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ interface ShopItem {
   category: string;
   emoji: string | null;
   is_active: boolean;
+  profile_items?: { css_value: string | null } | null;
 }
 
 const categoryIcons: Record<string, any> = {
@@ -31,6 +32,7 @@ const categoryIcons: Record<string, any> = {
   theme: Palette,
   effect: Zap,
   title: Type,
+  profile_background: ImageIcon,
 };
 
 const categoryLabels: Record<string, string> = {
@@ -39,6 +41,7 @@ const categoryLabels: Record<string, string> = {
   theme: "Temas",
   effect: "Efectos",
   title: "Títulos",
+  profile_background: "Fondos",
 };
 
 const ShopPage = () => {
@@ -61,7 +64,7 @@ const ShopPage = () => {
     if (!user) { navigate("/auth"); return; }
 
     const [itemsRes, purchasesRes, coinsRes] = await Promise.all([
-      supabase.from("shop_items").select("*").eq("is_active", true).order("price"),
+      supabase.from("shop_items").select("*, profile_items(css_value)").eq("is_active", true).order("price"),
       supabase.from("shop_purchases").select("item_id").eq("user_id", user.id),
       supabase.from("user_coins").select("balance").eq("user_id", user.id).maybeSingle(),
     ]);
@@ -175,7 +178,11 @@ const ShopPage = () => {
                 owned ? "opacity-60" : ""
               }`}
             >
-              <div className="text-3xl mb-2">{item.emoji || "🎁"}</div>
+              {item.category === "profile_background" && item.profile_items?.css_value ? (
+                <div className={`h-16 -mx-1 mb-2 rounded-xl ${item.profile_items.css_value}`} />
+              ) : (
+                <div className="text-3xl mb-2">{item.emoji || "🎁"}</div>
+              )}
               <h3 className="text-[14px] font-semibold leading-tight">{item.name}</h3>
               <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
               <div className="mt-3 flex items-center justify-between">
