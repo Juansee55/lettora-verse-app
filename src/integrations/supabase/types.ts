@@ -2832,6 +2832,7 @@ export type Database = {
           is_active: boolean
           name: string
           price: number
+          profile_item_id: string | null
         }
         Insert: {
           category?: string
@@ -2843,6 +2844,7 @@ export type Database = {
           is_active?: boolean
           name: string
           price?: number
+          profile_item_id?: string | null
         }
         Update: {
           category?: string
@@ -2854,8 +2856,17 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number
+          profile_item_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shop_items_profile_item_id_fkey"
+            columns: ["profile_item_id"]
+            isOneToOne: false
+            referencedRelation: "profile_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_purchases: {
         Row: {
