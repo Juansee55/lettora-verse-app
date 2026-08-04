@@ -931,7 +931,7 @@ input, textarea, [contenteditable="true"], .allow-select {
 @keyframes pf-orbit { to { transform: rotate(360deg) translateX(0); } }
 
 .pf-frame {
-  position: absolute;
+  position: relative;
   border-radius: 9999px;
   pointer-events: none;
   isolation: isolate;
