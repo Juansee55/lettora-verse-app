@@ -364,6 +364,27 @@ export type Database = {
           },
         ]
       }
+      best_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       beta_feedback: {
         Row: {
           book_id: string
@@ -3043,11 +3064,20 @@ export type Database = {
         Row: {
           background_color: string | null
           created_at: string
+          duration_ms: number
           expires_at: string
+          filter: string | null
           font_style: string | null
+          hidden_from: string[]
           id: string
+          likes_count: number
           media_type: string
           media_url: string | null
+          music: Json | null
+          overlays: Json | null
+          privacy: string
+          replies_count: number
+          shares_count: number
           text_content: string | null
           user_id: string
           views_count: number | null
@@ -3055,11 +3085,20 @@ export type Database = {
         Insert: {
           background_color?: string | null
           created_at?: string
+          duration_ms?: number
           expires_at: string
+          filter?: string | null
           font_style?: string | null
+          hidden_from?: string[]
           id?: string
+          likes_count?: number
           media_type?: string
           media_url?: string | null
+          music?: Json | null
+          overlays?: Json | null
+          privacy?: string
+          replies_count?: number
+          shares_count?: number
           text_content?: string | null
           user_id: string
           views_count?: number | null
@@ -3067,11 +3106,20 @@ export type Database = {
         Update: {
           background_color?: string | null
           created_at?: string
+          duration_ms?: number
           expires_at?: string
+          filter?: string | null
           font_style?: string | null
+          hidden_from?: string[]
           id?: string
+          likes_count?: number
           media_type?: string
           media_url?: string | null
+          music?: Json | null
+          overlays?: Json | null
+          privacy?: string
+          replies_count?: number
+          shares_count?: number
           text_content?: string | null
           user_id?: string
           views_count?: number | null
@@ -3120,6 +3168,56 @@ export type Database = {
           },
         ]
       }
+      story_likes: {
+        Row: {
+          created_at: string
+          id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_likes_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_mutes: {
+        Row: {
+          created_at: string
+          id: string
+          muted_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          muted_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          muted_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       story_nodes: {
         Row: {
           chapter_id: string
@@ -3160,6 +3258,38 @@ export type Database = {
             columns: ["chapter_id"]
             isOneToOne: false
             referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_replies: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_replies_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
@@ -4068,6 +4198,7 @@ export type Database = {
       }
       buy_weapon: { Args: { p_weapon_id: string }; Returns: Json }
       calculate_level: { Args: { p_xp: number }; Returns: number }
+      delete_expired_glimpses: { Args: never; Returns: undefined }
       enter_base: { Args: { p_base_id: string }; Returns: Json }
       has_role: {
         Args: {
@@ -4077,6 +4208,10 @@ export type Database = {
         Returns: boolean
       }
       heal_base: { Args: { p_base_id: string }; Returns: Json }
+      increment_glimpse_share: {
+        Args: { p_story_id: string }
+        Returns: undefined
+      }
       is_conversation_participant: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
