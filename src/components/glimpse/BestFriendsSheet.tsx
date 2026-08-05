@@ -4,7 +4,7 @@ import { X, Search, Star, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface Person { id: string; username: string | null; full_name: string | null; avatar_url: string | null; }
+interface Person { id: string; username: string | null; display_name: string | null; avatar_url: string | null; }
 
 const BestFriendsSheet = ({ onClose }: { onClose: () => void }) => {
   const { toast } = useToast();
@@ -24,7 +24,7 @@ const BestFriendsSheet = ({ onClose }: { onClose: () => void }) => {
       const ids = (follows ?? []).map((f) => f.following_id);
       if (ids.length) {
         const { data: profs } = await supabase
-          .from("profiles").select("id, username, full_name, avatar_url").in("id", ids);
+          .from("profiles").select("id, username, display_name, avatar_url").in("id", ids);
         setPeople(profs ?? []);
       }
       setFriends((bf ?? []).map((f) => f.friend_id));
@@ -49,7 +49,7 @@ const BestFriendsSheet = ({ onClose }: { onClose: () => void }) => {
   };
 
   const filtered = people.filter((p) =>
-    `${p.username ?? ""} ${p.full_name ?? ""}`.toLowerCase().includes(query.toLowerCase())
+    `${p.username ?? ""} ${p.display_name ?? ""}`.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -80,7 +80,7 @@ const BestFriendsSheet = ({ onClose }: { onClose: () => void }) => {
             <button key={p.id} onClick={() => toggle(p.id)} className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-muted/40">
               <img src={p.avatar_url ?? "/placeholder.svg"} alt="" className="w-10 h-10 rounded-full object-cover" />
               <span className="flex-1 text-left">
-                <span className="block text-[14px] font-medium">{p.full_name ?? p.username}</span>
+                <span className="block text-[14px] font-medium">{p.display_name ?? p.username}</span>
                 <span className="block text-[12px] text-muted-foreground">@{p.username}</span>
               </span>
               <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${friends.includes(p.id) ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
