@@ -1,289 +1,199 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, ChevronLeft, AlertCircle, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { motion, type Variants } from "framer-motion";
+import { User, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, ArrowLeft, AlertCircle, Check, ShieldCheck, ChevronRight } from "lucide-react";
+import { AuthField, LettoraMark, SocialRow } from "./AuthShell";
 
 interface RegisterFormProps {
   onSubmit: (email: string, password: string, username: string) => Promise<void>;
   onBack: () => void;
+  onLoginClick: () => void;
+  onGoogle: () => void;
+  onApple: () => void;
+  onMagicLink: (email: string) => void;
   loading: boolean;
 }
 
-const RegisterForm = ({ onSubmit, onBack, loading }: RegisterFormProps) => {
-  const [formData, setFormData] = useState({
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-  });
+const item: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
+const container: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+  exit: { opacity: 0, y: -12 },
+};
+
+const RegisterForm = ({ onSubmit, onBack, onLoginClick, onGoogle, onApple, onMagicLink, loading }: RegisterFormProps) => {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
-  const [touched, setTouched] = useState({
-    email: false,
-    username: false,
-    password: false,
-    confirmPassword: false,
-  });
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-  const isValidUsername = formData.username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(formData.username);
-  const isValidPassword = formData.password.length >= 8;
-  const passwordsMatch = formData.password === formData.confirmPassword && formData.password.length > 0;
-  const isFormValid = isValidEmail && isValidUsername && isValidPassword && passwordsMatch;
-
-  const containerVariants = {
-    hidden: { opacity: 0, x: 100 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.1,
-      },
-    },
-    exit: { opacity: 0, x: -100 },
-  };
-
-  const itemVariants: import("framer-motion").Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4, ease: "easeOut" as const },
-    },
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  const validUsername = /^[a-zA-Z0-9_.]{3,20}$/.test(username);
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validPassword = password.length >= 6;
+  const matches = password === confirm && confirm.length > 0;
+  const isValid = validUsername && validEmail && validPassword && matches;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!matches) return setError("Las contraseñas no coinciden");
     try {
-      await onSubmit(formData.email, formData.password, formData.username);
+      await onSubmit(email, password, username.toLowerCase());
     } catch (err: any) {
-      setError(err.message || "Error al crear la cuenta");
+      setError(err?.message || "Error al crear la cuenta");
     }
-  };
-
-  const renderFieldStatus = (isValid: boolean, isTouched: boolean) => {
-    if (!isTouched) return null;
-    return (
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className={`w-5 h-5 rounded-full flex items-center justify-center ${
-          isValid ? "bg-green-500/20" : "bg-red-500/20"
-        }`}
-      >
-        {isValid ? (
-          <Check className="w-3 h-3 text-green-500" strokeWidth={3} />
-        ) : (
-          <div className="w-2 h-2 rounded-full bg-red-500" />
-        )}
-      </motion.div>
-    );
   };
 
   return (
     <motion.div
-      className="w-full max-w-sm"
-      variants={containerVariants}
+      className="relative z-10 w-full max-w-sm mx-auto py-10"
+      variants={container}
       initial="hidden"
       animate="visible"
       exit="exit"
     >
-      {/* Header */}
-      <motion.div className="mb-8" variants={itemVariants}>
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ChevronLeft className="w-5 h-5" strokeWidth={2} />
-          <span className="text-sm font-medium">Volver</span>
-        </button>
-        <h2 className="text-3xl font-bold mb-2">Únete a Lettora Verse</h2>
-        <p className="text-muted-foreground">Crea tu cuenta y comienza tu aventura</p>
+      <motion.button
+        type="button"
+        onClick={onBack}
+        variants={item}
+        className="absolute left-0 top-8 w-11 h-11 rounded-full bg-foreground/[0.06] border border-primary/20 backdrop-blur-xl flex items-center justify-center"
+        aria-label="Volver"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </motion.button>
+
+      <motion.div className="flex flex-col items-center mb-7 text-center" variants={item}>
+        <LettoraMark size={88} />
+        <h1 className="mt-4 text-[34px] leading-none font-bold tracking-tight">Crear cuenta</h1>
+        <p className="mt-2.5 text-muted-foreground text-[15px] leading-snug px-4">
+          Únete a Lettora y forma parte de historias que inspiran.
+        </p>
       </motion.div>
 
-      {/* Error Message */}
       {error && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-3"
+          className="mb-5 p-3.5 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-start gap-2.5"
         >
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
-          <p className="text-sm text-red-500">{error}</p>
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-destructive">{error}</p>
         </motion.div>
       )}
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email Field */}
-        <motion.div className="space-y-2" variants={itemVariants}>
-          <Label htmlFor="email" className="text-sm font-medium">
-            Correo Electrónico
-          </Label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
-            <Input
-              id="email"
-              type="email"
-              name="email"
-              placeholder="tu@email.com"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={() => setTouched({ ...touched, email: true })}
-              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
-              disabled={loading}
-            />
-            {renderFieldStatus(isValidEmail, touched.email)}
-          </div>
-        </motion.div>
-
-        {/* Username Field */}
-        <motion.div className="space-y-2" variants={itemVariants}>
-          <Label htmlFor="username" className="text-sm font-medium">
-            Nombre de Usuario
-          </Label>
-          <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
-            <Input
-              id="username"
-              type="text"
-              name="username"
-              placeholder="tu_usuario"
-              value={formData.username}
-              onChange={handleChange}
-              onBlur={() => setTouched({ ...touched, username: true })}
-              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
-              disabled={loading}
-            />
-            {renderFieldStatus(isValidUsername, touched.username)}
-          </div>
-          {touched.username && !isValidUsername && (
-            <p className="text-xs text-red-500 mt-1">
-              Mínimo 3 caracteres, solo letras, números y guiones bajos
-            </p>
-          )}
-        </motion.div>
-
-        {/* Password Field */}
-        <motion.div className="space-y-2" variants={itemVariants}>
-          <Label htmlFor="password" className="text-sm font-medium">
-            Contraseña
-          </Label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              onBlur={() => setTouched({ ...touched, password: true })}
-              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
-              disabled={loading}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              disabled={loading}
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5" strokeWidth={1.5} />
-              ) : (
-                <Eye className="w-5 h-5" strokeWidth={1.5} />
-              )}
-            </button>
-          </div>
-          {touched.password && formData.password && !isValidPassword && (
-            <p className="text-xs text-red-500 mt-1">Mínimo 8 caracteres</p>
-          )}
-        </motion.div>
-
-        {/* Confirm Password Field */}
-        <motion.div className="space-y-2" variants={itemVariants}>
-          <Label htmlFor="confirmPassword" className="text-sm font-medium">
-            Confirmar Contraseña
-          </Label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" strokeWidth={1.5} />
-            <Input
-              id="confirmPassword"
-              type={showConfirm ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="••••••••"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              onBlur={() => setTouched({ ...touched, confirmPassword: true })}
-              className="pl-12 pr-12 h-12 rounded-xl border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-base"
-              disabled={loading}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              disabled={loading}
-            >
-              {showConfirm ? (
-                <EyeOff className="w-5 h-5" strokeWidth={1.5} />
-              ) : (
-                <Eye className="w-5 h-5" strokeWidth={1.5} />
-              )}
-            </button>
-          </div>
-          {touched.confirmPassword && formData.confirmPassword && !passwordsMatch && (
-            <p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden</p>
-          )}
-        </motion.div>
-
-        {/* Terms */}
-        <motion.label className="flex items-start gap-3 cursor-pointer" variants={itemVariants}>
-          <input
-            type="checkbox"
-            className="w-4 h-4 rounded border-white/20 bg-muted/50 cursor-pointer mt-1"
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        <motion.div variants={item}>
+          <AuthField
+            icon={User}
+            placeholder="Nombre de usuario"
+            value={username}
+            autoComplete="username"
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
             disabled={loading}
-            required
+            right={username ? (
+              <span className={`w-6 h-6 rounded-full border flex items-center justify-center ${validUsername ? "border-primary text-primary" : "border-destructive text-destructive"}`}>
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              </span>
+            ) : undefined}
           />
-          <span className="text-xs text-muted-foreground leading-relaxed">
-            Acepto los Términos de Servicio y la Política de Privacidad
-          </span>
-        </motion.label>
+        </motion.div>
 
-        {/* Submit Button */}
-        <motion.div variants={itemVariants} className="pt-2">
-          <Button
+        <motion.div variants={item}>
+          <AuthField
+            icon={Mail}
+            type="email"
+            autoComplete="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
+        </motion.div>
+
+        <motion.div variants={item}>
+          <AuthField
+            icon={Lock}
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            right={
+              <button type="button" onClick={() => setShowPassword((s) => !s)} className="text-primary" aria-label="Mostrar contraseña">
+                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </button>
+            }
+          />
+        </motion.div>
+
+        <motion.div variants={item}>
+          <AuthField
+            icon={Lock}
+            type={showConfirm ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="Confirmar contraseña"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            disabled={loading}
+            right={
+              <button type="button" onClick={() => setShowConfirm((s) => !s)} className="text-primary" aria-label="Mostrar contraseña">
+                {showConfirm ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </button>
+            }
+          />
+        </motion.div>
+
+        <motion.div variants={item} className="flex items-start gap-3 p-4 rounded-3xl bg-foreground/[0.04] border border-primary/15 backdrop-blur-xl">
+          <ShieldCheck className="w-8 h-8 text-primary flex-shrink-0" strokeWidth={1.6} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Tu privacidad es importante</p>
+            <p className="text-[13px] text-muted-foreground leading-snug">
+              No compartiremos tu información con nadie. Lee nuestra{" "}
+              <a href="/settings/info" className="text-primary">Política de privacidad.</a>
+            </p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground self-center" />
+        </motion.div>
+
+        <motion.div variants={item} className="pt-2">
+          <motion.button
             type="submit"
-            disabled={!isFormValid || loading}
-            className="w-full h-14 rounded-xl font-semibold text-base bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            whileTap={{ scale: 0.98 }}
+            disabled={!isValid || loading}
+            className="w-full h-[60px] rounded-full font-semibold text-[17px] text-primary-foreground bg-gradient-to-r from-primary to-accent shadow-[0_12px_40px_-8px_hsl(var(--primary)/0.7)] flex items-center justify-center gap-2 disabled:opacity-45 disabled:shadow-none transition-all"
           >
             {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Creando cuenta...
-              </>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Creando cuenta…</>
             ) : (
-              "Crear Cuenta"
+              <>
+                <span className="flex-1 text-center pl-7">Crear cuenta</span>
+                <ArrowRight className="w-5 h-5 mr-7" />
+              </>
             )}
-          </Button>
+          </motion.button>
         </motion.div>
       </form>
 
-      {/* Sign In Link */}
-      <motion.p className="text-center text-sm text-muted-foreground mt-8" variants={itemVariants}>
+      <motion.div className="flex items-center gap-4 my-6" variants={item}>
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">o continúa con</span>
+        <span className="h-px flex-1 bg-border" />
+      </motion.div>
+
+      <motion.div variants={item}>
+        <SocialRow onGoogle={onGoogle} onApple={onApple} onEmail={() => onMagicLink(email)} disabled={loading} />
+      </motion.div>
+
+      <motion.p className="mt-7 text-center text-[15px] text-muted-foreground" variants={item}>
         ¿Ya tienes cuenta?{" "}
-        <button className="text-primary hover:underline font-semibold transition-colors">
-          Inicia sesión
-        </button>
+        <button type="button" onClick={onLoginClick} className="text-primary font-semibold">Iniciar sesión</button>
       </motion.p>
     </motion.div>
   );
