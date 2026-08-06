@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 
 /** Fondo aurora violeta compartido por las pantallas de autenticación */
 export const AuthBackground = () => (
@@ -51,7 +52,7 @@ export const AuthField = ({
   right,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   right?: React.ReactNode;
 }) => (
   <div className="relative">
