@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/navigation/BottomNav";
+import GlimpseBar from "@/components/glimpse/GlimpseBar";
 import ShareAsImage from "@/components/microstories/ShareAsImage";
 import MicrostoryComments from "@/components/microstories/MicrostoryComments";
 import ShareMicrostoryInChat from "@/components/microstories/ShareMicrostoryInChat";
@@ -307,6 +308,8 @@ const MicrostoriesPage = () => {
       </div>
 
       {/* Compose Modal */}
+      <GlimpseBar />
+
       <AnimatePresence>
         {showCompose && (
           <motion.div
