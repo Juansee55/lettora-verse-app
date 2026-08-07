@@ -4,6 +4,7 @@ import { Bot, Shield, Sparkles, Loader2, Trash2, Play, UserPlus } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { logPrivacyAction } from "@/lib/privacyAudit";
 
 interface BotRow {
   id: string;
@@ -52,6 +53,7 @@ const BotsManager = () => {
     if (!confirm("¿Eliminar este bot?")) return;
     // Delete profile (cascades via auth user? Use admin RPC) — soft: mark banned & delete profile row.
     await supabase.from("profiles").delete().eq("id", id);
+    await logPrivacyAction("Eliminó un perfil de bot", { targetUserId: id, entityType: "profile" });
     fetchBots();
   };
 
