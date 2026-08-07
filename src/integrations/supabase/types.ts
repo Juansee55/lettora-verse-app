@@ -1855,6 +1855,42 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_documents: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_published: boolean
+          slug: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string | null
@@ -2421,6 +2457,36 @@ export type Database = {
         }
         Relationships: []
       }
+      privacy_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json
+          entity_type: string | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json
+          entity_type?: string | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json
+          entity_type?: string | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       profile_items: {
         Row: {
           created_at: string
@@ -2462,6 +2528,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_hide_identity: boolean
+          allow_mentions: boolean
+          allow_tags: boolean
           avatar_url: string | null
           bio: string | null
           bot_type: string | null
@@ -2472,6 +2541,10 @@ export type Database = {
           dm_privacy: string
           favorite_genres: string[] | null
           followers_visibility: string
+          hide_birth_date: boolean
+          hide_email: boolean
+          hide_online_status: boolean
+          hide_reading_activity: boolean
           id: string
           is_banned: boolean | null
           is_bot: boolean
@@ -2481,11 +2554,15 @@ export type Database = {
           location: string | null
           premium_theme: string | null
           push_preferences: Json
+          searchable: boolean
           updated_at: string | null
           username: string | null
           website: string | null
         }
         Insert: {
+          admin_hide_identity?: boolean
+          allow_mentions?: boolean
+          allow_tags?: boolean
           avatar_url?: string | null
           bio?: string | null
           bot_type?: string | null
@@ -2496,6 +2573,10 @@ export type Database = {
           dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
+          hide_birth_date?: boolean
+          hide_email?: boolean
+          hide_online_status?: boolean
+          hide_reading_activity?: boolean
           id: string
           is_banned?: boolean | null
           is_bot?: boolean
@@ -2505,11 +2586,15 @@ export type Database = {
           location?: string | null
           premium_theme?: string | null
           push_preferences?: Json
+          searchable?: boolean
           updated_at?: string | null
           username?: string | null
           website?: string | null
         }
         Update: {
+          admin_hide_identity?: boolean
+          allow_mentions?: boolean
+          allow_tags?: boolean
           avatar_url?: string | null
           bio?: string | null
           bot_type?: string | null
@@ -2520,6 +2605,10 @@ export type Database = {
           dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
+          hide_birth_date?: boolean
+          hide_email?: boolean
+          hide_online_status?: boolean
+          hide_reading_activity?: boolean
           id?: string
           is_banned?: boolean | null
           is_bot?: boolean
@@ -2529,6 +2618,7 @@ export type Database = {
           location?: string | null
           premium_theme?: string | null
           push_preferences?: Json
+          searchable?: boolean
           updated_at?: string | null
           username?: string | null
           website?: string | null

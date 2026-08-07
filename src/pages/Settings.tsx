@@ -515,6 +515,13 @@ const SettingsPage = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <IOSSettingSection title={t("privacy")}>
             <IOSSettingItem
+              icon={<Lock className="w-4 h-4" />}
+              iconBg="bg-primary"
+              title="Centro de privacidad"
+              subtitle="Controla quién ve tus datos y tu actividad"
+              onClick={() => navigate("/settings/privacy")}
+            />
+            <IOSSettingItem
               icon={<Shield className="w-4 h-4" />}
               iconBg="bg-green-500"
               title={t("privateProfile")}
@@ -568,6 +575,13 @@ const SettingsPage = () => {
               title="Usuarios bloqueados"
               value={blockedUsers.length > 0 ? `${blockedUsers.length}` : "0"}
               onClick={() => setShowBlockedUsers(true)}
+            />
+            <IOSSettingItem
+              icon={<FileText className="w-4 h-4" />}
+              iconBg="bg-slate-500"
+              title="Política de privacidad"
+              subtitle="Cómo tratamos tus datos"
+              onClick={() => navigate("/privacy-policy")}
             />
             <IOSSettingItem
               icon={<Trash2 className="w-4 h-4" />}
