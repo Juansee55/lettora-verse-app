@@ -47,6 +47,9 @@ const EditProfilePage = lazy(() => import("./pages/EditProfile"));
 const AdminPage = lazy(() => import("./pages/Admin"));
 const ChapterReaderPage = lazy(() => import("./pages/ChapterReader"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const PrivacyCenterPage = lazy(() => import("./pages/PrivacyCenter"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicy"));
+const PrivacyAuditPage = lazy(() => import("./pages/PrivacyAudit"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminsPage = lazy(() => import("./pages/Admins"));
 const InventoryPage = lazy(() => import("./pages/Inventory"));
@@ -192,6 +195,9 @@ const AppContent = () => {
       <Route path="/user/:userId" element={user ? <UserProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/edit-profile" element={user ? <EditProfilePage /> : <Navigate to="/auth" replace />} />
       <Route path="/settings" element={user ? <SettingsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/settings/privacy" element={user ? <PrivacyCenterPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/privacy-audit" element={user ? <PrivacyAuditPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/auth" replace />} />
       <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admins" element={user ? <AdminsPage /> : <Navigate to="/auth" replace />} />
