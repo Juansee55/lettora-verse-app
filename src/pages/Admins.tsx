@@ -63,7 +63,7 @@ const AdminsPage = () => {
     const userIds = roles.map((r) => r.user_id);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, display_name, username, avatar_url, is_verified")
+      .select("id, display_name, username, avatar_url, is_verified, admin_hide_identity")
       .in("id", userIds);
 
     if (profiles) {
