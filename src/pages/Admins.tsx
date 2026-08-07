@@ -69,6 +69,7 @@ const AdminsPage = () => {
     if (profiles) {
       const merged: AdminUser[] = profiles.map((p) => {
         const role: any = roles.find((r) => r.user_id === p.id);
+        const hidden = Boolean((p as any).admin_hide_identity);
         return {
           ...p,
           admin_title: role?.admin_title || null,
@@ -76,7 +77,7 @@ const AdminsPage = () => {
           role_since: role?.role_since || null,
           is_active: role?.is_active ?? true,
           left_at: role?.left_at || null,
-          birth_date: role?.birth_date || null,
+          birth_date: hidden ? null : role?.birth_date || null,
           role: role?.role || "admin",
           is_verified: p.is_verified ?? false,
         };
