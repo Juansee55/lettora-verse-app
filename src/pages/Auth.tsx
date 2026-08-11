@@ -2,12 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthRedirectUrl, syncUserProfile } from "@/lib/authProfile";
 import { toast } from "sonner";
 import { AuthBackground } from "@/components/auth/AuthShell";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 
 type AuthStep = "login" | "register";
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
 
 const Auth = () => {
   const [step, setStep] = useState<AuthStep>("login");
@@ -17,7 +21,10 @@ const Auth = () => {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) navigate("/home");
+      if (user) {
+        await syncUserProfile(user);
+        navigate("/home");
+      }
     };
     checkUser();
   }, [navigate]);
@@ -31,8 +38,8 @@ const Auth = () => {
         toast.success("¡Bienvenido de vuelta!");
         navigate("/home");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Error al iniciar sesión");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Error al iniciar sesión"));
       throw err;
     } finally {
       setLoading(false);
@@ -45,15 +52,18 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username }, emailRedirectTo: `${window.location.origin}/home` },
+        options: {
+          data: { username, display_name: username },
+          emailRedirectTo: getAuthRedirectUrl(),
+        },
       });
       if (error) throw new Error(error.message);
       if (data.user) {
         toast.success("¡Cuenta creada! Verifica tu correo para continuar.");
         setStep("login");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Error al crear la cuenta");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Error al crear la cuenta"));
       throw err;
     } finally {
       setLoading(false);
@@ -63,7 +73,7 @@ const Auth = () => {
   const handleGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/home` },
+      options: { redirectTo: getAuthRedirectUrl() },
     });
     if (error) toast.error(error.message);
   };
@@ -71,7 +81,7 @@ const Auth = () => {
   const handleApple = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "apple",
-      options: { redirectTo: `${window.location.origin}/home` },
+      options: { redirectTo: getAuthRedirectUrl() },
     });
     if (error) toast.error("Inicio con Apple no disponible por ahora");
   };
@@ -83,7 +93,7 @@ const Auth = () => {
     }
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/home` },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     if (error) toast.error(error.message);
     else toast.success("Te enviamos un enlace de acceso a tu correo");
@@ -95,7 +105,7 @@ const Auth = () => {
       return;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getAuthRedirectUrl("reset-password"),
     });
     if (error) toast.error(error.message);
     else toast.success("Revisa tu correo para restablecer la contraseña");

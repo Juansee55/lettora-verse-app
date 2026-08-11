@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { syncUserProfile } from "@/lib/authProfile";
 import { Session, User } from "@supabase/supabase-js";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -128,15 +129,19 @@ const AppContent = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (loading) {
-          setLoading(false);
+        if (session?.user) {
+          void syncUserProfile(session.user);
         }
+        setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        void syncUserProfile(session.user);
+      }
       setLoading(false);
     });
 

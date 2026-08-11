@@ -65,3 +65,25 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 Read more here:
 https://docs.lettora.dev/features/custom-domain#custom-domain⁠�
 Si quieres, también puedo mejorarlo para que parezca más profesional, como si Lettora fuera una plataforma real (tipo Vercel o Firebase).
+
+
+## Autenticación con Google
+
+El proyecto usa Supabase Auth. Para activar el botón de Google, en el panel de Supabase abre **Authentication → Providers → Google**, habilita el proveedor y añade el Client ID y Client Secret creados en Google Cloud Console.
+
+En **Authentication → URL Configuration**, configura como Site URL la URL publicada de la aplicación y añade estos Redirect URLs:
+
+```text
+https://juansee55.github.io/lettora-verse-app/home
+https://juansee55.github.io/lettora-verse-app/reset-password
+http://localhost:5173/lettora-verse-app/home
+http://localhost:5173/lettora-verse-app/reset-password
+```
+
+En Google Cloud Console, crea un OAuth Client de tipo **Web application** y utiliza como Authorized redirect URI la URL de callback de Supabase, con este formato:
+
+```text
+https://<PROJECT_REF>.supabase.co/auth/v1/callback
+```
+
+El frontend construye los redirects con `import.meta.env.BASE_URL`, por lo que conserva el subpath `/lettora-verse-app/` de GitHub Pages. La migración `20260811000000_fix_auth_profile_names.sql` utiliza los metadatos `display_name`, `full_name`, `name`, `username`, `preferred_username` y `picture` para evitar perfiles con nombre nulo y reparar perfiles existentes.
