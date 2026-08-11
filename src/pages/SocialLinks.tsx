@@ -92,11 +92,19 @@ const SocialLinksPage = () => {
     if (!newUrl.trim()) return;
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setSaving(false);
+      toast({ title: "Sesión requerida", description: "Inicia sesión para añadir una red social", variant: "destructive" });
+      return;
+    }
     const platformKey = newPlatform.toLowerCase().replace("/x", "").replace("otro", "other");
-    const { data, error } = await supabase.from("social_links").insert({
-      platform: newPlatform, url: newUrl.trim(), icon: platformKey, display_order: links.length, created_by: user.id,
-    } as any).select().single();
+    const { data, error } = await supabase
+      .from("social_links" as never)
+      .insert({
+        platform: newPlatform, url: newUrl.trim(), icon: platformKey, display_order: links.length, created_by: user.id,
+      } as never)
+      .select()
+      .single() as unknown as { data: SocialLink | null; error: { message: string } | null };
     if (!error && data) {
       setLinks(prev => [...prev, data as SocialLink]);
       setNewUrl("");
@@ -123,7 +131,7 @@ const SocialLinksPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-24">
+    <div className="min-h-screen bg-muted/30 pb-[calc(8rem+env(safe-area-inset-bottom))]">
       <header className="ios-header">
         <div className="flex items-center justify-between px-4 h-[52px]">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary active:opacity-60">
@@ -193,13 +201,13 @@ const SocialLinksPage = () => {
       {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-card rounded-t-3xl">
-              <div className="p-4 border-b border-border flex items-center justify-between">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] bg-black/50 flex items-end justify-center" onClick={() => setShowAddModal(false)}>
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md max-h-[90dvh] flex flex-col bg-card rounded-t-3xl overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
                 <h2 className="text-[17px] font-semibold">Añadir red social</h2>
-                <button onClick={() => setShowAddModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
+                <button type="button" aria-label="Cerrar" onClick={() => setShowAddModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
               </div>
-              <div className="p-4 pb-8 space-y-4">
+              <div className="p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] space-y-4 overflow-y-auto overscroll-contain">
                 <div>
                   <label className="text-[13px] font-medium text-muted-foreground mb-2 block">Plataforma</label>
                   <div className="flex flex-wrap gap-2">
@@ -214,7 +222,7 @@ const SocialLinksPage = () => {
                   <label className="text-[13px] font-medium text-muted-foreground mb-2 block">URL</label>
                   <Input placeholder="https://..." value={newUrl} onChange={(e) => setNewUrl(e.target.value)} className="rounded-xl" />
                 </div>
-                <Button onClick={handleAdd} disabled={saving || !newUrl.trim()} className="w-full rounded-xl h-11">
+                <Button onClick={handleAdd} disabled={saving || !newUrl.trim()} className="w-full rounded-xl h-12 sticky bottom-0 z-10 shadow-lg">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Añadir"}
                 </Button>
               </div>
