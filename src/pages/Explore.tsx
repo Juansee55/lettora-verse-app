@@ -74,18 +74,20 @@ const ExplorePage = () => {
   const [writers, setWriters] = useState<Writer[]>([]);
   const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { t } = useLanguage();
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setLoadError(null);
 
       let query = supabase
         .from("books")
         .select(`
           id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga,
-          profiles:author_id (display_name, username, avatar_url)
+          profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)
         `)
         .in("status", ["published", "completed"])
         .order("reads_count", { ascending: false });
@@ -95,22 +97,22 @@ const ExplorePage = () => {
       }
 
       const [
-        { data: booksData },
-        { data: trending },
-        { data: recent },
-        { data: writersData },
-        { data: tagsData },
+        booksRes,
+        trendingRes,
+        recentRes,
+        writersRes,
+        tagsRes,
       ] = await Promise.all([
         query.limit(20),
         supabase
           .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:author_id (display_name, username, avatar_url)`)
+          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)`)
           .in("status", ["published", "completed"])
           .order("likes_count", { ascending: false })
           .limit(6),
         supabase
           .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:author_id (display_name, username, avatar_url)`)
+          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)`)
           .in("status", ["published", "completed"])
           .order("created_at", { ascending: false })
           .limit(6),
@@ -125,15 +127,25 @@ const ExplorePage = () => {
           .limit(8),
       ]);
 
-      if (booksData) setBooks(booksData);
-      if (trending) setTrendingBooks(trending);
-      if (recent) setRecentBooks(recent);
-      if (writersData) setWriters(writersData);
-      if (tagsData) setTrendingTags(tagsData);
+      const firstError = [booksRes.error, trendingRes.error, recentRes.error, writersRes.error, tagsRes.error].find(Boolean);
+      if (firstError) {
+        console.error("Error cargando Explorar:", firstError);
+        setLoadError("No se pudo cargar el contenido. Inténtalo de nuevo.");
+      }
+
+      if (booksRes.data) setBooks(booksRes.data as Book[]);
+      if (trendingRes.data) setTrendingBooks(trendingRes.data as Book[]);
+      if (recentRes.data) setRecentBooks(recentRes.data as Book[]);
+      if (writersRes.data) setWriters(writersRes.data as Writer[]);
+      if (tagsRes.data) setTrendingTags(tagsRes.data as TrendingTag[]);
       setLoading(false);
     };
 
-    fetchData();
+    fetchData().catch((error) => {
+      console.error("Error inesperado cargando Explorar:", error);
+      setLoadError("No se pudo cargar el contenido. Inténtalo de nuevo.");
+      setLoading(false);
+    });
   }, [activeCategory]);
 
   const filteredBooks = books.filter((book) =>
@@ -210,6 +222,21 @@ const ExplorePage = () => {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-7 h-7 animate-spin text-primary" />
+        </div>
+      ) : loadError ? (
+        <div className="px-4 py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+            <BookOpen className="w-7 h-7 text-destructive" />
+          </div>
+          <h3 className="text-[15px] font-semibold mb-1">No se pudo cargar Explorar</h3>
+          <p className="text-[13px] text-muted-foreground mb-4">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium"
+          >
+            Reintentar
+          </button>
         </div>
       ) : isSearching ? (
         /* Search Results */

@@ -62,7 +62,8 @@ export const useUserLevel = (userId?: string | null) => {
 
       if (data) {
         const xp = Math.max(0, data.xp ?? 0);
-        const level = Math.max(data.level ?? 1, getLevelFromXp(xp));
+        // XP is the source of truth; a stale level row must not promote a new user.
+        const level = getLevelFromXp(xp);
         const rank = getRankForLevel(level);
         const currentLevelXp = getXpForCurrentLevel(level);
         const nextLevelXp = getXpForNextLevel(level);

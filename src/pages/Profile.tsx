@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { syncUserProfile } from "@/lib/authProfile";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import ShareProfileAsImage from "@/components/share/ShareProfileAsImage";
 import LevelBadge from "@/components/levels/LevelBadge";
@@ -96,12 +97,16 @@ const ProfilePage = () => {
     if (!user) { navigate("/auth"); return; }
     setCurrentUserId(user.id);
     setCurrentEmail(user.email || "");
-    
+
+    // The profile trigger and OAuth callback are asynchronous. Ensure the
+    // profile exists before fetching stats, books and equipped items.
+    await syncUserProfile(user);
+
     // Load saved accounts
-    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]");
+    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]") as { email: string; addedAt: string }[];
     setSavedAccounts(accounts);
     // Ensure current account is saved
-    if (user.email && !accounts.find((a: any) => a.email === user.email)) {
+    if (user.email && !accounts.find((a) => a.email === user.email)) {
       const updated = [...accounts, { email: user.email, addedAt: new Date().toISOString() }];
       localStorage.setItem("lettora_accounts", JSON.stringify(updated));
       setSavedAccounts(updated);
@@ -148,7 +153,9 @@ const ProfilePage = () => {
 
     // Process equipped items
     if (equippedRes.data) {
-      const items = equippedRes.data as any[];
+      const items = equippedRes.data as Array<{
+        profile_items?: { item_type?: string; css_value?: string | null } | null;
+      }>;
       items.forEach(item => {
         if (item.profile_items?.item_type === "frame") {
           setEquippedItems(prev => ({ ...prev, frame: item.profile_items.css_value }));
