@@ -104,7 +104,7 @@ const BookDetailPage = () => {
       if (!id) return;
       const { data: bookData, error } = await supabase
         .from("books")
-        .select(`id, title, description, cover_url, genre, reads_count, likes_count, comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order, age_rating, ai_generated, verification_status, profiles:author_id (id, display_name, username, avatar_url)`)
+        .select(`id, title, description, cover_url, genre, reads_count, likes_count, comments_count, status, tags, author_id, is_saga, parent_saga_id, saga_order, age_rating, ai_generated, verification_status, profiles:profiles!books_author_id_fkey (id, display_name, username, avatar_url)`)
         .eq("id", id).single();
       if (error || !bookData) { navigate("/home"); return; }
       setBook(bookData as unknown as BookData);
@@ -128,11 +128,15 @@ const BookDetailPage = () => {
       if (commentsData) setComments(commentsData as unknown as Comment[]);
 
       // Reviews stats
-      const { data: reviewsData } = await supabase.from("book_reviews" as any).select("rating").eq("book_id", id) as any;
+      type ReviewRow = { rating: number };
+      const { data: reviewsData } = await supabase
+        .from("book_reviews" as never)
+        .select("rating")
+        .eq("book_id", id) as unknown as { data: ReviewRow[] | null };
       if (reviewsData && reviewsData.length > 0) {
         const dist = [0, 0, 0, 0, 0];
-        reviewsData.forEach((r: any) => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
-        const avg = reviewsData.reduce((a: number, r: any) => a + r.rating, 0) / reviewsData.length;
+        reviewsData.forEach((review) => { if (review.rating >= 1 && review.rating <= 5) dist[review.rating - 1]++; });
+        const avg = reviewsData.reduce((total, review) => total + review.rating, 0) / reviewsData.length;
         setReviewStats({ avg: Math.round(avg * 10) / 10, total: reviewsData.length, distribution: dist });
       }
 

@@ -44,6 +44,7 @@ interface Book {
   likes_count: number | null;
   created_at: string | null;
   is_saga: boolean | null;
+  author_id: string;
   profiles: {
     display_name: string | null;
     username: string | null;
@@ -87,7 +88,7 @@ const ExplorePage = () => {
         .from("books")
         .select(`
           id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga,
-          profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)
+          author_id
         `)
         .in("status", ["published", "completed"])
         .order("reads_count", { ascending: false });
@@ -133,9 +134,24 @@ const ExplorePage = () => {
         setLoadError("No se pudo cargar el contenido. Inténtalo de nuevo.");
       }
 
-      if (booksRes.data) setBooks(booksRes.data as Book[]);
-      if (trendingRes.data) setTrendingBooks(trendingRes.data as Book[]);
-      if (recentRes.data) setRecentBooks(recentRes.data as Book[]);
+      const rawBookRows = [
+        ...(booksRes.data || []),
+        ...(trendingRes.data || []),
+        ...(recentRes.data || []),
+      ] as Array<{ author_id: string }>;
+      const authorIds = [...new Set(rawBookRows.map((book) => book.author_id).filter(Boolean))];
+      const { data: bookProfiles } = authorIds.length > 0
+        ? await supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
+        : { data: [] };
+      const profileById = new Map((bookProfiles || []).map((profile) => [profile.id, profile]));
+      const attachAuthor = (rows: unknown) => (rows as Array<{ author_id: string }> | null || []).map((book) => ({
+        ...book,
+        profiles: profileById.get(book.author_id) || null,
+      })) as Book[];
+
+      if (booksRes.data) setBooks(attachAuthor(booksRes.data));
+      if (trendingRes.data) setTrendingBooks(attachAuthor(trendingRes.data));
+      if (recentRes.data) setRecentBooks(attachAuthor(recentRes.data));
       if (writersRes.data) setWriters(writersRes.data as Writer[]);
       if (tagsRes.data) setTrendingTags(tagsRes.data as TrendingTag[]);
       setLoading(false);

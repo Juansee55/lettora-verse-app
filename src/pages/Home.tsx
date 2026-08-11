@@ -72,13 +72,13 @@ const Home = () => {
       const [{ data: topBooks }, { data: newBooks }, { data: followers }] = await Promise.all([
         supabase
           .from("books")
-          .select("id, title, cover_url, genre, reads_count, likes_count, is_saga, author_id, profiles:author_id(display_name, username, avatar_url)")
+          .select("id, title, cover_url, genre, reads_count, likes_count, is_saga, author_id")
           .in("status", ["published", "completed"])
           .order("likes_count", { ascending: false })
           .limit(12),
         supabase
           .from("books")
-          .select("id, title, cover_url, genre, reads_count, likes_count, is_saga, author_id, profiles:author_id(display_name, username, avatar_url)")
+          .select("id, title, cover_url, genre, reads_count, likes_count, is_saga, author_id")
           .in("status", ["published", "completed"])
           .order("created_at", { ascending: false })
           .limit(8),
@@ -87,13 +87,23 @@ const Home = () => {
 
       const top = ((topBooks || []) as unknown as HomeBook[]).filter(Boolean);
       const recent = ((newBooks || []) as unknown as HomeBook[]).filter(Boolean);
+
+      // Resolve authors explicitly by their profile IDs. This is more reliable
+      // than relying on a nested PostgREST relationship for every deployment.
+      const authorIds = [...new Set([...top, ...recent].map((book) => book.author_id).filter(Boolean))];
+      const { data: authorProfiles } = authorIds.length > 0
+        ? await supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
+        : { data: [] };
+      const profileById = new Map((authorProfiles || []).map((profile) => [profile.id, profile]));
+      const topWithProfiles = top.map((book) => ({ ...book, profiles: profileById.get(book.author_id) || null }));
+      const recentWithProfiles = recent.map((book) => ({ ...book, profiles: profileById.get(book.author_id) || null }));
       const followerRows = ((followers || []) as { following_id: string }[]).filter(Boolean);
       const followerCounts = followerRows.reduce<Record<string, number>>((acc, row) => {
         acc[row.following_id] = (acc[row.following_id] || 0) + 1;
         return acc;
       }, {});
 
-      const authors = [...top, ...recent].reduce<Record<string, HighlightedAuthor>>((acc, book) => {
+      const authors = [...topWithProfiles, ...recentWithProfiles].reduce<Record<string, HighlightedAuthor>>((acc, book) => {
         if (!book.author_id) return acc;
         const profile = book.profiles;
         const reads = book.reads_count || 0;
@@ -119,8 +129,8 @@ const Home = () => {
         return acc;
       }, {});
 
-      setTrendingBooks(top);
-      setRecentBooks(recent);
+      setTrendingBooks(topWithProfiles);
+      setRecentBooks(recentWithProfiles);
       setHighlightedAuthors(Object.values(authors).sort((a, b) => b.score - a.score).slice(0, 6));
       setLoading(false);
     };
