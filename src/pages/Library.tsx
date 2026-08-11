@@ -34,6 +34,34 @@ interface SavedChapterItem {
   bookCover: string;
 }
 
+interface LibraryBookRow {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  genre: string | null;
+  author_id: string;
+}
+
+interface ProgressRow {
+  id: string;
+  progress_percent: number | null;
+  books: LibraryBookRow | null;
+}
+
+interface IdRow {
+  id: string;
+  book_id?: string;
+  likeable_id?: string;
+}
+
+interface SavedChapterRow {
+  id: string;
+  chapter_id: string;
+  book_id: string;
+  chapters: { title: string | null; chapter_number: number | null } | null;
+  books: { title: string | null; cover_url: string | null } | null;
+}
+
 const LibraryPage = () => {
   const [activeTab, setActiveTab] = useState("reading");
   const [readingBooks, setReadingBooks] = useState<BookItem[]>([]);
@@ -56,7 +84,7 @@ const LibraryPage = () => {
     const [progressRes, likesRes, savedRes] = await Promise.all([
       supabase
         .from("reading_progress")
-        .select(`id, progress_percent, status, books:book_id (id, title, cover_url, genre, profiles:author_id (display_name, username))`)
+        .select(`id, progress_percent, status, books:book_id (id, title, cover_url, genre, author_id)`)
         .eq("user_id", user.id),
       supabase
         .from("likes")
@@ -69,8 +97,27 @@ const LibraryPage = () => {
         .eq("user_id", user.id),
     ]);
 
+    // Resolve all book authors explicitly so missing nested relationships do not
+    // turn valid authors into "Anónimo".
+    const progressData = (progressRes.data || []) as unknown as ProgressRow[];
+    const savedRows = (savedRes.data || []) as unknown as IdRow[];
+    const likedRows = (likesRes.data || []) as unknown as IdRow[];
+    const savedIdsForProfiles = savedRows.map((saved) => saved.book_id).filter((id): id is string => Boolean(id));
+    const likedIdsForProfiles = likedRows.map((like) => like.likeable_id).filter((id): id is string => Boolean(id));
+    const progressAuthorIds = progressData.map((row) => row.books?.author_id).filter(Boolean);
+    const allBookIds = [...new Set([...savedIdsForProfiles, ...likedIdsForProfiles])];
+    const { data: authorBooks } = allBookIds.length > 0
+      ? await supabase.from("books").select("id, author_id").in("id", allBookIds)
+      : { data: [] as Array<{ id: string; author_id: string }> };
+    const authorIds = [...new Set([
+      ...progressAuthorIds,
+      ...(authorBooks || []).map((book) => book.author_id),
+    ].filter(Boolean))];
+    const { data: authorProfiles } = authorIds.length > 0
+      ? await supabase.from("profiles").select("id, display_name, username").in("id", authorIds)
+      : { data: [] };
+    const profileById = new Map((authorProfiles || []).map((profile) => [profile.id, profile]));
     // Process reading progress
-    const progressData = (progressRes.data || []) as any[];
     const reading: BookItem[] = [];
     const completed: BookItem[] = [];
 
@@ -78,7 +125,7 @@ const LibraryPage = () => {
       const item: BookItem = {
         id: rp.books?.id || rp.id,
         title: rp.books?.title || "Sin título",
-        author: rp.books?.profiles?.display_name || rp.books?.profiles?.username || "Anónimo",
+        author: profileById.get(rp.books?.author_id)?.display_name || profileById.get(rp.books?.author_id)?.username || "Autor sin nombre",
         cover: rp.books?.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
         progress: rp.progress_percent || 0,
         genre: rp.books?.genre || undefined,
@@ -94,18 +141,18 @@ const LibraryPage = () => {
     setCompletedBooks(completed);
 
     // Process saved books
-    const savedIds = (savedRes.data || []).map((s: any) => s.book_id);
+    const savedIds = savedIdsForProfiles;
     if (savedIds.length > 0) {
       const { data: savedBooksData } = await supabase
         .from("books")
-        .select("id, title, cover_url, genre, profiles:author_id (display_name, username)")
+        .select("id, title, cover_url, genre, author_id")
         .in("id", savedIds);
 
       if (savedBooksData) {
-        setSavedBooks(savedBooksData.map((b: any) => ({
+        setSavedBooks(savedBooksData.map((b) => ({
           id: b.id,
           title: b.title,
-          author: b.profiles?.display_name || b.profiles?.username || "Anónimo",
+          author: profileById.get(b.author_id)?.display_name || profileById.get(b.author_id)?.username || "Autor sin nombre",
           cover: b.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
           progress: 100,
           genre: b.genre || undefined,
@@ -114,18 +161,18 @@ const LibraryPage = () => {
     }
 
     // Process favorites
-    const likeIds = (likesRes.data || []).map((l: any) => l.likeable_id);
+    const likeIds = likedIdsForProfiles;
     if (likeIds.length > 0) {
       const { data: likedBooksData } = await supabase
         .from("books")
-        .select("id, title, cover_url, genre, profiles:author_id (display_name, username)")
+        .select("id, title, cover_url, genre, author_id")
         .in("id", likeIds);
 
       if (likedBooksData) {
-        setFavoriteBooks(likedBooksData.map((b: any) => ({
+        setFavoriteBooks(likedBooksData.map((b) => ({
           id: b.id,
           title: b.title,
-          author: b.profiles?.display_name || b.profiles?.username || "Anónimo",
+          author: profileById.get(b.author_id)?.display_name || profileById.get(b.author_id)?.username || "Autor sin nombre",
           cover: b.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=280&fit=crop",
           progress: 100,
           genre: b.genre || undefined,
@@ -141,7 +188,7 @@ const LibraryPage = () => {
       .order("created_at", { ascending: false });
 
     if (savedChaptersData) {
-      setSavedChapters((savedChaptersData as any[]).map(sc => ({
+      setSavedChapters((savedChaptersData as unknown as SavedChapterRow[]).map((sc) => ({
         id: sc.id,
         chapterId: sc.chapter_id,
         chapterTitle: sc.chapters?.title || "Sin título",

@@ -19,6 +19,7 @@ interface RankedBook {
   likes_count: number | null;
   genre: string | null;
   created_at: string | null;
+  author_id: string;
   profiles: {
     display_name: string | null;
     username: string | null;
@@ -32,6 +33,7 @@ interface RankedMicrostory {
   content: string;
   likes_count: number | null;
   created_at: string | null;
+  author_id: string;
   profiles: {
     display_name: string | null;
     username: string | null;
@@ -64,8 +66,7 @@ const TopRankingsPage = () => {
     if (contentType === "books") {
       let query = supabase
         .from("books")
-        .select(`id, title, cover_url, reads_count, likes_count, genre, created_at,
-          profiles:author_id (display_name, username, avatar_url)`)
+        .select(`id, title, cover_url, reads_count, likes_count, genre, created_at, author_id`)
         .in("status", ["published", "completed"])
         .order("likes_count", { ascending: false })
         .limit(50);
@@ -78,12 +79,17 @@ const TopRankingsPage = () => {
       }
 
       const { data } = await query;
-      setBooks((data as unknown as RankedBook[]) || []);
+      const rows = (data || []) as unknown as RankedBook[];
+      const authorIds = [...new Set(rows.map((book) => book.author_id).filter(Boolean))];
+      const { data: profiles } = authorIds.length > 0
+        ? await supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
+        : { data: [] };
+      const profileById = new Map((profiles || []).map((profile) => [profile.id, profile]));
+      setBooks(rows.map((book) => ({ ...book, profiles: profileById.get(book.author_id) || null })));
     } else {
       let query = supabase
         .from("microstories")
-        .select(`id, title, content, likes_count, created_at,
-          profiles:author_id (display_name, username, avatar_url)`)
+        .select(`id, title, content, likes_count, created_at, author_id`)
         .order("likes_count", { ascending: false })
         .limit(50);
 
@@ -94,7 +100,13 @@ const TopRankingsPage = () => {
       }
 
       const { data } = await query;
-      setMicrostories((data as unknown as RankedMicrostory[]) || []);
+      const rows = (data || []) as unknown as RankedMicrostory[];
+      const authorIds = [...new Set(rows.map((story) => story.author_id).filter(Boolean))];
+      const { data: profiles } = authorIds.length > 0
+        ? await supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
+        : { data: [] };
+      const profileById = new Map((profiles || []).map((profile) => [profile.id, profile]));
+      setMicrostories(rows.map((story) => ({ ...story, profiles: profileById.get(story.author_id) || null })));
     }
 
     setLoading(false);
@@ -219,7 +231,7 @@ const TopRankingsPage = () => {
                     </div>
                     <h3 className="text-[14px] font-semibold truncate mt-0.5">{book.title}</h3>
                     <p className="text-[12px] text-muted-foreground truncate">
-                      {book.profiles?.display_name || "Anónimo"}
+                      {book.profiles?.display_name || book.profiles?.username || "Autor sin nombre"}
                     </p>
                     <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-0.5">
@@ -273,7 +285,7 @@ const TopRankingsPage = () => {
                     <p className="text-[12px] text-muted-foreground line-clamp-1">{ms.content}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-muted-foreground">
-                        {ms.profiles?.display_name || "Anónimo"}
+                        {ms.profiles?.display_name || ms.profiles?.username || "Autor sin nombre"}
                       </span>
                       <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
                         <Heart className="w-3 h-3" /> {ms.likes_count || 0}
