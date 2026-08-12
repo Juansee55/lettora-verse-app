@@ -1,6 +1,6 @@
 # Notificaciones Android de Lettora
 
-La aplicación ya incluye el registro nativo de tokens FCM, permisos Android 13+, canal `lettora_notifications`, manejo de notificaciones en primer plano y navegación al tocar un aviso.
+La aplicación ya incluye el registro nativo de tokens FCM, permisos Android 13+, canal `lettora_notifications`, manejo de notificaciones en primer plano y navegación al tocar un aviso. Para evitar cierres en APKs que todavía no tienen Firebase configurado, el registro nativo está desactivado por defecto y se activa compilando con `VITE_ENABLE_NATIVE_PUSH=true`.
 
 ## Firebase
 
@@ -16,7 +16,7 @@ Descarga `google-services.json` y colócalo en:
 android/app/google-services.json
 ```
 
-No subas ese archivo al repositorio si el proyecto exige proteger su configuración. El Gradle de la aplicación detecta el archivo automáticamente.
+No subas ese archivo al repositorio si el proyecto exige proteger su configuración. El Gradle de la aplicación detecta el archivo automáticamente. Después de añadirlo, genera el build con `VITE_ENABLE_NATIVE_PUSH=true` para activar el registro FCM nativo.
 
 ## Supabase Edge Function
 

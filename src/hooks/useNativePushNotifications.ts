@@ -10,11 +10,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const CHANNEL_ID = "lettora_notifications";
+// FCM is opt-in at build time so APKs without google-services.json never crash on launch.
+const ENABLE_NATIVE_PUSH = import.meta.env.VITE_ENABLE_NATIVE_PUSH === "true";
 
 /** Registers native Android FCM notifications for the authenticated user. */
 export const useNativePushNotifications = (userId: string | null) => {
   useEffect(() => {
-    if (!userId || !Capacitor.isNativePlatform()) return;
+    if (!userId || !Capacitor.isNativePlatform() || !ENABLE_NATIVE_PUSH) return;
 
     let cancelled = false;
     const listeners: Array<{ remove: () => Promise<void> }> = [];
