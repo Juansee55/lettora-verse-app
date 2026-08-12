@@ -4327,6 +4327,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_public_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          display_name: string | null
+          username: string | null
+          avatar_url: string | null
+          is_verified: boolean
+          admin_title: string | null
+          admin_bio: string | null
+          role_since: string | null
+          is_active: boolean
+          left_at: string | null
+          birth_date: string | null
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       heal_base: { Args: { p_base_id: string }; Returns: Json }
       increment_glimpse_share: {
         Args: { p_story_id: string }

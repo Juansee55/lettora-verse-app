@@ -19,7 +19,7 @@ interface AdminUser {
   is_active: boolean;
   left_at: string | null;
   birth_date: string | null;
-  role: string;
+  role: "admin" | "moderator" | "user";
 }
 
 const fmtDate = (d?: string | null) =>
@@ -50,44 +50,22 @@ const AdminsPage = () => {
   }, []);
 
   const fetchAdmins = async () => {
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role, admin_title, admin_bio, role_since, is_active, left_at, birth_date")
-      .in("role", ["admin", "moderator"]);
+    setLoading(true);
+    const { data, error } = await supabase.rpc("get_public_admins");
 
-    if (!roles || roles.length === 0) {
+    if (error) {
+      console.error("Error cargando el equipo de Lettora:", error);
+      toast({
+        title: "No se pudo cargar el equipo",
+        description: "Comprueba que la migración de administradores esté aplicada.",
+        variant: "destructive",
+      });
+      setAdmins([]);
       setLoading(false);
       return;
     }
 
-    const userIds = roles.map((r) => r.user_id);
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, username, avatar_url, is_verified, admin_hide_identity")
-      .in("id", userIds);
-
-    if (profiles) {
-      const merged: AdminUser[] = profiles.map((p) => {
-        const role: any = roles.find((r) => r.user_id === p.id);
-        const hidden = Boolean((p as any).admin_hide_identity);
-        return {
-          ...p,
-          admin_title: role?.admin_title || null,
-          admin_bio: role?.admin_bio || null,
-          role_since: role?.role_since || null,
-          is_active: role?.is_active ?? true,
-          left_at: role?.left_at || null,
-          birth_date: hidden ? null : role?.birth_date || null,
-          role: role?.role || "admin",
-          is_verified: p.is_verified ?? false,
-        };
-      });
-      merged.sort((a, b) => {
-        if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-        return a.role === "admin" && b.role !== "admin" ? -1 : 1;
-      });
-      setAdmins(merged);
-    }
+    setAdmins((data || []) as AdminUser[]);
     setLoading(false);
   };
 
@@ -103,9 +81,9 @@ const AdminsPage = () => {
         is_active: editing.is_active,
         left_at: editing.is_active ? null : editing.left_at || null,
         birth_date: editing.birth_date || null,
-      } as any)
+      })
       .eq("user_id", editing.id)
-      .eq("role", editing.role as any);
+      .eq("role", editing.role);
 
     setSaving(false);
     if (error) {
