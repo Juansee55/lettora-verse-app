@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lettora Verse</string>
+    <string name="title_activity_main">Lettora Verse</string>
+    <string name="package_name">com.lettora.verse</string>
+    <string name="custom_url_scheme">com.lettora.verse</string>
+</resources>
