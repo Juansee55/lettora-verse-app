@@ -6,4 +6,6 @@
     <string name="custom_url_scheme">com.lettora.verse</string>
     <string name="widget_quick_actions_description">Accesos rápidos de Lettora</string>
     <string name="widget_continue_reading_description">Continuar leyendo en Lettora</string>
+    <string name="default_notification_channel_id">lettora_notifications</string>
+    <string name="default_notification_channel_name">Notificaciones de Lettora</string>
 </resources>

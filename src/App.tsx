@@ -24,6 +24,7 @@ import { usePWA } from "@/hooks/usePWA";
 import { useLinkInterceptor } from "@/hooks/useLinkInterceptor";
 import { useOfflineMode } from "@/hooks/useOfflineMode";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useNativePushNotifications } from "@/hooks/useNativePushNotifications";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useSectionAnalytics } from "@/hooks/useSectionAnalytics";
 import OfflineOverlay from "@/components/pwa/OfflineOverlay";
@@ -110,6 +111,7 @@ const AppContent = () => {
   
   const { isOffline } = useOfflineMode();
   useRealtimeNotifications(user?.id || null);
+  useNativePushNotifications(user?.id || null);
 
   const { pushSupported, pushSubscribed, notificationPermission, subscribePush } = usePWA();
   useEffect(() => {

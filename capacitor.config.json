@@ -1,7 +1,12 @@
 {
   "appId": "com.lettora.verse",
-  "appName": "Lettora Verse",
+  "appName": "Lettora",
   "webDir": "dist",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert", "banner", "list"]
+    }
+  },
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
