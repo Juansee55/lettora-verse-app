@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="18dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Continuar leyendo"
+        android:textColor="@color/lettora_widget_primary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/reading_book_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="Abre Lettora para continuar"
+        android:textColor="@color/lettora_widget_text"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/reading_book_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Tu próxima lectura te espera"
+        android:textColor="@color/lettora_widget_muted"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/reading_open_button"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/lettora_widget_primary"
+        android:gravity="center"
+        android:text="Abrir Lettora"
+        android:textColor="@color/lettora_widget_white"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</LinearLayout>

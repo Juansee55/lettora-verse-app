@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lettora_widget_background">#FDFBFF</color>
+    <color name="lettora_widget_primary">#6620C4</color>
+    <color name="lettora_widget_secondary">#9A52D6</color>
+    <color name="lettora_widget_text">#24152F</color>
+    <color name="lettora_widget_muted">#786B83</color>
+    <color name="lettora_widget_white">#FFFFFF</color>
+    <dimen name="widget_corner_radius">24dp</dimen>
+</resources>
