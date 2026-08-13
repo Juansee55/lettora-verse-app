@@ -33,8 +33,18 @@ const Auth = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          throw new Error("Este proyecto todavía exige confirmar el correo. Desactiva esa opción en Supabase para permitir el acceso automático.");
+        }
+        throw new Error(error.message);
+      }
       if (data.session) {
+        try {
+          await syncUserProfile(data.user);
+        } catch (profileError) {
+          console.warn("No se pudo sincronizar el perfil durante el login:", profileError);
+        }
         toast.success("¡Bienvenido de vuelta!");
         navigate("/home");
       }
@@ -58,8 +68,22 @@ const Auth = () => {
         },
       });
       if (error) throw new Error(error.message);
+      if (data.user && data.session) {
+        // With email confirmation disabled in Supabase, signUp returns an
+        // active session and the user must enter the app immediately.
+        try {
+          await syncUserProfile(data.user);
+        } catch (profileError) {
+          console.warn("No se pudo sincronizar el perfil durante el registro:", profileError);
+        }
+        toast.success("¡Cuenta creada! Bienvenido a Lettora.");
+        navigate("/home");
+        return;
+      }
       if (data.user) {
-        toast.success("¡Cuenta creada! Verifica tu correo para continuar.");
+        // If this branch is reached, the Supabase project still requires
+        // email confirmation; the client cannot safely bypass that setting.
+        toast.success("Cuenta creada. La confirmación de correo sigue activa en Supabase.");
         setStep("login");
       }
     } catch (err: unknown) {

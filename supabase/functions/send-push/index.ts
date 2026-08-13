@@ -1,5 +1,5 @@
-import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -119,13 +119,71 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const expected = Deno.env.get("INTERNAL_PUSH_SECRET");
   const provided = req.headers.get("x-internal-secret");
-  if (!expected || provided !== expected) {
-    return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const isInternal = Boolean(expected && provided === expected);
+  let actorId: string | null = null;
+
+  if (!isInternal) {
+    const authHeader = req.headers.get("Authorization");
+    const accessToken = authHeader?.replace(/^Bearer\s+/i, "");
+    if (!accessToken) {
+      return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: admin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!admin) {
+      return new Response(JSON.stringify({ error: "admin required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    actorId = user.id;
   }
 
   try {
     const payload = await req.json();
-    const { user_id, type, title, message, link } = payload;
+    const { broadcast, user_id, type, title, message, link } = payload;
+    if (broadcast) {
+      if (!title || !message) {
+        return new Response(JSON.stringify({ error: "title and message are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const safeTitle = String(title).trim().slice(0, 100);
+      const safeMessage = String(message).trim().slice(0, 500);
+      const safeLink = typeof link === "string" && link.startsWith("/") ? link : "/notifications";
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, push_preferences");
+      if (profilesError) throw profilesError;
+      const recipients = (profiles || []).filter((profile) => profile.push_preferences?.announcements !== false);
+      const notificationRows = recipients.map((profile) => ({
+        user_id: profile.id,
+        type: "admin_announcement",
+        title: safeTitle,
+        message: safeMessage,
+        link: safeLink,
+        data: { source: "admin_broadcast", senderId: actorId },
+      }));
+      for (let index = 0; index < notificationRows.length; index += 500) {
+        const { error } = await supabase.from("notifications").insert(notificationRows.slice(index, index + 500));
+        if (error) throw error;
+      }
+
+      const recipientIds = recipients.map((profile) => profile.id);
+      const { data: devices } = recipientIds.length > 0
+        ? await supabase.from("device_push_tokens").select("id, user_id, token").in("user_id", recipientIds).eq("platform", "android")
+        : { data: [] };
+      const fcmResults = await sendFcm((devices || []).map((device) => device.token), safeTitle, safeMessage, safeLink, "admin_announcement");
+      if (fcmResults.invalid.length > 0) await supabase.from("device_push_tokens").delete().in("token", fcmResults.invalid);
+
+      let webSent = 0;
+      if (VAPID_PUBLIC && VAPID_PRIVATE) {
+        for (const recipient of recipients) {
+          const result = await sendWebPush(recipient.id, safeTitle, safeMessage, safeLink, "admin_announcement");
+          webSent += result.sent;
+        }
+      }
+      return new Response(JSON.stringify({ broadcast: true, recipients: recipients.length, web: { sent: webSent }, android: fcmResults }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (!user_id || !title) {
       return new Response(JSON.stringify({ error: "missing fields" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

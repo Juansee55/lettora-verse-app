@@ -84,43 +84,15 @@ const ExplorePage = () => {
       setLoading(true);
       setLoadError(null);
 
-      let query = supabase
+      const booksQuery = supabase
         .from("books")
-        .select(`
-          id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga,
-          author_id
-        `)
+        .select("id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, author_id")
         .in("status", ["published", "completed"])
-        .order("reads_count", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(60);
 
-      if (activeCategory !== "Todos") {
-        query = query.eq("genre", activeCategory);
-      }
-
-      const [
-        booksRes,
-        trendingRes,
-        recentRes,
-        writersRes,
-        tagsRes,
-      ] = await Promise.all([
-        query.limit(20),
-        supabase
-          .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)`)
-          .in("status", ["published", "completed"])
-          .order("likes_count", { ascending: false })
-          .limit(6),
-        supabase
-          .from("books")
-          .select(`id, title, cover_url, genre, reads_count, likes_count, created_at, is_saga, profiles:profiles!books_author_id_fkey (display_name, username, avatar_url)`)
-          .in("status", ["published", "completed"])
-          .order("created_at", { ascending: false })
-          .limit(6),
-        supabase
-          .from("profiles")
-          .select("id, display_name, username, avatar_url")
-          .limit(8),
+      const [booksRes, tagsRes] = await Promise.all([
+        activeCategory === "Todos" ? booksQuery : booksQuery.eq("genre", activeCategory),
         supabase
           .from("hashtags")
           .select("id, name, usage_count")
@@ -128,32 +100,53 @@ const ExplorePage = () => {
           .limit(8),
       ]);
 
-      const firstError = [booksRes.error, trendingRes.error, recentRes.error, writersRes.error, tagsRes.error].find(Boolean);
-      if (firstError) {
-        console.error("Error cargando Explorar:", firstError);
-        setLoadError("No se pudo cargar el contenido. Inténtalo de nuevo.");
+      if (booksRes.error) {
+        console.error("Error cargando libros de Explorar:", booksRes.error);
+        setLoadError("No se pudieron cargar los libros. Inténtalo de nuevo.");
+      }
+      if (tagsRes.error) {
+        console.warn("No se pudieron cargar las tendencias:", tagsRes.error);
       }
 
-      const rawBookRows = [
-        ...(booksRes.data || []),
-        ...(trendingRes.data || []),
-        ...(recentRes.data || []),
-      ] as Array<{ author_id: string }>;
-      const authorIds = [...new Set(rawBookRows.map((book) => book.author_id).filter(Boolean))];
-      const { data: bookProfiles } = authorIds.length > 0
-        ? await supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
-        : { data: [] };
-      const profileById = new Map((bookProfiles || []).map((profile) => [profile.id, profile]));
-      const attachAuthor = (rows: unknown) => (rows as Array<{ author_id: string }> | null || []).map((book) => ({
+      const rawBooks = (booksRes.data || []) as Array<{
+        id: string; title: string; cover_url: string | null; genre: string | null;
+        reads_count: number | null; likes_count: number | null; created_at: string | null;
+        is_saga: boolean | null; author_id: string;
+      }>;
+      const authorIds = [...new Set(rawBooks.map((book) => book.author_id).filter(Boolean))];
+      let bookProfiles: Array<{ id: string; display_name: string | null; username: string | null; avatar_url: string | null }> = [];
+      if (authorIds.length > 0) {
+        const profilesRes = await supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url")
+          .in("id", authorIds);
+        if (profilesRes.error) {
+          console.warn("No se pudieron cargar los autores de Explorar:", profilesRes.error);
+        } else {
+          bookProfiles = (profilesRes.data || []) as typeof bookProfiles;
+        }
+      }
+      const profileById = new Map(bookProfiles.map((profile) => [profile.id, profile]));
+      const enrichedBooks = rawBooks.map((book) => ({
         ...book,
         profiles: profileById.get(book.author_id) || null,
       })) as Book[];
+      const categoryBooks = activeCategory === "Todos"
+        ? enrichedBooks
+        : enrichedBooks.filter((book) => book.genre === activeCategory);
+      const trending = [...categoryBooks].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0)).slice(0, 6);
+      const recent = [...categoryBooks].sort((a, b) => (new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())).slice(0, 6);
+      const writerMap = new Map<string, Writer>();
+      enrichedBooks.forEach((book) => {
+        const profile = book.profiles;
+        if (profile && !writerMap.has(book.author_id)) writerMap.set(book.author_id, { id: book.author_id, ...profile });
+      });
 
-      if (booksRes.data) setBooks(attachAuthor(booksRes.data));
-      if (trendingRes.data) setTrendingBooks(attachAuthor(trendingRes.data));
-      if (recentRes.data) setRecentBooks(attachAuthor(recentRes.data));
-      if (writersRes.data) setWriters(writersRes.data as Writer[]);
-      if (tagsRes.data) setTrendingTags(tagsRes.data as TrendingTag[]);
+      setBooks(categoryBooks.slice(0, 20));
+      setTrendingBooks(trending);
+      setRecentBooks(recent);
+      setWriters([...writerMap.values()].slice(0, 8));
+      setTrendingTags((tagsRes.data || []) as TrendingTag[]);
       setLoading(false);
     };
 

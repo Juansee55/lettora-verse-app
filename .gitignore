@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build artifacts, signing material and generated migration payloads
+artifacts/

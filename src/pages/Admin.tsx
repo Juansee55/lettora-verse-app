@@ -2,7 +2,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Shield, Users, BadgeCheck, Search,
+  ArrowLeft, Shield, Users, BadgeCheck, Search, Bell,
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
   Trophy, BarChart3, Cake, UserPlus2, UserMinus, Award, DollarSign,
@@ -22,6 +22,7 @@ import CreateBadgeModal from "@/components/admin/CreateBadgeModal";
 import AdminWalletManager from "@/components/admin/AdminWalletManager";
 import BotsManager from "@/components/admin/BotsManager";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
+import AdminPushComposer from "@/components/admin/AdminPushComposer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -48,7 +49,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics" | "notifications">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -335,6 +336,7 @@ const AdminPage = () => {
             { key: "wallet" as const, icon: DollarSign, label: "Wallet" },
             { key: "bots" as const, icon: Bot, label: "Bots" },
             { key: "analytics" as const, icon: Activity, label: "Analítica" },
+            { key: "notifications" as const, icon: Bell, label: "Avisos" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -458,6 +460,8 @@ const AdminPage = () => {
             )}
           </div>
         </>
+      ) : activeTab === "notifications" ? (
+        <AdminPushComposer />
       ) : activeTab === "moderation" ? (
         <div className="px-4 py-4">
           <ModerationPanel isAdmin={isAdmin} />

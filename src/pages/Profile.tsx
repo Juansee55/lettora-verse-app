@@ -75,6 +75,7 @@ const ProfilePage = () => {
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [stats, setStats] = useState<Stats>({ books: 0, followers: 0, following: 0, totalReads: 0, totalLikes: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [equippedItems, setEquippedItems] = useState<EquippedItems>({ frame: null, background: null, nameColor: null });
@@ -93,85 +94,87 @@ const ProfilePage = () => {
   }, []);
 
   const fetchProfileData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/auth"); return; }
-    setCurrentUserId(user.id);
-    setCurrentEmail(user.email || "");
-
-    // The profile trigger and OAuth callback are asynchronous. Ensure the
-    // profile exists before fetching stats, books and equipped items.
-    await syncUserProfile(user);
-
-    // Load saved accounts
-    const accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]") as { email: string; addedAt: string }[];
-    setSavedAccounts(accounts);
-    // Ensure current account is saved
-    if (user.email && !accounts.find((a) => a.email === user.email)) {
-      const updated = [...accounts, { email: user.email, addedAt: new Date().toISOString() }];
-      localStorage.setItem("lettora_accounts", JSON.stringify(updated));
-      setSavedAccounts(updated);
-    }
-
-    const [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").eq("author_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("book_collaborators").select("book_id").eq("user_id", user.id).not("accepted_at", "is", null),
-      supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
-      supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
-      supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
-      supabase.from("user_roles").select("role, admin_title").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
-    ]);
-
-    if (profileRes.data) setProfile(profileRes.data);
-
-    // Merge authored + collaborated books
-    let allBooks = booksRes.data || [];
-    if (collabBooksRes.data && collabBooksRes.data.length > 0) {
-      const collabBookIds = collabBooksRes.data.map(c => c.book_id).filter(bid => !allBooks.some(b => b.id === bid));
-      if (collabBookIds.length > 0) {
-        const { data: collabBooks } = await supabase
-          .from("books")
-          .select("id, title, cover_url, reads_count, likes_count, status")
-          .in("id", collabBookIds);
-        if (collabBooks) allBooks = [...allBooks, ...collabBooks];
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        navigate("/auth");
+        return;
       }
-    }
+      setCurrentUserId(user.id);
+      setCurrentEmail(user.email || "");
 
-    if (allBooks.length > 0) {
+      // Profile creation is best-effort: a permissions/trigger problem must not
+      // leave the whole profile page in an infinite loading state.
+      try {
+        await syncUserProfile(user);
+      } catch (error) {
+        console.warn("No se pudo sincronizar el perfil:", error);
+      }
+
+      let accounts: { email: string; addedAt: string }[] = [];
+      try {
+        accounts = JSON.parse(localStorage.getItem("lettora_accounts") || "[]");
+      } catch {
+        localStorage.removeItem("lettora_accounts");
+      }
+      setSavedAccounts(accounts);
+      if (user.email && !accounts.find((a) => a.email === user.email)) {
+        const updated = [...accounts, { email: user.email, addedAt: new Date().toISOString() }];
+        localStorage.setItem("lettora_accounts", JSON.stringify(updated));
+        setSavedAccounts(updated);
+      }
+
+      const [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+        supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").eq("author_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("book_collaborators").select("book_id").eq("user_id", user.id).not("accepted_at", "is", null),
+        supabase.from("followers").select("*", { count: "exact", head: true }).eq("following_id", user.id),
+        supabase.from("followers").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
+        supabase.from("user_items").select("item_id, is_equipped, profile_items(css_value, item_type)").eq("user_id", user.id).eq("is_equipped", true),
+        supabase.from("user_roles").select("role, admin_title").eq("user_id", user.id).in("role", ["admin", "moderator"]).maybeSingle(),
+      ]);
+
+      const queryErrors = [profileRes, booksRes, collabBooksRes, followersRes, followingRes, equippedRes, roleRes].filter((result) => result.error);
+      if (queryErrors.length > 0) {
+        console.warn("Algunas consultas del Perfil fallaron:", queryErrors.map((result) => result.error));
+      }
+      if (profileRes.data) setProfile(profileRes.data as Profile);
+
+      let allBooks = booksRes.data || [];
+      if (collabBooksRes.data && collabBooksRes.data.length > 0) {
+        const collabBookIds = collabBooksRes.data.map(c => c.book_id).filter(bid => !allBooks.some(b => b.id === bid));
+        if (collabBookIds.length > 0) {
+          const { data: collabBooks } = await supabase.from("books").select("id, title, cover_url, reads_count, likes_count, status").in("id", collabBookIds);
+          if (collabBooks) allBooks = [...allBooks, ...collabBooks];
+        }
+      }
+
       setBooks(allBooks);
       const totalReads = allBooks.reduce((acc, b) => acc + (b.reads_count || 0), 0);
       const totalLikes = allBooks.reduce((acc, b) => acc + (b.likes_count || 0), 0);
-      setStats(prev => ({ ...prev, books: allBooks.length, totalReads, totalLikes }));
-    } else {
-      setBooks([]);
-    }
-    setStats(prev => ({
-      ...prev,
-      followers: followersRes.count || 0,
-      following: followingRes.count || 0,
-    }));
+      setStats(prev => ({ ...prev, books: allBooks.length, totalReads, totalLikes, followers: followersRes.count || 0, following: followingRes.count || 0 }));
 
-    // Process equipped items
-    if (equippedRes.data) {
-      const items = equippedRes.data as Array<{
-        profile_items?: { item_type?: string; css_value?: string | null } | null;
-      }>;
-      items.forEach(item => {
-        if (item.profile_items?.item_type === "frame") {
-          setEquippedItems(prev => ({ ...prev, frame: item.profile_items.css_value }));
-        } else if (item.profile_items?.item_type === "background") {
-          setEquippedItems(prev => ({ ...prev, background: item.profile_items.css_value }));
-        } else if (item.profile_items?.item_type === "name_color") {
-          setEquippedItems(prev => ({ ...prev, nameColor: item.profile_items.css_value }));
-        }
-      });
+      if (equippedRes.data) {
+        (equippedRes.data as Array<{ profile_items?: { item_type?: string; css_value?: string | null } | null }>).forEach(item => {
+          const type = item.profile_items?.item_type;
+          const value = item.profile_items?.css_value || null;
+          if (type === "frame") setEquippedItems(prev => ({ ...prev, frame: value }));
+          if (type === "background") setEquippedItems(prev => ({ ...prev, background: value }));
+          if (type === "name_color") setEquippedItems(prev => ({ ...prev, nameColor: value }));
+        });
+      }
+      if (roleRes.data) {
+        setUserRole(roleRes.data.role as UserRole);
+        setAdminTitle(roleRes.data.admin_title);
+      }
+    } catch (error) {
+      console.error("Error cargando Perfil:", error);
+      setLoadError("No se pudieron cargar todos los datos del perfil.");
+    } finally {
+      setLoading(false);
     }
-
-    if (roleRes.data) {
-      setUserRole(roleRes.data.role as UserRole);
-      setAdminTitle(roleRes.data.admin_title);
-    }
-    setLoading(false);
   };
 
   const handleDeleteBook = async () => {
@@ -197,6 +200,15 @@ const ProfilePage = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError && !profile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-sm text-muted-foreground mb-4">{loadError}</p>
+        <Button onClick={fetchProfileData}>Reintentar</Button>
       </div>
     );
   }

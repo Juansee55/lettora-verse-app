@@ -119,7 +119,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40"
+            className="fixed inset-0 z-[60] bg-black/40"
             onClick={onClose}
           />
           {/* Bottom Sheet */}
@@ -128,7 +128,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl max-h-[75vh] flex flex-col shadow-2xl"
+            className="fixed bottom-0 left-0 right-0 z-[61] bg-background rounded-t-3xl max-h-[calc(100dvh-1rem)] h-auto flex flex-col shadow-2xl overflow-hidden"
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
@@ -144,7 +144,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
             </div>
 
             {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-5">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -192,7 +192,7 @@ const FeedComments = ({ isOpen, onClose, postId, commentableType = "post", onCom
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="border-t border-border/30 px-4 py-3 flex items-center gap-2 bg-background">
+            <form onSubmit={handleSubmit} className="border-t border-border/30 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom)+3.75rem)] flex items-center gap-2 bg-background shrink-0">
               <Input
                 ref={inputRef}
                 placeholder="Añade un comentario..."

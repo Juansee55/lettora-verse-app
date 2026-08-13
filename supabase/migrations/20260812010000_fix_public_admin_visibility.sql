@@ -1,4 +1,8 @@
 -- Public, privacy-aware directory for administrators and moderators.
+-- Ensure this migration can be applied even when the earlier privacy migration was skipped.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS admin_hide_identity boolean NOT NULL DEFAULT false;
+
 -- SECURITY DEFINER is required because user_roles is intentionally private.
 CREATE OR REPLACE FUNCTION public.get_public_admins()
 RETURNS TABLE (
