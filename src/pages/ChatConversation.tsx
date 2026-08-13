@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { Send, Loader2, X, Users, Pin, Camera, CornerUpLeft, Check as CheckIcon } from "lucide-react";
+import { Send, Loader2, X, Users, Pin, Camera, Check as CheckIcon, Plus, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ChatBubble from "@/components/chat/ChatBubble";
@@ -8,6 +9,7 @@ import ChatDateSeparator from "@/components/chat/ChatDateSeparator";
 import GroupInfoSheet from "@/components/chat/GroupInfoSheet";
 import MessageActionsSheet from "@/components/chat/MessageActionsSheet";
 import DirectChatSheet from "@/components/chat/DirectChatSheet";
+import SharedContentSheet from "@/components/chat/SharedContentSheet";
 import ReportContentModal from "@/components/reports/ReportContentModal";
 import { useNameColors } from "@/hooks/useNameColors";
 import VoiceMessageRecorder from "@/components/chat/VoiceMessageRecorder";
@@ -74,11 +76,14 @@ const ChatConversationPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Record<string, { emoji: string; user_id: string }[]>>({});
   const [wallpaper, setWallpaper] = useState<string | null>(null);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showSharedContent, setShowSharedContent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const senderIds = [...new Set(messages.map(m => m.sender_id))];
   const nameColors = useNameColors(senderIds);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration, localVideoRef, remoteVideoRef } = useWebRTCCall();
   const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId);
@@ -256,6 +261,7 @@ const ChatConversationPage = () => {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setShowAttachmentMenu(false);
     const file = e.target.files?.[0];
     if (!file) return;
     const isImage = file.type.startsWith("image/");
@@ -515,7 +521,7 @@ const ChatConversationPage = () => {
       {/* Header */}
       <EnhancedChatHeader
         title={displayName}
-        subtitle={convInfo?.is_group ? `${Object.keys(participantsMap).length} miembros` : undefined}
+        subtitle={convInfo?.is_group ? `${Object.keys(participantsMap).length} miembros` : otherUser?.username ? `@${otherUser.username}` : "Conversación privada"}
         avatarUrl={!convInfo?.is_group ? otherUser?.avatar_url : undefined}
         isTyping={otherIsTyping}
         onBack={() => navigate("/chats")}
@@ -629,80 +635,113 @@ const ChatConversationPage = () => {
         )}
       </div>
 
-      {/* Media preview */}
-      {mediaPreview && (
-        <div className="px-3 pb-1">
-          <div className="relative inline-block rounded-2xl overflow-hidden border border-border/50 bg-muted/30 shadow-sm">
-            {mediaPreview.type === "image" ? (
-              <img src={mediaPreview.url} alt="" className="h-28 max-w-[220px] object-cover" />
-            ) : (
-              <video src={mediaPreview.url} className="h-28 max-w-[220px] object-cover" />
-            )}
-            <button onClick={clearMediaPreview} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <X className="w-3.5 h-3.5 text-white" />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Composer */}
+      <div className="relative border-t border-border/35 bg-background/88 px-3 pb-safe pt-2.5 shadow-[0_-12px_32px_hsl(var(--background)/0.22)] backdrop-blur-2xl">
+        <AnimatePresence>
+          {showAttachmentMenu && !inputDisabled && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+              className="absolute bottom-[calc(100%+8px)] left-3 z-30 w-[220px] overflow-hidden rounded-[22px] border border-border/55 bg-card/95 p-1.5 shadow-[0_20px_40px_hsl(var(--foreground)/0.16)] backdrop-blur-2xl"
+            >
+              <button
+                type="button"
+                onClick={() => { setShowAttachmentMenu(false); fileInputRef.current?.click(); }}
+                className="flex w-full items-center gap-3 rounded-[17px] px-3 py-3 text-left transition-colors hover:bg-primary/[0.08]"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><ImagePlus className="h-[18px] w-[18px]" /></span>
+                <span><span className="block text-[13px] font-bold">Fotos y vídeos</span><span className="block text-[11px] text-muted-foreground">Elige desde tu dispositivo</span></span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAttachmentMenu(false); cameraInputRef.current?.click(); }}
+                className="flex w-full items-center gap-3 rounded-[17px] px-3 py-3 text-left transition-colors hover:bg-primary/[0.08]"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Camera className="h-[18px] w-[18px]" /></span>
+                <span><span className="block text-[13px] font-bold">Abrir cámara</span><span className="block text-[11px] text-muted-foreground">Captura y comparte al instante</span></span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Input bar */}
-      <div className="border-t border-border/30 bg-background/80 backdrop-blur-2xl px-3 py-2 pb-safe">
-        {/* Reply / Edit banner */}
         {(replyTo || editingId) && (
-          <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20">
-            <div className="w-1 h-8 rounded-full bg-primary" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-primary leading-tight">
+          <div className="mb-2.5 flex items-center gap-2.5 rounded-2xl border border-primary/18 bg-primary/[0.075] px-3 py-2">
+            <div className="h-8 w-1 rounded-full bg-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold leading-tight text-primary">
                 {editingId ? "Editando mensaje" : `Respondiendo a ${participantsMap[replyTo!.sender_id]?.display_name || participantsMap[replyTo!.sender_id]?.username || "Usuario"}`}
               </p>
-              <p className="text-[12px] text-muted-foreground truncate">
-                {(editingId ? messages.find(m => m.id === editingId)?.content : replyTo?.content) || "📎 adjunto"}
-              </p>
+              <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{(editingId ? messages.find(m => m.id === editingId)?.content : replyTo?.content) || "Adjunto"}</p>
             </div>
-            <button onClick={cancelEditOrReply} className="w-7 h-7 rounded-full bg-muted/60 flex items-center justify-center">
-              <X className="w-3.5 h-3.5" />
+            <button type="button" onClick={cancelEditOrReply} className="flex h-7 w-7 items-center justify-center rounded-xl bg-background/55 text-muted-foreground transition-colors hover:bg-background hover:text-foreground" aria-label="Cancelar respuesta o edición">
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
+
+        {mediaPreview && (
+          <div className="mb-2.5">
+            <div className="relative inline-block overflow-hidden rounded-2xl border border-border/55 bg-muted/30 shadow-sm">
+              {mediaPreview.type === "image" ? (
+                <img src={mediaPreview.url} alt="Vista previa del adjunto" className="h-28 max-w-[220px] object-cover" />
+              ) : (
+                <video src={mediaPreview.url} className="h-28 max-w-[220px] object-cover" />
+              )}
+              <button type="button" onClick={clearMediaPreview} className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-xl bg-black/55 text-white backdrop-blur-sm" aria-label="Quitar adjunto">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {inputDisabled && convInfo?.admin_only_messages ? (
-          <div className="text-center py-3">
-            <p className="text-[13px] text-muted-foreground/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>Solo los administradores pueden enviar mensajes</p>
+          <div className="py-3 text-center">
+            <p className="text-[13px] text-muted-foreground/65" style={{ fontFamily: "'DM Sans', sans-serif" }}>Solo los administradores pueden enviar mensajes</p>
           </div>
         ) : (
           <div className="flex items-end gap-2">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 w-9 h-9 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-90 transition-all mb-[2px]"
+              type="button"
+              onClick={() => setShowAttachmentMenu((current) => !current)}
+              className={`mb-[2px] flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] transition-all active:scale-95 ${showAttachmentMenu ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25" : "bg-muted/55 text-muted-foreground hover:bg-primary/10 hover:text-primary"}`}
+              aria-label={showAttachmentMenu ? "Cerrar adjuntos" : "Abrir adjuntos"}
             >
-              <Camera className="w-[18px] h-[18px]" />
+              {showAttachmentMenu ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
             </button>
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
-            <VoiceMessageRecorder
-              onSendVoice={handleVoiceSend}
-              disabled={!!inputDisabled}
-            />
-            <div className="flex-1 relative">
+            <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+            <VoiceMessageRecorder onSendVoice={handleVoiceSend} disabled={!!inputDisabled} />
+            <div className="relative flex-1">
               <textarea
                 ref={inputRef}
-                placeholder={convInfo?.slow_mode_seconds ? `Mensaje (🐢 ${convInfo.slow_mode_seconds}s)` : "Mensaje"}
+                placeholder={convInfo?.slow_mode_seconds ? `Mensaje (🐢 ${convInfo.slow_mode_seconds}s)` : "Escribe un mensaje…"}
                 value={newMessage}
-                onChange={(e) => {
-                  handleTextareaInput(e);
-                  notifyTyping();
-                }}
+                onChange={(event) => { handleTextareaInput(event); notifyTyping(); }}
                 onKeyDown={handleKeyDown}
                 rows={1}
                 disabled={!!inputDisabled}
-                className="w-full resize-none rounded-[22px] bg-muted/30 border border-border/40 px-4 py-2.5 text-[15px] placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary/30 transition-all max-h-[120px] leading-relaxed"
-                style={{ minHeight: "40px", fontFamily: "'DM Sans', sans-serif" }}
+                className="max-h-[120px] min-h-10 w-full resize-none rounded-[19px] border border-border/45 bg-muted/38 py-2.5 pl-3.5 pr-10 text-[14px] leading-relaxed placeholder:text-muted-foreground/45 transition-all focus:border-primary/35 focus:outline-none focus:ring-2 focus:ring-primary/12"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
               />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                aria-label="Adjuntar foto o vídeo"
+              >
+                <ImagePlus className="h-[17px] w-[17px]" />
+              </button>
             </div>
             <button
+              type="button"
               onClick={handleSend}
               disabled={(!newMessage.trim() && !mediaPreview) || sending}
-              className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center disabled:opacity-30 active:scale-90 transition-all mb-[2px] shadow-sm shadow-primary/20"
+              className="mb-[2px] flex h-10 w-10 shrink-0 items-center justify-center rounded-[15px] bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 disabled:opacity-30"
+              aria-label={editingId ? "Guardar edición" : "Enviar mensaje"}
             >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : editingId ? <CheckIcon className="w-4 h-4 text-primary-foreground" /> : <Send className="w-4 h-4 text-primary-foreground ml-0.5" />}
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <CheckIcon className="h-4 w-4" /> : <Send className="ml-0.5 h-4 w-4" />}
             </button>
           </div>
         )}
@@ -731,10 +770,17 @@ const ChatConversationPage = () => {
           currentUserId={currentUserId}
           onCleared={() => setMessages([])}
           onReport={() => { setReportMessageId(conversationId!); setShowReportModal(true); }}
+          onSharedContent={() => setShowSharedContent(true)}
           wallpaperValue={wallpaper}
           onWallpaperChange={setWallpaper}
         />
       )}
+
+      <SharedContentSheet
+        isOpen={showSharedContent}
+        onClose={() => setShowSharedContent(false)}
+        messages={messages}
+      />
 
       {/* Message Actions */}
       <MessageActionsSheet

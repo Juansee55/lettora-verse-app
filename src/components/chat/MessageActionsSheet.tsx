@@ -115,30 +115,32 @@ const MessageActionsSheet = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 backdrop-blur-[2px]"
         onClick={onClose}
       >
-        <motion.div
-          initial={{ y: 200, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 200, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 400 }}
-          onClick={e => e.stopPropagation()}
-          className="bg-card rounded-t-2xl w-full max-w-md overflow-hidden pb-safe"
+        <motion.section
+          initial={{ y: 44, opacity: 0, scale: 0.985 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 44, opacity: 0, scale: 0.985 }}
+          transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+          onClick={event => event.stopPropagation()}
+          className="w-full max-w-md overflow-hidden rounded-t-[30px] border border-border/45 bg-card/95 pb-safe shadow-2xl backdrop-blur-2xl"
+          aria-label="Acciones del mensaje"
         >
-          {/* Reactions row */}
+          <div className="flex justify-center pb-1 pt-3"><div className="h-1 w-10 rounded-full bg-muted-foreground/25" /></div>
+
           {onReact && (
-            <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-1">
+            <div className="mx-4 mt-2 flex items-center justify-between gap-0.5 rounded-[22px] border border-border/40 bg-muted/35 px-2 py-1.5">
               {REACTION_EMOJIS.map((emoji, i) => (
                 <motion.button
                   key={emoji}
-                  initial={{ scale: 0, y: 12 }}
+                  initial={{ scale: 0, y: 8 }}
                   animate={{ scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 18, delay: 0.03 * i }}
-                  whileTap={{ scale: 0.75 }}
-                  whileHover={{ scale: 1.2, y: -4 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 19, delay: 0.025 * i }}
+                  whileTap={{ scale: 0.78 }}
+                  whileHover={{ scale: 1.15, y: -3 }}
                   onClick={() => { onReact(messageId, emoji); onClose(); }}
-                  className="text-2xl w-11 h-11 rounded-full flex items-center justify-center hover:bg-muted/60 active:bg-muted"
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl text-[23px] transition-colors hover:bg-background/70"
                   aria-label={`Reaccionar con ${emoji}`}
                 >
                   {emoji}
@@ -147,42 +149,32 @@ const MessageActionsSheet = ({
             </div>
           )}
 
-          {/* Preview */}
           {messageContent && (
-            <div className="px-4 pt-4 pb-2">
-              <p className="text-sm text-muted-foreground line-clamp-2 bg-muted/50 rounded-xl px-3 py-2">
-                {messageContent}
-              </p>
+            <div className="px-4 pb-2 pt-3">
+              <p className="line-clamp-2 rounded-2xl border border-border/35 bg-muted/25 px-3 py-2.5 text-[12px] leading-relaxed text-muted-foreground">{messageContent}</p>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="px-2 py-2">
+          <div className="space-y-2 px-4 pb-4 pt-1">
             {actions.map((action, i) => (
               <button
                 key={i}
                 onClick={action.onClick}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                className={`group flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all active:scale-[0.985] ${
                   action.destructive
-                    ? "text-destructive hover:bg-destructive/10"
-                    : "hover:bg-muted/50"
+                    ? "border-destructive/15 bg-destructive/[0.055] text-destructive hover:bg-destructive/10"
+                    : "border-border/45 bg-muted/28 hover:border-primary/20 hover:bg-primary/[0.055]"
                 }`}
               >
-                <action.icon className="w-5 h-5" />
-                <span className="text-sm font-medium">{action.label}</span>
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${action.destructive ? "bg-destructive/10" : "bg-primary/10 text-primary"}`}>
+                  <action.icon className="h-[18px] w-[18px]" />
+                </span>
+                <span className="flex-1 text-[14px] font-semibold">{action.label}</span>
+                <span className="text-[17px] leading-none opacity-35 transition-transform group-hover:translate-x-0.5">›</span>
               </button>
             ))}
           </div>
-
-          <div className="px-4 pb-4">
-            <button
-              onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-muted text-sm font-medium hover:bg-muted/80 transition-colors"
-            >
-              Cancelar
-            </button>
-          </div>
-        </motion.div>
+        </motion.section>
       </motion.div>
     </AnimatePresence>
   );

@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { User, BellOff, Bell, Trash2, Ban, Flag, Eye, X, Loader2 } from "lucide-react";
+import { User, BellOff, Bell, Trash2, Ban, Flag, Eye, X, Loader2, Images } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,11 +14,12 @@ interface DirectChatSheetProps {
   currentUserId: string;
   onCleared?: () => void;
   onReport?: () => void;
+  onSharedContent?: () => void;
   wallpaperValue?: string | null;
   onWallpaperChange?: (v: string) => void;
 }
 
-const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUserId, onCleared, onReport, wallpaperValue, onWallpaperChange }: DirectChatSheetProps) => {
+const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUserId, onCleared, onReport, onSharedContent, wallpaperValue, onWallpaperChange }: DirectChatSheetProps) => {
   const navigate = useNavigate();
   const [muted, setMuted] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -73,6 +74,7 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
 
   const actions = [
     { icon: User, label: "Ver perfil", onClick: () => { onClose(); navigate(`/user/${otherUser.id}`); }, destructive: false },
+    { icon: Images, label: "Contenido compartido", onClick: () => { onClose(); onSharedContent?.(); }, disabled: !onSharedContent, destructive: false },
     { icon: muted ? Bell : BellOff, label: muted ? "Activar notificaciones" : "Silenciar notificaciones", onClick: toggleMute, busy: busy === "mute", destructive: false },
     { icon: Eye, label: "Marcar como leído", onClick: async () => {
       await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("user_id", currentUserId);
@@ -98,7 +100,7 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
           exit={{ y: 300, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 380 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-card rounded-t-3xl w-full max-w-md overflow-hidden pb-safe shadow-2xl"
+          className="w-full max-w-md overflow-hidden rounded-t-[30px] border border-border/45 bg-card/95 pb-safe shadow-2xl backdrop-blur-2xl"
         >
           {/* Drag handle */}
           <div className="flex justify-center pt-2.5 pb-1">
@@ -106,7 +108,7 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
           </div>
 
           {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-border/50">
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border/50">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center text-primary-foreground font-semibold">
               {otherUser.avatar_url ? (
                 <img src={otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -124,8 +126,8 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
           </div>
 
           {/* Section title */}
-          <p className="px-5 pt-4 pb-1.5 text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
-            Configuración del chat
+          <p className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
+            Opciones de conversación
           </p>
 
           {/* Wallpaper */}
@@ -137,31 +139,25 @@ const DirectChatSheet = ({ isOpen, onClose, conversationId, otherUser, currentUs
           )}
 
           {/* Actions */}
-          <div className="px-2 py-1">
+          <div className="space-y-2 px-4 pb-4">
             {actions.map((action, i) => (
               <button
                 key={i}
                 onClick={action.onClick}
-                disabled={!!action.busy}
-                className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-colors ${
-                  action.destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-muted/60"
-                } disabled:opacity-50`}
+                disabled={!!action.busy || !!action.disabled}
+                className={`group flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all active:scale-[0.985] ${
+                  action.destructive
+                    ? "border-destructive/15 bg-destructive/[0.055] text-destructive hover:bg-destructive/10"
+                    : "border-border/45 bg-muted/30 hover:border-primary/20 hover:bg-primary/[0.055]"
+                } disabled:cursor-not-allowed disabled:opacity-45`}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${action.destructive ? "bg-destructive/10" : "bg-muted/60"}`}>
-                  {action.busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <action.icon className="w-[18px] h-[18px]" />}
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${action.destructive ? "bg-destructive/10" : "bg-primary/10 text-primary"}`}>
+                  {action.busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <action.icon className="h-[18px] w-[18px]" />}
                 </div>
-                <span className="text-[15px] font-medium flex-1 text-left">{action.label}</span>
+                <span className="flex-1 text-[14px] font-semibold">{action.label}</span>
+                <span className="text-[17px] leading-none opacity-35 transition-transform group-hover:translate-x-0.5">›</span>
               </button>
             ))}
-          </div>
-
-          <div className="px-4 pb-4 pt-2">
-            <button
-              onClick={onClose}
-              className="w-full py-3 rounded-xl bg-muted text-[15px] font-semibold hover:bg-muted/80 transition-colors"
-            >
-              Cancelar
-            </button>
           </div>
         </motion.div>
       </motion.div>
