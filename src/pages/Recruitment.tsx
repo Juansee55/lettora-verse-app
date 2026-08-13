@@ -45,8 +45,9 @@ const RecruitmentPage = () => {
   const loadRecruitment = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
+    const now = new Date().toISOString();
     const [vacanciesRes, staffRes, applicationsRes] = await Promise.all([
-      (supabase.from("staff_vacancies" as any).select("id, title, team, description, requirements, openings, status, closes_at").eq("status", "open").order("created_at", { ascending: false }) as any),
+      (supabase.from("staff_vacancies" as any).select("id, title, team, description, requirements, openings, status, closes_at").eq("status", "open").or(`closes_at.is.null,closes_at.gt.${now}`).order("created_at", { ascending: false }) as any),
       supabase.rpc("get_public_staff" as any),
       user
         ? (supabase.from("staff_applications" as any).select("vacancy_id, status").eq("applicant_id", user.id) as any)
@@ -110,7 +111,7 @@ const RecruitmentPage = () => {
   };
 
   const formatCloseDate = (date: string | null) => date
-    ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" }).format(new Date(date))
+    ? `Cierra el ${new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" }).format(new Date(date))}`
     : "Sin fecha de cierre";
 
   return (
