@@ -64,9 +64,10 @@ const StaffRecruitmentManager = () => {
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    const closesAt = form.closes_at ? new Date(`${form.closes_at}T23:59:59.999`).toISOString() : null;
     const { error } = await (supabase.from("staff_vacancies" as any).insert({
       title: option.title, team: option.team, description: form.description.trim(), requirements: form.requirements.trim() || null,
-      openings: Math.max(1, Math.min(25, Number(form.openings) || 1)), closes_at: form.closes_at || null, created_by: user.id,
+      openings: Math.max(1, Math.min(25, Number(form.openings) || 1)), closes_at: closesAt, created_by: user.id,
     }) as any);
     if (error) { toast({ title: "No se pudo publicar", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Vacante publicada", description: "Ya está disponible para que los usuarios se postulen." });
