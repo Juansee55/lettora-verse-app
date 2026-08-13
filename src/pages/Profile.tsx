@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit3, BookOpen, Heart, Eye, Plus, Loader2, Settings, Share2,
   Grid3X3, List, Crown, ChevronRight, Trash2, QrCode, MapPin,
-  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check, Trophy,
+  Calendar, Link as LinkIcon, Sparkles, UserPlus, X, LogOut, Check, Trophy, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ interface Profile {
   website: string | null;
   created_at: string | null;
   favorite_genres: string[] | null;
+  admin_hide_identity?: boolean | null;
 }
 
 interface Book {
@@ -85,6 +86,7 @@ const ProfilePage = () => {
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<{ email: string; addedAt: string }[]>([]);
   const [currentEmail, setCurrentEmail] = useState<string>("");
+  const [savingVisibility, setSavingVisibility] = useState(false);
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
   const { savedAccounts: multiAccounts, removeAccount } = useMultiAccount();
@@ -175,6 +177,34 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleAdminVisibility = async () => {
+    if (!profile || userRole !== "admin") return;
+    setSavingVisibility(true);
+    const nextValue = !profile.admin_hide_identity;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ admin_hide_identity: nextValue } as any)
+      .eq("id", profile.id);
+    setSavingVisibility(false);
+
+    if (error) {
+      toast({
+        title: "No se pudo actualizar la visibilidad",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProfile((current) => current ? { ...current, admin_hide_identity: nextValue } : current);
+    toast({
+      title: nextValue ? "Perfil invisible" : "Perfil visible",
+      description: nextValue
+        ? "Tu perfil no aparecerá a usuarios ni en el equipo público."
+        : "Tu perfil vuelve a ser visible para la comunidad.",
+    });
   };
 
   const handleDeleteBook = async () => {
@@ -397,6 +427,31 @@ const ProfilePage = () => {
         {/* Premium Advanced Stats */}
         {premiumData.isPremium && currentUserId && (
           <PremiumStatsCard userId={currentUserId} />
+        )}
+
+        {userRole === "admin" && (
+          <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold flex items-center gap-1.5">
+                <EyeOff className="w-3.5 h-3.5 text-amber-500" /> Perfil invisible
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {profile?.admin_hide_identity
+                  ? "Tu identidad está oculta para los usuarios."
+                  : "Oculta tu perfil del equipo y de las páginas públicas."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant={profile?.admin_hide_identity ? "default" : "outline"}
+              disabled={savingVisibility}
+              onClick={toggleAdminVisibility}
+              className="rounded-lg shrink-0"
+            >
+              {savingVisibility ? <Loader2 className="w-4 h-4 animate-spin" /> : profile?.admin_hide_identity ? "Mostrar" : "Ocultar"}
+            </Button>
+          </div>
         )}
 
         {/* Action Buttons */}

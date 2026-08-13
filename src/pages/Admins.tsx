@@ -235,6 +235,9 @@ const AdminsPage = () => {
               <p className="text-[13px] text-muted-foreground mt-0.5">
                 {admins.length} miembro{admins.length !== 1 ? "s" : ""} del equipo
               </p>
+              <button onClick={() => navigate("/recruitment")} className="mt-2 text-[12px] font-semibold text-primary active:opacity-60">
+                Ver vacantes y postularme
+              </button>
             </div>
           </div>
         </motion.div>

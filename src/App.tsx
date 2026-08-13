@@ -54,6 +54,7 @@ const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicy"));
 const PrivacyAuditPage = lazy(() => import("./pages/PrivacyAudit"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminsPage = lazy(() => import("./pages/Admins"));
+const RecruitmentPage = lazy(() => import("./pages/Recruitment"));
 const InventoryPage = lazy(() => import("./pages/Inventory"));
 const HashtagPage = lazy(() => import("./pages/Hashtag"));
 const TrendingHashtagsPage = lazy(() => import("./pages/TrendingHashtags"));
@@ -208,6 +209,7 @@ const AppContent = () => {
       <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/auth" replace />} />
       <Route path="/notifications" element={user ? <NotificationsPage /> : <Navigate to="/auth" replace />} />
       <Route path="/admins" element={user ? <AdminsPage /> : <Navigate to="/auth" replace />} />
+      <Route path="/recruitment" element={<RecruitmentPage />} />
       <Route path="/inventory" element={user ? <InventoryPage /> : <Navigate to="/auth" replace />} />
       <Route path="/hashtag/:tag" element={user ? <HashtagPage /> : <Navigate to="/auth" replace />} />
       <Route path="/trending" element={user ? <TrendingHashtagsPage /> : <Navigate to="/auth" replace />} />

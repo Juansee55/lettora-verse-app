@@ -23,6 +23,8 @@ import AdminWalletManager from "@/components/admin/AdminWalletManager";
 import BotsManager from "@/components/admin/BotsManager";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 import AdminPushComposer from "@/components/admin/AdminPushComposer";
+import StaffRecruitmentManager from "@/components/admin/StaffRecruitmentManager";
+import AdminContentManager from "@/components/admin/AdminContentManager";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -49,7 +51,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics" | "notifications">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "recruitment" | "content" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics" | "notifications">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -323,11 +325,13 @@ const AdminPage = () => {
           </div>
         </div>
 
-        <div className="flex border-t border-border/50">
+        <div className="flex gap-1 overflow-x-auto border-t border-border/50 px-2 scrollbar-none">
           {[
             { key: "users" as const, icon: Users, label: "Usuarios" },
             { key: "moderation" as const, icon: Shield, label: "Moderación" },
             { key: "roles" as const, icon: Tag, label: "Cargos" },
+            { key: "recruitment" as const, icon: UserPlus, label: "Reclutamiento" },
+            { key: "content" as const, icon: FileText, label: "Editor" },
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
             { key: "events" as const, icon: Trophy, label: "Eventos" },
@@ -341,7 +345,7 @@ const AdminPage = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 transition-colors ${
+              className={`shrink-0 flex items-center justify-center gap-2 px-2 py-3 border-b-2 transition-colors ${
                 activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground"
               }`}
             >
@@ -462,6 +466,10 @@ const AdminPage = () => {
         </>
       ) : activeTab === "notifications" ? (
         <AdminPushComposer />
+      ) : activeTab === "recruitment" ? (
+        <StaffRecruitmentManager />
+      ) : activeTab === "content" ? (
+        <AdminContentManager />
       ) : activeTab === "moderation" ? (
         <div className="px-4 py-4">
           <ModerationPanel isAdmin={isAdmin} />
