@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, TrendingUp, Star, BookOpen, Users, Sparkles, Heart,
-  Loader2, Flame, Clock, Award, ChevronRight, Hash,
+  Loader2, Flame, Clock, Award, ChevronRight, Hash, UserRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +73,8 @@ const ExplorePage = () => {
   const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
   const [recentBooks, setRecentBooks] = useState<Book[]>([]);
   const [writers, setWriters] = useState<Writer[]>([]);
+  const [discoverableProfiles, setDiscoverableProfiles] = useState<Writer[]>([]);
+  const [userSearchResults, setUserSearchResults] = useState<Writer[]>([]);
   const [trendingTags, setTrendingTags] = useState<TrendingTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,13 +93,20 @@ const ExplorePage = () => {
         .order("created_at", { ascending: false })
         .limit(60);
 
-      const [booksRes, tagsRes] = await Promise.all([
+      const [booksRes, tagsRes, profilesRes] = await Promise.all([
         activeCategory === "Todos" ? booksQuery : booksQuery.eq("genre", activeCategory),
         supabase
           .from("hashtags")
           .select("id, name, usage_count")
           .order("usage_count", { ascending: false })
           .limit(8),
+        supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url")
+          .eq("searchable", true)
+          .or("is_banned.is.null,is_banned.eq.false")
+          .order("created_at", { ascending: false })
+          .limit(12),
       ]);
 
       if (booksRes.error) {
@@ -106,6 +115,9 @@ const ExplorePage = () => {
       }
       if (tagsRes.error) {
         console.warn("No se pudieron cargar las tendencias:", tagsRes.error);
+      }
+      if (profilesRes.error) {
+        console.warn("No se pudieron cargar los usuarios de Explorar:", profilesRes.error);
       }
 
       const rawBooks = (booksRes.data || []) as Array<{
@@ -146,6 +158,7 @@ const ExplorePage = () => {
       setTrendingBooks(trending);
       setRecentBooks(recent);
       setWriters([...writerMap.values()].slice(0, 8));
+      setDiscoverableProfiles((profilesRes.data || []) as Writer[]);
       setTrendingTags((tagsRes.data || []) as TrendingTag[]);
       setLoading(false);
     };
@@ -157,10 +170,49 @@ const ExplorePage = () => {
     });
   }, [activeCategory]);
 
+  useEffect(() => {
+    const rawQuery = searchQuery.trim();
+    const normalizedQuery = rawQuery.replace(/[%,_().]/g, " ").trim();
+
+    if (normalizedQuery.length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .eq("searchable", true)
+        .or("is_banned.is.null,is_banned.eq.false")
+        .or(`display_name.ilike.%${normalizedQuery}%,username.ilike.%${normalizedQuery}%`)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.warn("No se pudieron buscar usuarios:", error);
+        setUserSearchResults([]);
+        return;
+      }
+
+      setUserSearchResults((data || []) as Writer[]);
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredBooks = books.filter((book) =>
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (book.profiles?.display_name || "").toLowerCase().includes(searchQuery.toLowerCase())
+    book.title.toLowerCase().includes(normalizedSearchQuery) ||
+    (book.profiles?.display_name || "").toLowerCase().includes(normalizedSearchQuery) ||
+    (book.profiles?.username || "").toLowerCase().includes(normalizedSearchQuery)
   );
+  const filteredUsers = normalizedSearchQuery.length > 1
+    ? userSearchResults
+    : discoverableProfiles.filter((profile) =>
+      (profile.display_name || "").toLowerCase().includes(normalizedSearchQuery) ||
+      (profile.username || "").toLowerCase().includes(normalizedSearchQuery)
+    );
 
   const formatBookForCard = (book: Book) => ({
     id: book.id,
@@ -249,36 +301,116 @@ const ExplorePage = () => {
         </div>
       ) : isSearching ? (
         /* Search Results */
-        <div className="px-4">
-          <p className="text-[13px] text-muted-foreground mb-3">
-            {filteredBooks.length} resultado{filteredBooks.length !== 1 ? "s" : ""}
+        <div className="px-4 space-y-5">
+          <p className="text-[13px] text-muted-foreground">
+            {filteredUsers.length + filteredBooks.length} resultado{filteredUsers.length + filteredBooks.length !== 1 ? "s" : ""}
           </p>
-          {filteredBooks.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {filteredBooks.map((book, index) => (
-                <motion.div
-                  key={book.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.04 }}
-                >
-                  <BookCard book={formatBookForCard(book)} />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
+
+          {filteredUsers.length > 0 && (
+            <section>
+              <h2 className="text-[16px] font-semibold flex items-center gap-2 mb-2.5">
+                <UserRound className="w-4 h-4 text-primary" />
+                Usuarios
+              </h2>
+              <div className="space-y-2">
+                {filteredUsers.map((profile, index) => (
+                  <motion.button
+                    key={profile.id}
+                    type="button"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    onClick={() => navigate(`/user/${profile.id}`)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-card text-left active:bg-muted/60 transition-colors"
+                  >
+                    <div className="w-11 h-11 rounded-full bg-gradient-hero flex items-center justify-center overflow-hidden text-sm font-bold text-primary-foreground shrink-0">
+                      {profile.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        profile.display_name?.[0]?.toUpperCase() || profile.username?.[0]?.toUpperCase() || "?"
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-semibold truncate">{profile.display_name || profile.username || "Usuario"}</p>
+                      {profile.username && <p className="text-[12px] text-muted-foreground truncate">@{profile.username}</p>}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </motion.button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {filteredBooks.length > 0 && (
+            <section>
+              <h2 className="text-[16px] font-semibold flex items-center gap-2 mb-2.5">
+                <BookOpen className="w-4 h-4 text-primary" />
+                Libros
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {filteredBooks.map((book, index) => (
+                  <motion.div
+                    key={book.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.04 }}
+                  >
+                    <BookCard book={formatBookForCard(book)} />
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {filteredUsers.length === 0 && filteredBooks.length === 0 && (
             <div className="text-center py-16">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
                 <Search className="w-7 h-7 text-muted-foreground" />
               </div>
               <h3 className="text-[15px] font-semibold mb-1">Sin resultados</h3>
-              <p className="text-[13px] text-muted-foreground">Intenta con otro término</p>
+              <p className="text-[13px] text-muted-foreground">Intenta con otro nombre, usuario o título</p>
             </div>
           )}
         </div>
       ) : (
         /* Main Content */
         <div className="space-y-6">
+          {/* Newly registered, publicly searchable members */}
+          {discoverableProfiles.length > 0 && (
+            <section className="px-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[17px] font-semibold flex items-center gap-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  <UserRound className="w-4.5 h-4.5 text-primary" />
+                  Usuarios nuevos
+                </h2>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+                {discoverableProfiles.slice(0, 8).map((profile, index) => (
+                  <motion.button
+                    key={profile.id}
+                    type="button"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => navigate(`/user/${profile.id}`)}
+                    className="flex flex-col items-center gap-1.5 flex-shrink-0 min-w-[64px]"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gradient-hero flex items-center justify-center text-base font-bold text-primary-foreground overflow-hidden ring-2 ring-primary/20">
+                      {profile.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        profile.display_name?.[0]?.toUpperCase() || profile.username?.[0]?.toUpperCase() || "?"
+                      )}
+                    </div>
+                    <span className="text-[11px] whitespace-nowrap max-w-[64px] truncate text-muted-foreground">
+                      {profile.display_name || profile.username || "Usuario"}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Trending Hashtags */}
           {trendingTags.length > 0 && (
             <section className="px-4">
