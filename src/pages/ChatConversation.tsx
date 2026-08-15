@@ -78,6 +78,11 @@ const ChatConversationPage = () => {
   const [wallpaper, setWallpaper] = useState<string | null>(null);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showSharedContent, setShowSharedContent] = useState(false);
+  const [showTypingIndicator, setShowTypingIndicator] = useState(true);
+  const [showReadReceipts, setShowReadReceipts] = useState(true);
+  const [privacyLoaded, setPrivacyLoaded] = useState(false);
+  const [readByUserAt, setReadByUserAt] = useState<Record<string, string | null>>({});
+  const readChannelRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const senderIds = [...new Set(messages.map(m => m.sender_id))];
   const nameColors = useNameColors(senderIds);
@@ -86,7 +91,7 @@ const ChatConversationPage = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   
   const { callState, startCall, acceptCall, rejectCall, endCall, toggleMute, toggleVideo, formatCallDuration, localVideoRef, remoteVideoRef } = useWebRTCCall();
-  const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId);
+  const { isTyping: otherIsTyping, notifyTyping } = useTypingIndicator(conversationId!, currentUserId, privacyLoaded && showTypingIndicator);
 
   useEffect(() => {
     let mounted = true;
@@ -96,14 +101,18 @@ const ChatConversationPage = () => {
       if (!user) { navigate("/auth"); return; }
       setCurrentUserId(user.id);
       await fetchConversationData(user.id);
-      await updateLastRead(user.id);
-      // Load wallpaper preference
+      // Load chat privacy and wallpaper preferences.
       const { data: profile } = await supabase
         .from("profiles")
-        .select("chat_wallpaper" as any)
+        .select("chat_wallpaper, show_typing_indicator, show_read_receipts" as any)
         .eq("id", user.id)
         .maybeSingle();
-      if (mounted && profile) setWallpaper((profile as any).chat_wallpaper ?? null);
+      if (mounted && profile) {
+        setWallpaper((profile as any).chat_wallpaper ?? null);
+        setShowTypingIndicator((profile as any).show_typing_indicator ?? true);
+        setShowReadReceipts((profile as any).show_read_receipts ?? true);
+      }
+      if (mounted) setPrivacyLoaded(true);
     };
     checkUserAndFetch();
     return () => { mounted = false; };
@@ -122,10 +131,16 @@ const ChatConversationPage = () => {
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
-      }, (payload) => setMessages(prev => {
-        if (prev.find(m => m.id === (payload.new as Message).id)) return prev;
-        return [...prev, payload.new as Message];
-      }))
+      }, async (payload) => {
+        const incoming = payload.new as Message;
+        if (incoming.sender_id !== currentUserId && showReadReceipts) {
+          await updateLastRead(currentUserId);
+        }
+        setMessages(prev => {
+          if (prev.find(m => m.id === incoming.id)) return prev;
+          return [...prev, incoming];
+        });
+      })
       .on("postgres_changes", {
         event: "UPDATE", schema: "public", table: "messages",
         filter: `conversation_id=eq.${conversationId}`,
@@ -135,8 +150,30 @@ const ChatConversationPage = () => {
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id)))
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId, currentUserId]);
+      return () => { supabase.removeChannel(channel); };
+  }, [conversationId, currentUserId, showReadReceipts]);
+
+  useEffect(() => {
+    if (!conversationId || !currentUserId || !privacyLoaded) return;
+    const channel = supabase
+      .channel(`read-receipts:${conversationId}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "read" }, ({ payload }) => {
+        const from = (payload as any)?.user_id as string | undefined;
+        const at = (payload as any)?.last_read_at as string | undefined;
+        if (!from || from === currentUserId || !at) return;
+        setReadByUserAt(prev => ({ ...prev, [from]: at }));
+      });
+    readChannelRef.current = channel;
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED" && showReadReceipts) {
+        void updateLastRead(currentUserId);
+      }
+    });
+    return () => {
+      if (readChannelRef.current === channel) readChannelRef.current = null;
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, currentUserId, privacyLoaded, showReadReceipts]);
 
   // Reactions realtime + initial load
   useEffect(() => {
@@ -216,7 +253,7 @@ const ChatConversationPage = () => {
       // Parallel fetch to speed up
       const [convRes, participantsRes, messagesRes] = await Promise.all([
         supabase.from("conversations").select("*").eq("id", conversationId).single(),
-        supabase.from("conversation_participants").select("user_id, role").eq("conversation_id", conversationId),
+        supabase.from("conversation_participants").select("user_id, role, last_read_at").eq("conversation_id", conversationId),
         supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true })
       ]);
 
@@ -227,6 +264,7 @@ const ChatConversationPage = () => {
         const participants = participantsRes.data;
         const myPart = participants.find(p => p.user_id === userId);
         if (myPart) setCurrentRole(myPart.role);
+        setReadByUserAt(Object.fromEntries(participants.map((participant: any) => [participant.user_id, participant.last_read_at ?? null])));
 
         const allUserIds = participants.map(p => p.user_id);
         const { data: profiles } = await supabase
@@ -255,9 +293,34 @@ const ChatConversationPage = () => {
 
 
   const updateLastRead = async (userId: string) => {
-    await supabase.from("conversation_participants")
-      .update({ last_read_at: new Date().toISOString() })
+    if (!conversationId || !showReadReceipts) return;
+    const lastReadAt = new Date().toISOString();
+    const { error } = await supabase.from("conversation_participants")
+      .update({ last_read_at: lastReadAt })
       .eq("conversation_id", conversationId).eq("user_id", userId);
+    if (error) return;
+    setReadByUserAt(prev => ({ ...prev, [userId]: lastReadAt }));
+    await readChannelRef.current?.send({
+      type: "broadcast",
+      event: "read",
+      payload: { user_id: userId, last_read_at: lastReadAt },
+    });
+  };
+
+  const hasBeenReadByRecipient = (message: Message) => {
+    if (!showReadReceipts || message.sender_id !== currentUserId) return false;
+    const participantIds = Object.keys(readByUserAt).filter(id => id !== currentUserId);
+    if (participantIds.length === 0) return false;
+    const messageTime = new Date(message.created_at).getTime();
+    return convInfo?.is_group
+      ? participantIds.every(id => {
+          const lastRead = readByUserAt[id];
+          return !!lastRead && new Date(lastRead).getTime() >= messageTime;
+        })
+      : participantIds.some(id => {
+          const lastRead = readByUserAt[id];
+          return !!lastRead && new Date(lastRead).getTime() >= messageTime;
+        });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -620,6 +683,8 @@ const ChatConversationPage = () => {
                   onToggleReaction={(emoji) => toggleReaction(message.id, emoji)}
                   isEdited={!!message.edited_at}
                   isDeleted={!!message.is_deleted}
+                  readByRecipient={hasBeenReadByRecipient(message)}
+                  readReceiptsEnabled={showReadReceipts}
                   replyPreview={message.reply_to_id && messagesById[message.reply_to_id] ? {
                     author: participantsMap[messagesById[message.reply_to_id].sender_id]?.display_name
                       || participantsMap[messagesById[message.reply_to_id].sender_id]?.username

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Shield, Eye, EyeOff, Search, AtSign, Tag, Mail, Cake, Radio,
-  Loader2, FileText, Download, UserX, MessageSquare, ScrollText, Users,
+  Loader2, FileText, Download, UserX, UserRound, MessageSquare, ScrollText, Users, CheckCheck,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,8 @@ type Flags = {
   admin_hide_identity: boolean;
   dm_privacy: string;
   followers_visibility: string;
+  show_typing_indicator: boolean;
+  show_read_receipts: boolean;
 };
 
 const DM_LABELS: Record<string, string> = {
@@ -52,7 +54,7 @@ const PrivacyCenterPage = () => {
       const [{ data: profile }, { data: roles }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("is_private, hide_email, hide_birth_date, hide_reading_activity, hide_online_status, searchable, allow_mentions, allow_tags, admin_hide_identity, dm_privacy, followers_visibility")
+          .select("is_private, hide_email, hide_birth_date, hide_reading_activity, hide_online_status, searchable, allow_mentions, allow_tags, admin_hide_identity, dm_privacy, followers_visibility, show_typing_indicator, show_read_receipts")
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
@@ -134,10 +136,26 @@ const PrivacyCenterPage = () => {
           <IOSSettingItem icon={<Radio className="w-4 h-4" />} iconBg="bg-teal-500" title="Ocultar estado en línea" showChevron={false} action={toggle("hide_online_status")} />
         </IOSSettingSection>
 
-        <IOSSettingSection title="Interacciones">
+        <IOSSettingSection title="Interacciones" footer="Si desactivas las confirmaciones de lectura, tampoco podrás ver las de otras personas. Los indicadores solo funcionan cuando ambas personas los permiten.">
           <IOSSettingItem icon={<MessageSquare className="w-4 h-4" />} iconBg="bg-violet-500" title="Quién puede escribirte" value={DM_LABELS[flags.dm_privacy] || "Todos"} onClick={() => cycle("dm_privacy", ["everyone", "followers", "nobody"])} />
           <IOSSettingItem icon={<AtSign className="w-4 h-4" />} iconBg="bg-cyan-500" title="Permitir menciones" showChevron={false} action={toggle("allow_mentions")} />
           <IOSSettingItem icon={<Tag className="w-4 h-4" />} iconBg="bg-amber-500" title="Permitir etiquetas" showChevron={false} action={toggle("allow_tags")} />
+          <IOSSettingItem
+            icon={<UserRound className="w-4 h-4" />}
+            iconBg="bg-violet-500"
+            title="Mostrar cuando escribo"
+            subtitle="Otros verán el indicador mientras redactas"
+            showChevron={false}
+            action={toggle("show_typing_indicator")}
+          />
+          <IOSSettingItem
+            icon={<CheckCheck className="w-4 h-4" />}
+            iconBg="bg-blue-500"
+            title="Confirmaciones de lectura"
+            subtitle="Permite mostrar cuándo has leído un mensaje"
+            showChevron={false}
+            action={toggle("show_read_receipts")}
+          />
           <IOSSettingItem icon={<UserX className="w-4 h-4" />} iconBg="bg-orange-500" title="Usuarios bloqueados" onClick={() => navigate("/settings")} />
         </IOSSettingSection>
 

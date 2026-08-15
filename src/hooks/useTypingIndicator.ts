@@ -7,8 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
  * Uses a single channel per conversation; sends `typing` broadcasts and
  * listens for others' typing events with a 3s auto-clear.
  */
-export const useTypingIndicator = (conversationId: string, userId: string | null) => {
+export const useTypingIndicator = (conversationId: string, userId: string | null, enabled = true) => {
   const [isTyping, setIsTyping] = useState(false);
+  const enabledRef = useRef(enabled);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -22,7 +23,9 @@ export const useTypingIndicator = (conversationId: string, userId: string | null
     channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
       const from = (payload as any)?.user_id as string | undefined;
       const active = (payload as any)?.typing as boolean | undefined;
+      const senderEnabled = (payload as any)?.enabled !== false;
       if (!from || from === userId) return;
+      if (active && !senderEnabled) return;
       setTypingUsers((prev) => {
         const next = new Set(prev);
         if (active) next.add(from);
@@ -54,16 +57,25 @@ export const useTypingIndicator = (conversationId: string, userId: string | null
   }, [conversationId, userId]);
 
   useEffect(() => {
+    enabledRef.current = enabled;
+    if (!enabled) {
+      setTypingUsers(new Set());
+      setIsTyping(false);
+      channelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { user_id: userId, typing: false, enabled: false } });
+    }
+  }, [enabled, userId]);
+
+  useEffect(() => {
     setIsTyping(typingUsers.size > 0);
   }, [typingUsers]);
 
   const notifyTyping = useCallback(() => {
     const channel = channelRef.current;
-    if (!channel || !userId) return;
-    channel.send({ type: 'broadcast', event: 'typing', payload: { user_id: userId, typing: true } });
+    if (!channel || !userId || !enabledRef.current) return;
+    channel.send({ type: 'broadcast', event: 'typing', payload: { user_id: userId, typing: true, enabled: true } });
     if (sendTimeoutRef.current) clearTimeout(sendTimeoutRef.current);
     sendTimeoutRef.current = setTimeout(() => {
-      channel.send({ type: 'broadcast', event: 'typing', payload: { user_id: userId, typing: false } });
+      channel.send({ type: 'broadcast', event: 'typing', payload: { user_id: userId, typing: false, enabled: true } });
     }, 2500);
   }, [userId]);
 

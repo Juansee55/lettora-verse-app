@@ -2585,6 +2585,8 @@ export type Database = {
           premium_theme: string | null
           push_preferences: Json
           searchable: boolean
+          show_read_receipts: boolean
+          show_typing_indicator: boolean
           updated_at: string | null
           username: string | null
           website: string | null
@@ -2617,6 +2619,8 @@ export type Database = {
           premium_theme?: string | null
           push_preferences?: Json
           searchable?: boolean
+          show_read_receipts?: boolean
+          show_typing_indicator?: boolean
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -2649,6 +2653,8 @@ export type Database = {
           premium_theme?: string | null
           push_preferences?: Json
           searchable?: boolean
+          show_read_receipts?: boolean
+          show_typing_indicator?: boolean
           updated_at?: string | null
           username?: string | null
           website?: string | null

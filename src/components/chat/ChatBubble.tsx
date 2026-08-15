@@ -23,6 +23,8 @@ interface ChatBubbleProps {
   replyPreview?: { author: string; content: string; onJump?: () => void } | null;
   isEdited?: boolean;
   isDeleted?: boolean;
+  readByRecipient?: boolean;
+  readReceiptsEnabled?: boolean;
 }
 
 const ChatBubble = ({
@@ -44,6 +46,8 @@ const ChatBubble = ({
   replyPreview,
   isEdited,
   isDeleted,
+  readByRecipient = false,
+  readReceiptsEnabled = true,
 }: ChatBubbleProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isMedia = mediaType === "image" || mediaType === "video";
@@ -175,7 +179,12 @@ const ChatBubble = ({
           <div className={`flex items-center justify-end gap-1.5 ${isMedia && !content ? "px-2 pb-1.5" : "mt-1"}`}>
             {isEdited && <span className={`text-[9px] italic ${isOwn ? "text-primary-foreground/58" : "text-muted-foreground/70"}`}>editado</span>}
             <span className={`text-[9px] ${isOwn ? "text-primary-foreground/62" : "text-muted-foreground/75"}`}>{time}</span>
-            {isOwn && <CheckCheck className="h-3.5 w-3.5 text-primary-foreground/65" aria-label="Enviado" />}
+            {isOwn && (
+              <CheckCheck
+                className={`h-3.5 w-3.5 transition-colors ${readReceiptsEnabled && readByRecipient ? "text-sky-200" : "text-primary-foreground/65"}`}
+                aria-label={readReceiptsEnabled && readByRecipient ? "Leído" : "Enviado"}
+              />
+            )}
           </div>
         </div>
       </div>
