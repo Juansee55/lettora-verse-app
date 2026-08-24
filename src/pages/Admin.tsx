@@ -6,7 +6,7 @@ import {
   Loader2, CheckCircle, XCircle, UserPlus, Tag, Save,
   Trash2, ShieldPlus, ShieldMinus, FileText, Plus, Newspaper,
   Trophy, BarChart3, Cake, UserPlus2, UserMinus, Award, DollarSign,
-  Bot, Activity,
+  Bot, Activity, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 import AdminPushComposer from "@/components/admin/AdminPushComposer";
 import StaffRecruitmentManager from "@/components/admin/StaffRecruitmentManager";
 import AdminContentManager from "@/components/admin/AdminContentManager";
+import FreeBooksAdminManager from "@/components/admin/FreeBooksAdminManager";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -51,7 +52,7 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithVerification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "recruitment" | "content" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics" | "notifications">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "moderation" | "roles" | "recruitment" | "content" | "free_books" | "contracts" | "news" | "events" | "bday" | "badges" | "wallet" | "bots" | "analytics" | "notifications">("users");
   const [userFilter, setUserFilter] = useState<"all" | "pending" | "verified">("all");
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithVerification | null>(null);
@@ -331,7 +332,8 @@ const AdminPage = () => {
             { key: "moderation" as const, icon: Shield, label: "Moderación" },
             { key: "roles" as const, icon: Tag, label: "Cargos" },
             { key: "recruitment" as const, icon: UserPlus, label: "Reclutamiento" },
-            { key: "content" as const, icon: FileText, label: "Editor" },
+            { key: "content", icon: FileText, label: "Editor" },
+            { key: "free_books", icon: BookOpen, label: "Biblioteca" },
             { key: "contracts" as const, icon: FileText, label: "Contratos" },
             { key: "news" as const, icon: Newspaper, label: "Noticias" },
             { key: "events" as const, icon: Trophy, label: "Eventos" },
@@ -470,6 +472,8 @@ const AdminPage = () => {
         <StaffRecruitmentManager />
       ) : activeTab === "content" ? (
         <AdminContentManager />
+      ) : activeTab === "free_books" ? (
+        <FreeBooksAdminManager />
       ) : activeTab === "moderation" ? (
         <div className="px-4 py-4">
           <ModerationPanel isAdmin={isAdmin} />

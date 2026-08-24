@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -769,6 +769,39 @@ export type Database = {
           },
         ]
       }
+      call_signals: {
+        Row: {
+          call_id: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          is_video: boolean
+          signal_data: Json
+          signal_type: string
+          to_user_id: string
+        }
+        Insert: {
+          call_id?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          is_video?: boolean
+          signal_data?: Json
+          signal_type: string
+          to_user_id: string
+        }
+        Update: {
+          call_id?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          is_video?: boolean
+          signal_data?: Json
+          signal_type?: string
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       chapter_bookmarks: {
         Row: {
           chapter_id: string
@@ -1453,6 +1486,115 @@ export type Database = {
         }
         Relationships: []
       }
+      free_book_ingestion_queue: {
+        Row: {
+          author: string
+          content: string | null
+          content_format: string
+          content_url: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          external_id: string | null
+          genre: string | null
+          id: string
+          is_featured: boolean
+          language: string
+          license_note: string | null
+          published_book_id: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rights_jurisdiction: string | null
+          rights_verified_at: string | null
+          scheduled_month: string
+          source: string
+          source_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          content?: string | null
+          content_format?: string
+          content_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_id?: string | null
+          genre?: string | null
+          id?: string
+          is_featured?: boolean
+          language?: string
+          license_note?: string | null
+          published_book_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_jurisdiction?: string | null
+          rights_verified_at?: string | null
+          scheduled_month: string
+          source?: string
+          source_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          content?: string | null
+          content_format?: string
+          content_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_id?: string | null
+          genre?: string | null
+          id?: string
+          is_featured?: boolean
+          language?: string
+          license_note?: string | null
+          published_book_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_jurisdiction?: string | null
+          rights_verified_at?: string | null
+          scheduled_month?: string
+          source?: string
+          source_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_book_ingestion_queue_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_book_ingestion_queue_published_book_id_fkey"
+            columns: ["published_book_id"]
+            isOneToOne: false
+            referencedRelation: "free_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_book_ingestion_queue_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       free_book_ratings: {
         Row: {
           book_id: string
@@ -1493,9 +1635,13 @@ export type Database = {
       }
       free_books: {
         Row: {
+          added_month: string | null
           added_week: string | null
+          approval_status: string
+          approved_by: string | null
           author: string
           content: string | null
+          content_format: string
           content_url: string | null
           cover_url: string | null
           created_at: string
@@ -1505,17 +1651,26 @@ export type Database = {
           id: string
           is_featured: boolean | null
           language: string | null
+          license_note: string | null
+          publish_at: string | null
           rating_avg: number | null
           ratings_count: number | null
           reads_count: number | null
+          rights_jurisdiction: string | null
+          rights_verified_at: string | null
           source: string | null
+          source_url: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          added_month?: string | null
           added_week?: string | null
+          approval_status?: string
+          approved_by?: string | null
           author: string
           content?: string | null
+          content_format?: string
           content_url?: string | null
           cover_url?: string | null
           created_at?: string
@@ -1525,17 +1680,26 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           language?: string | null
+          license_note?: string | null
+          publish_at?: string | null
           rating_avg?: number | null
           ratings_count?: number | null
           reads_count?: number | null
+          rights_jurisdiction?: string | null
+          rights_verified_at?: string | null
           source?: string | null
+          source_url?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          added_month?: string | null
           added_week?: string | null
+          approval_status?: string
+          approved_by?: string | null
           author?: string
           content?: string | null
+          content_format?: string
           content_url?: string | null
           cover_url?: string | null
           created_at?: string
@@ -1545,14 +1709,27 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           language?: string | null
+          license_note?: string | null
+          publish_at?: string | null
           rating_avg?: number | null
           ratings_count?: number | null
           reads_count?: number | null
+          rights_jurisdiction?: string | null
+          rights_verified_at?: string | null
           source?: string | null
+          source_url?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "free_books_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gang_allies: {
         Row: {
@@ -2009,6 +2186,57 @@ export type Database = {
           },
         ]
       }
+      maintenance_locks: {
+        Row: {
+          key: string
+          locked_until: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          locked_until: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          locked_until?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_runs: {
+        Row: {
+          database_result: Json
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          run_type: string
+          started_at: string
+          status: string
+          storage_result: Json
+        }
+        Insert: {
+          database_result?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          run_type?: string
+          started_at?: string
+          status?: string
+          storage_result?: Json
+        }
+        Update: {
+          database_result?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          run_type?: string
+          started_at?: string
+          status?: string
+          storage_result?: Json
+        }
+        Relationships: []
+      }
       mentions: {
         Row: {
           content_id: string
@@ -2316,6 +2544,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
+          data: Json
           id: string
           link: string | null
           message: string | null
@@ -2326,6 +2555,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data?: Json
           id?: string
           link?: string | null
           message?: string | null
@@ -2336,6 +2566,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data?: Json
           id?: string
           link?: string | null
           message?: string | null
@@ -2568,7 +2799,6 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           display_name: string | null
-          dm_privacy: string
           favorite_genres: string[] | null
           followers_visibility: string
           hide_birth_date: boolean
@@ -2578,7 +2808,6 @@ export type Database = {
           id: string
           is_banned: boolean | null
           is_bot: boolean
-          is_premium: boolean
           is_private: boolean | null
           is_verified: boolean | null
           location: string | null
@@ -2587,6 +2816,9 @@ export type Database = {
           searchable: boolean
           show_read_receipts: boolean
           show_typing_indicator: boolean
+          tip_paypal_url: string | null
+          tip_stripe_url: string | null
+          tips_enabled: boolean | null
           updated_at: string | null
           username: string | null
           website: string | null
@@ -2602,7 +2834,6 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
-          dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
           hide_birth_date?: boolean
@@ -2612,7 +2843,6 @@ export type Database = {
           id: string
           is_banned?: boolean | null
           is_bot?: boolean
-          is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -2621,6 +2851,9 @@ export type Database = {
           searchable?: boolean
           show_read_receipts?: boolean
           show_typing_indicator?: boolean
+          tip_paypal_url?: string | null
+          tip_stripe_url?: string | null
+          tips_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -2636,7 +2869,6 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           display_name?: string | null
-          dm_privacy?: string
           favorite_genres?: string[] | null
           followers_visibility?: string
           hide_birth_date?: boolean
@@ -2646,7 +2878,6 @@ export type Database = {
           id?: string
           is_banned?: boolean | null
           is_bot?: boolean
-          is_premium?: boolean
           is_private?: boolean | null
           is_verified?: boolean | null
           location?: string | null
@@ -2655,6 +2886,9 @@ export type Database = {
           searchable?: boolean
           show_read_receipts?: boolean
           show_typing_indicator?: boolean
+          tip_paypal_url?: string | null
+          tip_stripe_url?: string | null
+          tips_enabled?: boolean | null
           updated_at?: string | null
           username?: string | null
           website?: string | null
@@ -2818,32 +3052,47 @@ export type Database = {
       reading_progress: {
         Row: {
           book_id: string
+          chapter_number: number
           completed_at: string | null
+          created_at: string
           current_chapter: number | null
           id: string
+          last_read_at: string
           progress_percent: number | null
+          scroll_percentage: number
           started_at: string | null
           status: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           book_id: string
+          chapter_number?: number
           completed_at?: string | null
+          created_at?: string
           current_chapter?: number | null
           id?: string
+          last_read_at?: string
           progress_percent?: number | null
+          scroll_percentage?: number
           started_at?: string | null
           status?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           book_id?: string
+          chapter_number?: number
           completed_at?: string | null
+          created_at?: string
           current_chapter?: number | null
           id?: string
+          last_read_at?: string
           progress_percent?: number | null
+          scroll_percentage?: number
           started_at?: string | null
           status?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -3080,6 +3329,113 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_applications: {
+        Row: {
+          applicant_id: string
+          created_at: string
+          id: string
+          motivation: string
+          relevant_experience: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_note: string | null
+          status: string
+          updated_at: string
+          vacancy_id: string
+        }
+        Insert: {
+          applicant_id: string
+          created_at?: string
+          id?: string
+          motivation: string
+          relevant_experience?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string | null
+          status?: string
+          updated_at?: string
+          vacancy_id: string
+        }
+        Update: {
+          applicant_id?: string
+          created_at?: string
+          id?: string
+          motivation?: string
+          relevant_experience?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string | null
+          status?: string
+          updated_at?: string
+          vacancy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_applications_vacancy_id_fkey"
+            columns: ["vacancy_id"]
+            isOneToOne: false
+            referencedRelation: "staff_vacancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_assignments: {
+        Row: {
+          application_id: string | null
+          assigned_at: string
+          assigned_by: string
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          note: string | null
+          team: string
+          title: string
+          user_id: string
+          vacancy_id: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          assigned_at?: string
+          assigned_by: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          team: string
+          title: string
+          user_id: string
+          vacancy_id?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          assigned_at?: string
+          assigned_by?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          team?: string
+          title?: string
+          user_id?: string
+          vacancy_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_assignments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "staff_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_assignments_vacancy_id_fkey"
+            columns: ["vacancy_id"]
+            isOneToOne: false
+            referencedRelation: "staff_vacancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_bday_messages: {
         Row: {
           bday_id: string
@@ -3183,6 +3539,48 @@ export type Database = {
           id?: string
           is_active?: boolean
           title?: string
+        }
+        Relationships: []
+      }
+      staff_vacancies: {
+        Row: {
+          closes_at: string | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          openings: number
+          requirements: string | null
+          status: string
+          team: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closes_at?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          openings?: number
+          requirements?: string | null
+          status?: string
+          team: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          openings?: number
+          requirements?: string | null
+          status?: string
+          team?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4098,6 +4496,95 @@ export type Database = {
           },
         ]
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          receipt_data: Json | null
+          receiver_wallet_id: string | null
+          sender_wallet_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          receipt_data?: Json | null
+          receiver_wallet_id?: string | null
+          sender_wallet_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          receipt_data?: Json | null
+          receiver_wallet_id?: string | null
+          sender_wallet_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_receiver_wallet_id_fkey"
+            columns: ["receiver_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_sender_wallet_id_fkey"
+            columns: ["sender_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          alias: string | null
+          balance: number | null
+          cbu_cvu: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alias?: string | null
+          balance?: number | null
+          cbu_cvu?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alias?: string | null
+          balance?: number | null
+          cbu_cvu?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weapon_loadout: {
         Row: {
           equipped_at: string
@@ -4290,6 +4777,15 @@ export type Database = {
         Args: { p_bot_name?: string; p_gang_id: string }
         Returns: Json
       }
+      admin_adjust_balance: {
+        Args: {
+          p_admin_user_id: string
+          p_amount: number
+          p_description: string
+          p_target_user_id: string
+        }
+        Returns: undefined
+      }
       admin_adjust_gang_hours: {
         Args: { p_gang_id: string; p_hours: number }
         Returns: undefined
@@ -4324,31 +4820,59 @@ export type Database = {
       }
       buy_weapon: { Args: { p_weapon_id: string }; Returns: Json }
       calculate_level: { Args: { p_xp: number }; Returns: number }
+      claim_maintenance_slot: {
+        Args: { p_cooldown?: string; p_key: string }
+        Returns: boolean
+      }
       delete_expired_glimpses: { Args: never; Returns: undefined }
       enter_base: { Args: { p_base_id: string }; Returns: Json }
+      find_wallet_by_identifier: {
+        Args: { p_identifier: string }
+        Returns: {
+          alias: string
+          avatar_url: string
+          cbu_cvu: string
+          display_name: string
+          user_id: string
+          username: string
+          wallet_id: string
+        }[]
+      }
+      get_public_admins: {
+        Args: never
+        Returns: {
+          admin_bio: string
+          admin_title: string
+          avatar_url: string
+          birth_date: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          left_at: string
+          role: Database["public"]["Enums"]["app_role"]
+          role_since: string
+          username: string
+        }[]
+      }
+      get_public_staff: {
+        Args: never
+        Returns: {
+          assigned_at: string
+          avatar_url: string
+          display_name: string
+          id: string
+          team: string
+          title: string
+          username: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
-      }
-      get_public_admins: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          display_name: string | null
-          username: string | null
-          avatar_url: string | null
-          is_verified: boolean
-          admin_title: string | null
-          admin_bio: string | null
-          role_since: string | null
-          is_active: boolean
-          left_at: string | null
-          birth_date: string | null
-          role: Database["public"]["Enums"]["app_role"]
-        }[]
       }
       heal_base: { Args: { p_base_id: string }; Returns: Json }
       increment_glimpse_share: {
@@ -4373,17 +4897,47 @@ export type Database = {
           uses_count: number
         }[]
       }
+      publish_due_free_books: { Args: { p_limit?: number }; Returns: Json }
       purchase_shop_item: { Args: { p_item_id: string }; Returns: Json }
       record_daily_check_in: { Args: never; Returns: Json }
-      send_notification: {
+      review_staff_application: {
         Args: {
-          p_link?: string
-          p_message: string
-          p_title: string
-          p_type: string
-          p_user_id: string
+          p_application_id: string
+          p_decision: string
+          p_reviewer_note?: string
         }
-        Returns: string
+        Returns: {
+          applicant_id: string
+          created_at: string
+          id: string
+          motivation: string
+          relevant_experience: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_note: string | null
+          status: string
+          updated_at: string
+          vacancy_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "staff_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      run_database_maintenance: {
+        Args: { p_batch_size?: number }
+        Returns: Json
+      }
+      transfer_lettopays: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_receiver_id: string
+          p_sender_id: string
+        }
+        Returns: undefined
       }
       upgrade_weapon: { Args: { p_user_weapon_id: string }; Returns: Json }
       upsert_hashtags: {
