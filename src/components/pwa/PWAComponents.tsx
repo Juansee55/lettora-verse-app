@@ -1,8 +1,10 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Download, WifiOff, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePWA } from "@/hooks/usePWA";
 import { toast } from "sonner";
+import { localNotificationPermission, requestLocalNotificationPermission } from "@/lib/localNotifications";
 
 export const InstallBanner = () => {
   const { canInstall, isInstalled, promptInstall } = usePWA();
@@ -46,34 +48,52 @@ export const OfflineIndicator = () => {
 };
 
 export const NotificationButton = () => {
-  const { pushSupported, pushSubscribed, subscribePush, unsubscribePush, notificationPermission } = usePWA();
+  const { pushSupported, pushSubscribed, subscribePush, unsubscribePush } = usePWA();
+  const [localPermission, setLocalPermission] = useState<"granted" | "denied" | "prompt" | "unsupported">("prompt");
 
-  if (!pushSupported) {
-    return (
-      <Button variant="outline" size="sm" disabled className="gap-2">
-        <BellOff className="w-4 h-4" />
-        Push no disponible aquí
-      </Button>
-    );
-  }
+  useEffect(() => {
+    void localNotificationPermission().then(setLocalPermission);
+  }, []);
 
-  const handleClick = async () => {
+  const handleLocalClick = async () => {
+    const permission = await requestLocalNotificationPermission();
+    setLocalPermission(permission);
+    if (permission === "granted") toast.success("¡Alertas del dispositivo activadas!");
+    else if (permission === "denied") toast.error("El permiso está bloqueado; habilítalo desde los ajustes del dispositivo o navegador");
+    else toast.error("Las notificaciones locales no están disponibles aquí");
+  };
+
+  const handlePushClick = async () => {
     if (pushSubscribed) {
       await unsubscribePush();
       toast.success("Notificaciones push desactivadas");
-    } else {
-      const res = await subscribePush();
-      if (res.ok) toast.success("¡Notificaciones push activadas!");
-      else if (res.reason === "denied") toast.error("Permiso denegado en el navegador");
-      else if (res.reason === "no-auth") toast.error("Inicia sesión primero");
-      else toast.error("No se pudo activar");
+      return;
     }
+    const res = await subscribePush();
+    if (res.ok) toast.success("¡Notificaciones push activadas!");
+    else if (res.reason === "denied") toast.error("Permiso denegado en el navegador");
+    else if (res.reason === "no-auth") toast.error("Inicia sesión primero");
+    else toast.error("No se pudo activar");
   };
 
   return (
-    <Button variant={pushSubscribed ? "default" : "outline"} size="sm" onClick={handleClick} className="gap-2">
-      {pushSubscribed ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-      {pushSubscribed ? "Push activadas" : "Activar push"}
-    </Button>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <Button
+        variant={localPermission === "granted" ? "default" : "outline"}
+        size="sm"
+        onClick={handleLocalClick}
+        disabled={localPermission === "unsupported" || localPermission === "denied"}
+        className="gap-2"
+      >
+        {localPermission === "granted" ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+        {localPermission === "granted" ? "Alertas activadas" : localPermission === "denied" ? "Permiso bloqueado" : "Activar alertas"}
+      </Button>
+      {pushSupported && (
+        <Button variant={pushSubscribed ? "default" : "outline"} size="sm" onClick={handlePushClick} className="gap-2">
+          {pushSubscribed ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+          {pushSubscribed ? "Push activadas" : "Activar push web"}
+        </Button>
+      )}
+    </div>
   );
 };

@@ -1,141 +1,110 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePushNotifications, NotificationType } from "./usePushNotifications";
+import { showLocalNotification, setupLocalNotificationActions } from "@/lib/localNotifications";
+
+interface NotificationRow {
+  id: string;
+  type: string;
+  title: string;
+  message: string | null;
+  link: string | null;
+  data?: Record<string, unknown> | null;
+}
+
+type NotificationCategory = "chat" | "social" | "announcements";
+type NotificationPreferences = Record<NotificationCategory, boolean>;
+
+const DEFAULT_PREFERENCES: NotificationPreferences = {
+  chat: true,
+  social: true,
+  announcements: true,
+};
+
+const categoryFor = (type: string): NotificationCategory => {
+  if (["message", "chat", "chat_message"].includes(type)) return "chat";
+  if (["like", "comment", "follow", "mention", "chapter_like", "new_reader"].includes(type)) return "social";
+  return "announcements";
+};
 
 /**
- * Hook para escuchar eventos en tiempo real de Supabase y enviar notificaciones push
+ * Shows a local device/browser alert when a notification row is created for
+ * the signed-in user. Remote delivery remains owned by send-push and the PWA
+ * service worker, so a web push subscription will not receive a duplicate.
  */
 export const useRealtimeNotifications = (userId: string | null) => {
-  const { sendPushNotification } = usePushNotifications();
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const preferencesRef = useRef<NotificationPreferences>(DEFAULT_PREFERENCES);
 
-  // Escuchar nuevos mensajes
   useEffect(() => {
     if (!userId) return;
+    seenIdsRef.current.clear();
+    preferencesRef.current = DEFAULT_PREFERENCES;
+    let mounted = true;
+    let actionListener: { remove: () => Promise<void> } | undefined;
 
-    const subscription = supabase
-      .channel(`messages:${userId}`)
+    const loadPreferences = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("push_preferences")
+        .eq("id", userId)
+        .maybeSingle();
+      if (!mounted) return;
+      const saved = data?.push_preferences;
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+        preferencesRef.current = {
+          ...DEFAULT_PREFERENCES,
+          ...(saved as Partial<NotificationPreferences>),
+        };
+      }
+    };
+
+    void loadPreferences();
+    void setupLocalNotificationActions()
+      .then((listener) => { actionListener = listener; })
+      .catch((error) => console.error("[LocalNotifications] No se pudieron preparar las acciones:", error));
+
+    const channel = supabase
+      .channel(`local-notifications:${userId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "messages",
-          filter: `recipient_id=eq.${userId}`,
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const message = payload.new as any;
-          sendPushNotification(
-            userId,
-            "message",
-            "Nuevo mensaje",
-            `${message.sender_name || "Usuario"} te envió un mensaje`,
-            { messageId: message.id, conversationId: message.conversation_id }
-          );
-        }
-      )
-      .subscribe();
+          if (!mounted) return;
+          const notification = payload.new as NotificationRow;
+          if (!notification.id || seenIdsRef.current.has(notification.id)) return;
+          seenIdsRef.current.add(notification.id);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [userId, sendPushNotification]);
+          const senderId = notification.data?.senderId;
+          if (senderId === userId) return;
+          if (preferencesRef.current[categoryFor(notification.type)] === false) return;
 
-  // Escuchar nuevos likes
-  useEffect(() => {
-    if (!userId) return;
-
-    const subscription = supabase
-      .channel(`likes:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "likes",
-          filter: `liked_by_user_id=eq.${userId}`,
+          void showLocalNotification({
+            id: notification.id,
+            title: notification.title || "Lettora",
+            body: notification.message || "Tienes una nueva notificación",
+            link: notification.link,
+            tag: notification.type || notification.id,
+            type: notification.type,
+          }).catch((error) => console.error("[LocalNotifications] No se pudo mostrar el aviso:", error));
         },
-        (payload) => {
-          const like = payload.new as any;
-          sendPushNotification(
-            userId,
-            "like",
-            "¡Te ha gustado!",
-            `${like.liker_name || "Usuario"} le gustó tu contenido`,
-            { contentId: like.content_id, likerId: like.liker_id }
-          );
-        }
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.error("[Realtime][notifications] No se pudo suscribir:", error ?? status);
+        }
+      });
 
     return () => {
-      subscription.unsubscribe();
+      mounted = false;
+      void actionListener?.remove();
+      void supabase.removeChannel(channel);
     };
-  }, [userId, sendPushNotification]);
+  }, [userId]);
 
-  // Escuchar nuevos seguidores
-  useEffect(() => {
-    if (!userId) return;
-
-    const subscription = supabase
-      .channel(`followers:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "follows",
-          filter: `followed_user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const follow = payload.new as any;
-          sendPushNotification(
-            userId,
-            "follower",
-            "¡Nuevo seguidor!",
-            `${follow.follower_name || "Usuario"} te está siguiendo`,
-            { followerId: follow.follower_id }
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [userId, sendPushNotification]);
-
-  // Escuchar nuevas noticias
-  useEffect(() => {
-    const subscription = supabase
-      .channel("news:public")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "news",
-        },
-        (payload) => {
-          const news = payload.new as any;
-          if (userId) {
-            sendPushNotification(
-              userId,
-              "news",
-              "Noticia destacada",
-              news.title || "Se publicó una nueva noticia",
-              { newsId: news.id }
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [userId, sendPushNotification]);
-
-  return {
-    isListening: !!userId,
-  };
+  return { isListening: Boolean(userId) };
 };
