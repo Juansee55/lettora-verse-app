@@ -78,6 +78,50 @@ export interface GlimpseTrack {
   duration: number;
 }
 
+export const MIN_GLIMPSE_MUSIC_CLIP_SECONDS = 5;
+export const DEFAULT_GLIMPSE_MUSIC_CLIP_SECONDS = 15;
+export const MAX_GLIMPSE_MUSIC_CLIP_SECONDS = 30;
+
+export interface GlimpseMusicSelection {
+  id?: string;
+  title?: string;
+  artist?: string;
+  url: string;
+  gradient?: string;
+  duration?: number;
+  start: number;
+  clip_duration_seconds: number;
+}
+
+const clampNumber = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** Normalizes stored JSON so old Glimps remain playable and clips never exceed 30 seconds. */
+export const normalizeGlimpseMusic = (raw: unknown): GlimpseMusicSelection | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.url !== "string" || !value.url.trim()) return null;
+
+  const trackDuration = Number(value.duration);
+  const clipDuration = clampNumber(
+    Number.isFinite(Number(value.clip_duration_seconds)) ? Number(value.clip_duration_seconds) : DEFAULT_GLIMPSE_MUSIC_CLIP_SECONDS,
+    MIN_GLIMPSE_MUSIC_CLIP_SECONDS,
+    MAX_GLIMPSE_MUSIC_CLIP_SECONDS,
+  );
+  const requestedStart = Number.isFinite(Number(value.start)) ? Number(value.start) : 0;
+  const maxStart = Number.isFinite(trackDuration) ? Math.max(0, trackDuration - clipDuration) : Number.MAX_SAFE_INTEGER;
+
+  return {
+    id: typeof value.id === "string" ? value.id : undefined,
+    title: typeof value.title === "string" ? value.title : undefined,
+    artist: typeof value.artist === "string" ? value.artist : undefined,
+    url: value.url.trim(),
+    gradient: typeof value.gradient === "string" ? value.gradient : undefined,
+    duration: Number.isFinite(trackDuration) ? Math.max(0, trackDuration) : undefined,
+    start: clampNumber(requestedStart, 0, maxStart),
+    clip_duration_seconds: clipDuration,
+  };
+};
+
 export const GLIMPSE_MUSIC: GlimpseTrack[] = [
   { id: "t1", title: "Noche de Tinta", artist: "Lettora Sound", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", gradient: "linear-gradient(135deg,#7C3AED,#EC4899)", duration: 372 },
   { id: "t2", title: "Páginas al Viento", artist: "Aurora Lab", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", gradient: "linear-gradient(135deg,#0EA5E9,#7C3AED)", duration: 425 },

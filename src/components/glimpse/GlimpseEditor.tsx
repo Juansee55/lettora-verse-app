@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   GLIMPSE_FONTS, GLIMPSE_FILTERS, GLIMPSE_STICKERS, EMOJI_SET, GLIMPSE_MUSIC,
   DEFAULT_ADJUST, adjustCss, filterCss, fontFamilyOf, compressImage,
-  PRIVACY_OPTIONS, type GlimpseAdjust, type OverlayLayer, type GlimpseTrack,
+  PRIVACY_OPTIONS, DEFAULT_GLIMPSE_MUSIC_CLIP_SECONDS, MIN_GLIMPSE_MUSIC_CLIP_SECONDS, MAX_GLIMPSE_MUSIC_CLIP_SECONDS,
+  type GlimpseAdjust, type OverlayLayer, type GlimpseTrack,
 } from "./glimpseData";
 
 interface Props {
@@ -46,6 +47,7 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
 
   const [track, setTrack] = useState<GlimpseTrack | null>(null);
   const [trackStart, setTrackStart] = useState(0);
+  const [clipDuration, setClipDuration] = useState(DEFAULT_GLIMPSE_MUSIC_CLIP_SECONDS);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicQuery, setMusicQuery] = useState("");
 
@@ -61,19 +63,43 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
 
   /* ── Music preview ── */
   useEffect(() => {
-    if (!track) { audioRef.current?.pause(); audioRef.current = null; setMusicPlaying(false); return; }
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setMusicPlaying(false);
+    if (!track) return;
+
     const audio = new Audio(track.url);
+    const clipEnd = Math.min(track.duration, trackStart + clipDuration);
+    const stopAtClipEnd = () => {
+      if (audio.currentTime >= clipEnd) {
+        audio.pause();
+        audio.currentTime = trackStart;
+        setMusicPlaying(false);
+      }
+    };
+    audio.preload = "metadata";
     audio.currentTime = trackStart;
-    audio.loop = true;
+    audio.addEventListener("timeupdate", stopAtClipEnd);
+    audio.addEventListener("ended", stopAtClipEnd);
     audioRef.current = audio;
-    return () => { audio.pause(); };
-  }, [track, trackStart]);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("timeupdate", stopAtClipEnd);
+      audio.removeEventListener("ended", stopAtClipEnd);
+    };
+  }, [track, trackStart, clipDuration]);
 
   const toggleMusic = () => {
     const a = audioRef.current;
-    if (!a) return;
-    if (musicPlaying) { a.pause(); setMusicPlaying(false); }
-    else { a.play().catch(() => {}); setMusicPlaying(true); }
+    if (!a || !track) return;
+    if (musicPlaying) {
+      a.pause();
+      setMusicPlaying(false);
+      return;
+    }
+    if (a.currentTime >= trackStart + clipDuration) a.currentTime = trackStart;
+    void a.play().then(() => setMusicPlaying(true)).catch(() => setMusicPlaying(false));
   };
 
   /* ── Drawing ── */
@@ -193,7 +219,7 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
         privacy,
         filter: `${filter}:${filterIntensity.toFixed(2)}`,
         overlays: allLayers as unknown as never,
-        music: track ? ({ ...track, start: trackStart } as unknown as never) : null,
+        music: track ? ({ ...track, start: trackStart, clip_duration_seconds: clipDuration } as unknown as never) : null,
         duration_ms: (isVideo ? 15 : duration) * 1000,
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       });
@@ -326,7 +352,7 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
         {track && (
           <button onClick={toggleMusic} className="absolute bottom-4 left-4 flex items-center gap-2 px-3 h-9 rounded-full liquid-glass text-white text-[12px]">
             {musicPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span className="max-w-[140px] truncate">{track.title}</span>
+            <span className="max-w-[160px] truncate">{track.title} · {clipDuration}s</span>
           </button>
         )}
       </div>
@@ -429,7 +455,7 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
                 <input value={musicQuery} onChange={(e) => setMusicQuery(e.target.value)} placeholder="Buscar música"
                   className="allow-select w-full h-10 px-3 rounded-xl bg-muted/60 text-[14px] outline-none" />
                 {GLIMPSE_MUSIC.filter((t) => `${t.title} ${t.artist}`.toLowerCase().includes(musicQuery.toLowerCase())).map((t) => (
-                  <button key={t.id} onClick={() => { setTrack(t); setTrackStart(0); }}
+                  <button key={t.id} onClick={() => { setTrack(t); setTrackStart(0); setClipDuration(DEFAULT_GLIMPSE_MUSIC_CLIP_SECONDS); }}
                     className={`w-full flex items-center gap-3 p-2 rounded-2xl ${track?.id === t.id ? "bg-primary/15" : "bg-muted/40"}`}>
                     <span className="w-10 h-10 rounded-xl" style={{ background: t.gradient }} />
                     <span className="flex-1 text-left">
@@ -440,10 +466,36 @@ const GlimpseEditor = ({ file, onClose, onPublished }: Props) => {
                   </button>
                 ))}
                 {track && (
-                  <label className="block text-[12px] text-muted-foreground">Inicio del fragmento: {Math.floor(trackStart)}s
-                    <input type="range" min={0} max={Math.max(1, track.duration - 15)} value={trackStart}
-                      onChange={(e) => setTrackStart(Number(e.target.value))} className="w-full accent-primary" />
-                  </label>
+                  <div className="space-y-3 rounded-2xl bg-muted/40 p-3">
+                    <label className="block text-[12px] text-muted-foreground">
+                      Duración del fragmento: <span className="font-semibold text-foreground">{clipDuration}s</span>
+                      <input
+                        type="range"
+                        min={MIN_GLIMPSE_MUSIC_CLIP_SECONDS}
+                        max={MAX_GLIMPSE_MUSIC_CLIP_SECONDS}
+                        step={1}
+                        value={clipDuration}
+                        onChange={(e) => {
+                          const nextDuration = Number(e.target.value);
+                          setClipDuration(nextDuration);
+                          setTrackStart((start) => Math.min(start, Math.max(0, track.duration - nextDuration)));
+                        }}
+                        className="w-full accent-primary"
+                      />
+                    </label>
+                    <label className="block text-[12px] text-muted-foreground">
+                      Inicio del fragmento: <span className="font-semibold text-foreground">{Math.floor(trackStart)}s</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={Math.max(0, track.duration - clipDuration)}
+                        value={Math.min(trackStart, Math.max(0, track.duration - clipDuration))}
+                        onChange={(e) => setTrackStart(Number(e.target.value))}
+                        className="w-full accent-primary"
+                      />
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">Se reproducen {clipDuration}s, del segundo {Math.floor(trackStart)} al {Math.floor(trackStart + clipDuration)}. Máximo permitido: 30s.</p>
+                  </div>
                 )}
                 {track && (
                   <button onClick={() => setTrack(null)} className="text-[13px] text-destructive">Quitar música</button>

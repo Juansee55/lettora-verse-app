@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Send, Music2, Eye, MoreHorizontal, Trash2, EyeOff, Pause, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { filterCss, fontFamilyOf, timeAgoLabel, type OverlayLayer } from "./glimpseData";
+import { filterCss, fontFamilyOf, normalizeGlimpseMusic, timeAgoLabel, type OverlayLayer } from "./glimpseData";
 
 export interface GlimpseStory {
   id: string;
@@ -52,7 +52,7 @@ const GlimpseViewer = ({ stories, authorName, authorAvatar, isOwner, currentUser
 
   const story = stories[index];
   const duration = story?.duration_ms || 5000;
-  const music = story?.music as { url?: string; title?: string; artist?: string; start?: number } | null;
+  const music = normalizeGlimpseMusic(story?.music);
   const layers = (Array.isArray(story?.overlays) ? story?.overlays : []) as OverlayLayer[];
 
   const next = useCallback(() => {
@@ -104,19 +104,37 @@ const GlimpseViewer = ({ stories, authorName, authorAvatar, isOwner, currentUser
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [story?.id, paused, duration, next]);
 
-  // music
+  // music: reproduce únicamente el fragmento guardado, nunca la pista completa
   useEffect(() => {
     audioRef.current?.pause();
     audioRef.current = null;
-    if (music?.url) {
-      const a = new Audio(music.url);
-      a.currentTime = music.start || 0;
-      a.volume = 0.8;
-      a.play().catch(() => {});
-      audioRef.current = a;
-    }
-    return () => { audioRef.current?.pause(); audioRef.current = null; };
-  }, [story?.id]);
+    if (!music?.url) return;
+
+    const a = new Audio(music.url);
+    const clipStart = music.start;
+    const clipEnd = clipStart + music.clip_duration_seconds;
+    const stopAtClipEnd = () => {
+      if (a.currentTime >= clipEnd) {
+        a.pause();
+        a.currentTime = clipStart;
+      }
+    };
+
+    a.preload = "metadata";
+    a.currentTime = clipStart;
+    a.volume = 0.8;
+    a.addEventListener("timeupdate", stopAtClipEnd);
+    a.addEventListener("ended", stopAtClipEnd);
+    void a.play().catch(() => {});
+    audioRef.current = a;
+
+    return () => {
+      a.pause();
+      a.removeEventListener("timeupdate", stopAtClipEnd);
+      a.removeEventListener("ended", stopAtClipEnd);
+      if (audioRef.current === a) audioRef.current = null;
+    };
+  }, [story?.id, music?.url, music?.start, music?.clip_duration_seconds]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -242,9 +260,9 @@ const GlimpseViewer = ({ stories, authorName, authorAvatar, isOwner, currentUser
             <p className="text-white/70 text-[11px]">{timeAgoLabel(story.created_at)}</p>
           </div>
           {music?.title && (
-            <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md max-w-[40%]">
+            <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md max-w-[46%]">
               <Music2 className="w-3.5 h-3.5 text-white flex-shrink-0" />
-              <span className="text-white text-[11px] truncate">{music.title}</span>
+              <span className="text-white text-[11px] truncate">{music.title}{music.artist ? ` · ${music.artist}` : ""} · {music.clip_duration_seconds}s</span>
             </div>
           )}
           <button onClick={() => setPaused((p) => !p)} className="text-white/90 p-1">
