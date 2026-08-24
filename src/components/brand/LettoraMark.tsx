@@ -2,13 +2,14 @@ import { motion, useReducedMotion } from "framer-motion";
 import lettoraIcon from "@/assets/lettora-app-icon.png";
 
 interface LettoraMarkProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   animated?: boolean;
   showWordmark?: boolean;
   className?: string;
 }
 
 const sizes = {
+  xs: { box: "h-8 w-8 rounded-[10px]", image: "h-5 w-5", glow: "-inset-1" },
   sm: { box: "h-10 w-10 rounded-[13px]", image: "h-7 w-7", glow: "-inset-1" },
   md: { box: "h-14 w-14 rounded-[18px]", image: "h-10 w-10", glow: "-inset-2" },
   lg: { box: "h-24 w-24 rounded-[28px]", image: "h-16 w-16", glow: "-inset-3" },

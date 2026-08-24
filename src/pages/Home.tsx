@@ -166,12 +166,19 @@ const Home = () => {
             <motion.button
               onClick={() => navigate("/news")}
               whileTap={{ scale: 0.96 }}
-              className="group flex h-10 items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-2.5 pr-3 text-primary shadow-sm transition-colors hover:bg-primary/12"
+              whileHover={{ y: -1 }}
+              className="group relative flex h-9 items-center gap-2 overflow-hidden rounded-full border border-border/70 bg-card/80 px-2.5 pr-3 shadow-sm backdrop-blur-md transition-all hover:border-primary/25 hover:bg-primary/[0.04] hover:shadow-md"
               aria-label="Abrir novedades"
             >
-              <LettoraMark size="sm" animated />
-              <span className="text-[12px] font-bold">Novedades</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_0_3px_hsl(320_80%_60%/0.12)]" aria-hidden="true" />
+              <span className="absolute inset-y-0 left-0 w-1/2 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 group-hover:translate-x-[260%]" aria-hidden="true" />
+              <LettoraMark size="xs" animated />
+              <span className="relative text-[12px] font-semibold tracking-tight text-foreground">Novedades</span>
+              <motion.span
+                animate={{ scale: [1, 1.22, 1], opacity: [0.65, 1, 0.65] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                className="relative h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]"
+                aria-label="Hay novedades"
+              />
             </motion.button>
             <button onClick={() => navigate("/explore")} className="h-10 w-10 rounded-full bg-muted/70 flex items-center justify-center text-foreground" aria-label="Explorar">
               <Search className="w-5 h-5" />
