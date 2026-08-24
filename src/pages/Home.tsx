@@ -21,6 +21,7 @@ import AnnouncementBanner from "@/components/announcements/AnnouncementBanner";
 import PromotionsSection from "@/components/promotions/PromotionsSection";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
+import LettoraMark from "@/components/brand/LettoraMark";
 import { Button } from "@/components/ui/button";
 
 interface HomeBook {
@@ -162,10 +163,20 @@ const Home = () => {
             <h1 className="text-[28px] font-bold leading-none tracking-normal">Inicio</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate("/explore")} className="h-10 w-10 rounded-full bg-muted/70 flex items-center justify-center text-foreground">
+            <motion.button
+              onClick={() => navigate("/news")}
+              whileTap={{ scale: 0.96 }}
+              className="group flex h-10 items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-2.5 pr-3 text-primary shadow-sm transition-colors hover:bg-primary/12"
+              aria-label="Abrir novedades"
+            >
+              <LettoraMark size="sm" animated />
+              <span className="text-[12px] font-bold">Novedades</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_0_3px_hsl(320_80%_60%/0.12)]" aria-hidden="true" />
+            </motion.button>
+            <button onClick={() => navigate("/explore")} className="h-10 w-10 rounded-full bg-muted/70 flex items-center justify-center text-foreground" aria-label="Explorar">
               <Search className="w-5 h-5" />
             </button>
-            <button onClick={() => navigate("/notifications")} className="h-10 w-10 rounded-full bg-muted/70 flex items-center justify-center text-foreground">
+            <button onClick={() => navigate("/notifications")} className="h-10 w-10 rounded-full bg-muted/70 flex items-center justify-center text-foreground" aria-label="Notificaciones">
               <Bell className="w-5 h-5" />
             </button>
           </div>
