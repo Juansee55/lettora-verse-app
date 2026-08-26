@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ImportBookModal from "@/components/write/ImportBookModal";
 import BookConfigSection from "@/components/write/BookConfigSection";
+import FormattingToolbar, { type WritingFormat } from "@/components/write/FormattingToolbar";
 
 const categories = [
   "Romance", "Fantasía", "Misterio", "Poesía",
@@ -48,6 +49,7 @@ const WritePage = () => {
   const writeType = searchParams.get("type") || "novel";
   const { toast } = useToast();
   const [showImportModal, setShowImportModal] = useState(false);
+  const contentEditorRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -57,7 +59,10 @@ const WritePage = () => {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [localSavedAt, setLocalSavedAt] = useState<Date | null>(null);
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const localDraftKey = `lettora.quick-writer.v1.${writeType}`;
 
   // Saga state
   const [isSaga, setIsSaga] = useState(writeType === "saga");
@@ -79,7 +84,53 @@ const WritePage = () => {
       if (!user) navigate("/auth");
     };
     checkAuth();
-  }, [navigate]);
+    try {
+      setHasLocalDraft(Boolean(window.localStorage.getItem(localDraftKey)));
+    } catch {
+      setHasLocalDraft(false);
+    }
+  }, [navigate, localDraftKey]);
+
+  useEffect(() => {
+    if (hasLocalDraft || typeof window === "undefined") return;
+    if (!title.trim() && !description.trim() && !content.trim()) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(localDraftKey, JSON.stringify({ title, description, content, category, tags, ageRating, aiGenerated, requestVerification }));
+        setLocalSavedAt(new Date());
+      } catch {
+        // La edición continúa en memoria si el dispositivo no tiene espacio local.
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [hasLocalDraft, localDraftKey, title, description, content, category, tags, ageRating, aiGenerated, requestVerification]);
+
+  const restoreLocalDraft = () => {
+    try {
+      const raw = window.localStorage.getItem(localDraftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<{ title: string; description: string; content: string; category: string; tags: string[]; ageRating: string; aiGenerated: boolean; requestVerification: boolean }>;
+      if (typeof draft.title === "string") setTitle(draft.title);
+      if (typeof draft.description === "string") setDescription(draft.description);
+      if (typeof draft.content === "string") setContent(draft.content);
+      if (typeof draft.category === "string") setCategory(draft.category);
+      if (Array.isArray(draft.tags)) setTags(draft.tags.filter((tag): tag is string => typeof tag === "string"));
+      if (typeof draft.ageRating === "string") setAgeRating(draft.ageRating);
+      if (typeof draft.aiGenerated === "boolean") setAiGenerated(draft.aiGenerated);
+      if (typeof draft.requestVerification === "boolean") setRequestVerification(draft.requestVerification);
+      window.localStorage.removeItem(localDraftKey);
+      setHasLocalDraft(false);
+      toast({ title: "Borrador recuperado", description: "Se restauró la última versión guardada en este dispositivo." });
+    } catch {
+      window.localStorage.removeItem(localDraftKey);
+      setHasLocalDraft(false);
+    }
+  };
+
+  const dismissLocalDraft = () => {
+    window.localStorage.removeItem(localDraftKey);
+    setHasLocalDraft(false);
+  };
 
   const loadUserSagas = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -113,6 +164,35 @@ const WritePage = () => {
   };
 
   const removeTag = (tag: string) => setTags(prev => prev.filter(t => t !== tag));
+
+  const applyFormat = (format: WritingFormat) => {
+    const textarea = contentEditorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = content.slice(start, end);
+    let replacement = selected;
+    if (format === "bold") replacement = `<strong>${selected || "texto"}</strong>`;
+    if (format === "italic") replacement = `<em>${selected || "texto"}</em>`;
+    if (format === "underline") replacement = `<u>${selected || "texto"}</u>`;
+    if (format === "heading") replacement = `<strong style="font-size:1.2em">${selected || "Título de sección"}</strong>`;
+    if (format === "quote") replacement = `<em>“${selected || "Cita"}”</em>`;
+    if (format === "bullet") replacement = selected ? selected.split("\\n").map(line => line.trim() ? `• ${line}` : line).join("\\n") : "• ";
+    setContent(content.slice(0, start) + replacement + content.slice(end));
+    window.requestAnimationFrame(() => {
+      contentEditorRef.current?.focus();
+      contentEditorRef.current?.setSelectionRange(start, start + replacement.length);
+    });
+  };
+
+  const handleEditorKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    const shortcuts: Record<string, WritingFormat> = { b: "bold", i: "italic", u: "underline" };
+    const format = shortcuts[event.key.toLowerCase()];
+    if (!format) return;
+    event.preventDefault();
+    applyFormat(format);
+  };
 
   const uploadCover = async (bookId: string): Promise<string | null> => {
     if (!coverFile) return coverPreview;
@@ -189,6 +269,8 @@ const WritePage = () => {
     }
 
     setSaving(false); setPublishing(false);
+    try { window.localStorage.removeItem(localDraftKey); } catch { /* noop */ }
+    setHasLocalDraft(false);
     toast({
       title: isPublishing ? "¡Historia publicada!" : "Borrador guardado",
       description: isPublishing ? "Ya está disponible para los lectores." : "Guardada como borrador.",
@@ -205,7 +287,10 @@ const WritePage = () => {
             <ArrowLeft className="w-5 h-5" />
             <span className="text-[17px]">Atrás</span>
           </button>
-          <h1 className="font-semibold text-[17px]">Nueva historia</h1>
+          <div className="flex flex-col items-center">
+            <h1 className="font-semibold text-[17px]">{writeType === "book" ? "Nuevo libro" : "Nueva novela"}</h1>
+            {localSavedAt && <span className="text-[10px] text-muted-foreground">Guardado en dispositivo</span>}
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="ios-ghost" size="ios-sm" onClick={() => saveBook("draft")} disabled={saving || publishing}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -216,6 +301,17 @@ const WritePage = () => {
           </div>
         </div>
       </div>
+
+      {hasLocalDraft && (
+        <div className="mx-4 mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-3 py-2.5 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold">Tienes un borrador local</p>
+            <p className="text-[11px] text-muted-foreground">Puedes restaurarlo antes de continuar.</p>
+          </div>
+          <button type="button" onClick={restoreLocalDraft} className="text-[12px] font-semibold text-primary">Restaurar</button>
+          <button type="button" onClick={dismissLocalDraft} className="text-[12px] text-muted-foreground">Descartar</button>
+        </div>
+      )}
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-5 py-6">
@@ -467,27 +563,26 @@ const WritePage = () => {
           />
         </motion.div>
 
-        {/* Minimal formatting bar */}
+        {/* Functional formatting bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16 }}
-          className="flex items-center gap-0.5 py-2 mb-4 border-b border-border"
+          className="mb-4"
         >
-          <button className="p-2 rounded-lg hover:bg-muted"><Bold className="w-4 h-4 text-muted-foreground" /></button>
-          <button className="p-2 rounded-lg hover:bg-muted"><Italic className="w-4 h-4 text-muted-foreground" /></button>
-          <button className="p-2 rounded-lg hover:bg-muted"><List className="w-4 h-4 text-muted-foreground" /></button>
-          <button className="p-2 rounded-lg hover:bg-muted"><Image className="w-4 h-4 text-muted-foreground" /></button>
+          <FormattingToolbar onFormat={applyFormat} compact />
         </motion.div>
 
         {/* Content editor */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
           <Textarea
+            ref={contentEditorRef}
             placeholder="Empieza a escribir tu historia aquí...
 
 La primera línea es siempre la más importante."
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleEditorKeyDown}
             className="min-h-[400px] border-0 bg-transparent px-0 resize-none focus-visible:ring-0 text-[17px] leading-[1.8] placeholder:text-muted-foreground/40"
           />
         </motion.div>

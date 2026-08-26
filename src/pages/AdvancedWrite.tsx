@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -28,6 +28,9 @@ import {
   Loader2,
   Check,
   CalendarClock,
+  Maximize2,
+  Minimize2,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +38,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BookConfigSection from "@/components/write/BookConfigSection";
+import FormattingToolbar, { type WritingFormat } from "@/components/write/FormattingToolbar";
+import SagaWorkspace from "@/components/write/SagaWorkspace";
 
 interface Chapter {
   id: string;
@@ -45,6 +50,22 @@ interface Chapter {
   word_count: number;
   notes: string;
   publish_at?: string | null;
+  is_published?: boolean;
+}
+
+interface LocalWriterDraft {
+  title: string;
+  description: string;
+  genre: string;
+  coverPreview: string | null;
+  status: "draft" | "published";
+  isSaga: boolean;
+  tags: string[];
+  ageRating: string;
+  aiGenerated: boolean;
+  requestVerification: boolean;
+  chapters: Chapter[];
+  wordGoal: number;
 }
 
 const genres = [
@@ -59,8 +80,10 @@ const genres = [
 const AdvancedWritePage = () => {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -84,15 +107,92 @@ const AdvancedWritePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!!bookId);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [localSavedAt, setLocalSavedAt] = useState<Date | null>(null);
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [wordGoal, setWordGoal] = useState(1000);
+  const [sagaId, setSagaId] = useState<string | null>(null);
+  const [parentSagaId, setParentSagaId] = useState<string | null>(searchParams.get("sagaId"));
 
+  const localDraftKey = `lettora.writer.v1.${bookId || "new"}`;
   const activeChapter = chapters.find(c => c.id === activeChapterId) || chapters[0];
 
   // Load existing book data
   useEffect(() => {
     if (bookId) {
       loadBookData();
+    } else if (searchParams.get("sagaId")) {
+      setSagaId(searchParams.get("sagaId"));
     }
-  }, [bookId]);
+  }, [bookId, searchParams]);
+
+  useEffect(() => {
+    if (isLoading || typeof window === "undefined") return;
+    setHasLocalDraft(Boolean(window.localStorage.getItem(localDraftKey)));
+  }, [isLoading, localDraftKey]);
+
+  useEffect(() => {
+    if (isLoading || hasLocalDraft || typeof window === "undefined") return;
+    const hasWritingContent = Boolean(title.trim() || description.trim() || chapters.some((chapter) => chapter.content.trim()));
+    if (!hasWritingContent) return;
+    const timer = window.setTimeout(() => {
+      const draft: LocalWriterDraft = {
+        title,
+        description,
+        genre,
+        coverPreview: coverPreview?.startsWith("data:") && coverPreview.length > 250_000 ? null : coverPreview,
+        status,
+        isSaga,
+        tags,
+        ageRating,
+        aiGenerated,
+        requestVerification,
+        chapters,
+        wordGoal,
+      };
+      try {
+        window.localStorage.setItem(localDraftKey, JSON.stringify(draft));
+        setLocalSavedAt(new Date());
+      } catch {
+        // El borrador principal sigue en memoria aunque el dispositivo no tenga cuota local.
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [isLoading, hasLocalDraft, localDraftKey, title, description, genre, coverPreview, status, isSaga, tags, ageRating, aiGenerated, requestVerification, chapters, wordGoal]);
+
+  const restoreLocalDraft = () => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(localDraftKey);
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw) as Partial<LocalWriterDraft>;
+      if (typeof draft.title === "string") setTitle(draft.title);
+      if (typeof draft.description === "string") setDescription(draft.description);
+      if (typeof draft.genre === "string") setGenre(draft.genre);
+      if (typeof draft.coverPreview === "string" || draft.coverPreview === null) setCoverPreview(draft.coverPreview ?? null);
+      if (draft.status === "draft" || draft.status === "published") setStatus(draft.status);
+      if (typeof draft.isSaga === "boolean") setIsSaga(draft.isSaga);
+      if (Array.isArray(draft.tags)) setTags(draft.tags.filter((tag): tag is string => typeof tag === "string"));
+      if (typeof draft.ageRating === "string") setAgeRating(draft.ageRating);
+      if (typeof draft.aiGenerated === "boolean") setAiGenerated(draft.aiGenerated);
+      if (typeof draft.requestVerification === "boolean") setRequestVerification(draft.requestVerification);
+      if (Array.isArray(draft.chapters) && draft.chapters.length > 0) {
+        setChapters(draft.chapters as Chapter[]);
+        setActiveChapterId((draft.chapters[0] as Chapter).id);
+      }
+      if (typeof draft.wordGoal === "number" && draft.wordGoal > 0) setWordGoal(draft.wordGoal);
+      setHasLocalDraft(false);
+      toast({ title: "Borrador recuperado", description: "Se restauró la última versión guardada en este dispositivo." });
+    } catch {
+      window.localStorage.removeItem(localDraftKey);
+      setHasLocalDraft(false);
+    }
+  };
+
+  const dismissLocalDraft = () => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(localDraftKey);
+    setHasLocalDraft(false);
+  };
 
   const loadBookData = async () => {
     setIsLoading(true);
@@ -139,6 +239,8 @@ const AdvancedWritePage = () => {
     setCoverPreview(bookData.cover_url);
     setStatus((bookData.status as "draft" | "published") || "draft");
     setIsSaga(bookData.is_saga || false);
+    setSagaId(bookData.is_saga ? bookData.id : bookData.parent_saga_id || null);
+    setParentSagaId(bookData.parent_saga_id || null);
     setTags(bookData.tags || []);
     setAgeRating((bookData as any).age_rating || "all");
     setAiGenerated((bookData as any).ai_generated || false);
@@ -160,7 +262,8 @@ const AdvancedWritePage = () => {
         chapter_number: c.chapter_number,
         word_count: c.word_count || 0,
         notes: "",
-        publish_at: (c as any).publish_at || null,
+        publish_at: c.publish_at || null,
+        is_published: c.is_published || false,
       })));
       setActiveChapterId(chaptersData[0].id);
     }
@@ -192,15 +295,52 @@ const AdvancedWritePage = () => {
   };
 
   const updateChapterNotes = (notes: string) => {
-    setChapters(prev => prev.map(c => 
+    setChapters(prev => prev.map(c =>
       c.id === activeChapterId ? { ...c, notes } : c
     ));
+  };
+
+  const applyFormat = (format: WritingFormat) => {
+    const textarea = editorRef.current;
+    if (!textarea || !activeChapter) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = activeChapter.content.slice(start, end);
+    let replacement = selected;
+
+    if (format === "bold") replacement = `<strong>${selected || "texto"}</strong>`;
+    if (format === "italic") replacement = `<em>${selected || "texto"}</em>`;
+    if (format === "underline") replacement = `<u>${selected || "texto"}</u>`;
+    if (format === "heading") replacement = `<strong style="font-size:1.2em">${selected || "Título de sección"}</strong>`;
+    if (format === "quote") replacement = `<em>“${selected || "Cita"}”</em>`;
+    if (format === "bullet") replacement = selected ? selected.split("\\n").map(line => line.trim() ? `• ${line}` : line).join("\\n") : "• ";
+
+    const nextContent = activeChapter.content.slice(0, start) + replacement + activeChapter.content.slice(end);
+    updateChapterContent(nextContent);
+    window.requestAnimationFrame(() => {
+      editorRef.current?.focus();
+      editorRef.current?.setSelectionRange(start, start + replacement.length);
+    });
+  };
+
+  const handleEditorKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    const shortcuts: Record<string, WritingFormat> = { b: "bold", i: "italic", u: "underline" };
+    const format = shortcuts[event.key.toLowerCase()];
+    if (!format) return;
+    event.preventDefault();
+    applyFormat(format);
   };
 
   const updateChapterPublishAt = (value: string) => {
     setChapters(prev => prev.map(c =>
       c.id === activeChapterId ? { ...c, publish_at: value || null } : c
     ));
+  };
+
+  const updateWordGoal = (value: string) => {
+    const nextGoal = Number(value);
+    if (Number.isFinite(nextGoal)) setWordGoal(Math.min(100000, Math.max(100, nextGoal)));
   };
 
   const addChapter = () => {
@@ -211,6 +351,7 @@ const AdvancedWritePage = () => {
       chapter_number: chapters.length + 1,
       word_count: 0,
       notes: "",
+      is_published: false,
     };
     setChapters(prev => [...prev, newChapter]);
     setActiveChapterId(newChapter.id);
@@ -238,6 +379,7 @@ const AdvancedWritePage = () => {
       chapter_number: chapters.length + 1,
       word_count: source.word_count,
       notes: source.notes,
+      is_published: false,
     };
     setChapters(prev => [...prev, newChapter]);
     setActiveChapterId(newChapter.id);
@@ -328,6 +470,14 @@ const AdvancedWritePage = () => {
         }
       } else {
         // Create new book
+        let nextSagaOrder: number | null = null;
+        if (parentSagaId) {
+          const { count } = await supabase
+            .from("books")
+            .select("id", { count: "exact", head: true })
+            .eq("parent_saga_id", parentSagaId);
+          nextSagaOrder = (count || 0) + 1;
+        }
         const { data: newBook, error } = await supabase.from("books").insert({
           author_id: user.id,
           title: title || "Sin título",
@@ -335,6 +485,8 @@ const AdvancedWritePage = () => {
           cover_url: coverPreview,
           status: saveStatus,
           is_saga: isSaga,
+          parent_saga_id: parentSagaId,
+          saga_order: nextSagaOrder,
           tags: tags.length > 0 ? tags : null,
           age_rating: ageRating,
           ai_generated: aiGenerated,
@@ -342,6 +494,7 @@ const AdvancedWritePage = () => {
         } as any).select().single();
 
         if (error || !newBook) throw error;
+        setSagaId(isSaga ? newBook.id : parentSagaId);
 
         await supabase.from("chapters").insert(
           chapters.map(c => ({
@@ -356,6 +509,8 @@ const AdvancedWritePage = () => {
       }
 
       setLastSaved(new Date());
+      if (typeof window !== "undefined") window.localStorage.removeItem(localDraftKey);
+      setHasLocalDraft(false);
       toast({
         title: saveStatus === "published" ? "¡Publicado!" : "Guardado",
         description: saveStatus === "published"
@@ -396,6 +551,20 @@ const AdvancedWritePage = () => {
                 {lastSaved.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
               </span>
             )}
+            {!lastSaved && localSavedAt && (
+              <span className="text-[11px] text-muted-foreground" title="Guardado local automático">
+                <Check className="w-3 h-3 inline mr-0.5" /> Dispositivo
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setFocusMode((value) => !value)}
+              className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted flex items-center justify-center"
+              aria-label={focusMode ? "Salir del modo concentración" : "Activar modo concentración"}
+              title={focusMode ? "Salir del modo concentración" : "Modo concentración"}
+            >
+              {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
             <Button
               variant="ios-ghost"
               size="ios-sm"
@@ -417,8 +586,20 @@ const AdvancedWritePage = () => {
         </div>
       </div>
 
+      {/* Local recovery */}
+      {hasLocalDraft && !focusMode && (
+        <div className="mx-4 mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-3 py-2.5 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold">Hay un borrador en este dispositivo</p>
+            <p className="text-[11px] text-muted-foreground">Puedes restaurarlo antes de continuar.</p>
+          </div>
+          <button type="button" onClick={restoreLocalDraft} className="text-[12px] font-semibold text-primary">Restaurar</button>
+          <button type="button" onClick={dismissLocalDraft} className="text-[12px] text-muted-foreground">Descartar</button>
+        </div>
+      )}
+
       {/* Book Info Bar */}
-      <div className="border-b border-border bg-card/50">
+      {!focusMode && <div className="border-b border-border bg-card/50">
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Cover thumbnail */}
           <input type="file" ref={fileInputRef} onChange={handleCoverUpload} accept="image/*" className="hidden" />
@@ -473,14 +654,15 @@ const AdvancedWritePage = () => {
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Chapter Navigation Strip */}
-      <div className="border-b border-border bg-background">
+      {!focusMode && <div className="border-b border-border bg-background">
         <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto">
           {chapters.map((chapter) => (
-            <button
+                      <button
               key={chapter.id}
+              title={chapter.title || `Capítulo ${chapter.chapter_number}`}
               onClick={() => setActiveChapterId(chapter.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-medium transition-colors ${
                 chapter.id === activeChapterId
@@ -505,13 +687,41 @@ const AdvancedWritePage = () => {
             Gestionar
           </button>
         </div>
-      </div>
+      </div>}
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Editor */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-5 py-6">
+            {sagaId && !focusMode && (
+              <div className="md:hidden mb-5">
+                <SagaWorkspace
+                  sagaId={sagaId}
+                  currentBookId={bookId}
+                  onOpenVolume={(volumeId) => navigate(`/write/advanced/${volumeId}`)}
+                  onAddVolume={() => navigate(`/write/advanced?sagaId=${sagaId}`)}
+                />
+              </div>
+            )}
+            {!focusMode && (
+              <div className="md:hidden mb-5 rounded-2xl border border-border bg-card/60 p-3 space-y-3">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Configuración del proyecto</p>
+                <Input
+                  placeholder="Sinopsis breve del proyecto…"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="h-10 bg-muted/40 border-0 text-[13px]"
+                />
+                <button type="button" onClick={() => setIsSaga((value) => !value)} className="w-full flex items-center gap-2 text-left">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                  <span className="flex-1 text-[13px]">{isSaga ? "Proyecto de saga" : "Convertir en saga"}</span>
+                  <span className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors ${isSaga ? "bg-primary" : "bg-muted"}`}>
+                    <span className={`w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${isSaga ? "translate-x-4" : ""}`} />
+                  </span>
+                </button>
+              </div>
+            )}
             {/* Chapter Title */}
             <Input
               type="text"
@@ -521,39 +731,31 @@ const AdvancedWritePage = () => {
               className="text-[22px] font-display font-bold border-0 bg-transparent px-0 h-auto py-2 mb-2 focus-visible:ring-0"
             />
 
-            {/* Minimal Formatting Bar */}
-            <div className="flex items-center gap-0.5 py-2 mb-4 border-b border-border">
-              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
-                <Bold className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
-                <Italic className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
-                <Heading1 className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
-                <Quote className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-muted active:bg-muted/80 transition-colors">
-                <List className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <div className="flex-1" />
-              <button
-                onClick={() => setShowNotesPanel(!showNotesPanel)}
-                className={`p-2 rounded-lg transition-colors ${showNotesPanel ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"}`}
-              >
-                <StickyNote className="w-4 h-4" />
-              </button>
+            {/* Formatting and planning bar */}
+            <div className="flex items-center gap-2 mb-4">
+              <FormattingToolbar onFormat={applyFormat} compact />
+              {!focusMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowNotesPanel(!showNotesPanel)}
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showNotesPanel ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"}`}
+                  aria-label="Abrir notas y planificación"
+                  title="Notas y planificación"
+                >
+                  <StickyNote className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* Content Editor */}
             <Textarea
+              ref={editorRef}
               placeholder="Empieza a escribir tu capítulo aquí...
 
 La primera línea es siempre la más importante. ¿Qué quieres que sienta el lector?"
               value={activeChapter.content}
               onChange={(e) => updateChapterContent(e.target.value)}
+              onKeyDown={handleEditorKeyDown}
               className="min-h-[500px] border-0 bg-transparent px-0 resize-none focus-visible:ring-0 text-[17px] leading-[1.8] placeholder:text-muted-foreground/40"
             />
 
@@ -562,6 +764,18 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
               <span>{activeChapter.word_count} palabras</span>
               <span>{activeChapter.content.length} caracteres</span>
             </div>
+            {!focusMode && (
+              <div className="md:hidden mt-4 rounded-2xl bg-primary/[0.04] border border-primary/10 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  <label htmlFor="mobile-word-goal" className="text-[12px] font-semibold flex-1">Meta del capítulo</label>
+                  <Input id="mobile-word-goal" type="number" min={100} max={100000} step={100} value={wordGoal} onChange={(e) => updateWordGoal(e.target.value)} className="w-20 h-7 text-[11px] px-2" />
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.min(100, (activeChapter.word_count / Math.max(1, wordGoal)) * 100)}%` }} />
+                </div>
+              </div>
+            )}
           </div>
         </main>
 
@@ -585,6 +799,20 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                   onChange={(e) => updateChapterNotes(e.target.value)}
                   className="min-h-[200px] bg-muted/30 resize-none text-[14px]"
                 />
+                <div className="mt-4 rounded-2xl bg-primary/[0.04] border border-primary/10 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <label htmlFor="chapter-word-goal" className="text-[12px] font-semibold flex-1">Meta de palabras</label>
+                    <Input id="chapter-word-goal" type="number" min={100} max={100000} step={100} value={wordGoal} onChange={(e) => updateWordGoal(e.target.value)} className="w-20 h-7 text-[11px] px-2" />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                    <span>{activeChapter.word_count.toLocaleString("es-ES")} palabras</span>
+                    <span>{Math.min(100, Math.round((activeChapter.word_count / Math.max(1, wordGoal)) * 100))}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${Math.min(100, (activeChapter.word_count / Math.max(1, wordGoal)) * 100)}%` }} />
+                  </div>
+                </div>
                 <div className="mt-4">
                   <label className="text-[11px] text-muted-foreground mb-1 flex items-center gap-1">
                     <CalendarClock className="w-3 h-3" /> Publicar capítulo el
@@ -661,6 +889,12 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                     setRequestVerification={setRequestVerification}
                   />
                 </div>
+                <SagaWorkspace
+                  sagaId={sagaId}
+                  currentBookId={bookId}
+                  onOpenVolume={(volumeId) => navigate(`/write/advanced/${volumeId}`)}
+                  onAddVolume={() => navigate(`/write/advanced?sagaId=${sagaId}`)}
+                />
               </div>
             </motion.aside>
           )}
@@ -701,7 +935,7 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                       </div>
                       <div className="flex-1 min-w-0" onClick={() => { setActiveChapterId(chapter.id); setShowChapterPanel(false); }}>
                         <p className="text-[15px] font-medium truncate">{chapter.title}</p>
-                        <p className="text-[12px] text-muted-foreground">{chapter.word_count} palabras</p>
+                        <p className="text-[12px] text-muted-foreground">{chapter.word_count} palabras · {chapter.is_published ? "Publicado" : chapter.publish_at ? "Programado" : "Borrador"}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button

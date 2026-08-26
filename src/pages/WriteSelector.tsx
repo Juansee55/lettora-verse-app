@@ -20,15 +20,15 @@ const writeOptions = [
     id: "novel",
     icon: BookOpen,
     title: "Escribir Novela",
-    description: "Historia con capítulos, personajes y arcos narrativos",
+    description: "Manuscrito largo con capítulos, personajes y arcos narrativos",
     gradient: "from-violet-500 to-purple-600",
-    path: "/write/new?type=novel",
+    path: "/write/advanced",
   },
   {
     id: "book",
     icon: FileText,
     title: "Escribir Libro",
-    description: "Obra sin capítulos — poesía, ensayo o texto libre",
+    description: "Poesía, ensayo, diario o texto libre con edición sencilla",
     gradient: "from-blue-500 to-cyan-500",
     path: "/write/new?type=book",
   },
@@ -52,13 +52,16 @@ const WriteSelectorPage = () => {
   const fetchMyBooks = async () => {
     setLoadingBooks(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoadingBooks(false);
+      return;
+    }
     const { data } = await supabase
       .from("books")
       .select("id, title, cover_url, genre")
       .eq("author_id", user.id)
       .is("parent_saga_id", null)
-      .is("is_saga", null)
+      .or("is_saga.eq.false,is_saga.is.null")
       .order("created_at", { ascending: false });
     if (data) setMyBooks(data);
     setLoadingBooks(false);
@@ -104,11 +107,14 @@ const WriteSelectorPage = () => {
     }
 
     // Assign books to saga with order
-    for (let i = 0; i < selectedBooks.length; i++) {
-      await supabase.from("books").update({
-        parent_saga_id: saga.id,
-        saga_order: i + 1,
-      }).eq("id", selectedBooks[i].id);
+    const assignments = await Promise.all(selectedBooks.map((book, index) =>
+      supabase.from("books").update({ parent_saga_id: saga.id, saga_order: index + 1 }).eq("id", book.id),
+    ));
+    const assignmentError = assignments.find((result) => result.error)?.error;
+    if (assignmentError) {
+      toast({ title: "Saga creada a medias", description: "No se pudieron vincular todos los libros. Revisa la saga antes de publicar.", variant: "destructive" });
+      setCreating(false);
+      return;
     }
 
     toast({ title: "¡Saga creada! 📚" });
@@ -139,7 +145,7 @@ const WriteSelectorPage = () => {
             <Sparkles className="w-8 h-8 text-primary" />
           </div>
           <h2 className="text-[22px] font-bold">¿Qué quieres crear?</h2>
-          <p className="text-[15px] text-muted-foreground mt-1">Elige el formato que mejor se adapte a tu historia</p>
+          <p className="text-[15px] text-muted-foreground mt-1">Empieza con el espacio de escritura que mejor se adapte a tu proyecto</p>
         </motion.div>
 
         <div className="space-y-3" data-tour="publish">
@@ -175,7 +181,7 @@ const WriteSelectorPage = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-[17px] font-semibold">Crear Saga</h3>
-              <p className="text-[13px] text-muted-foreground mt-0.5">Selecciona y ordena libros existentes en una serie</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5">Organiza volúmenes, orden y continuidad de una serie</p>
             </div>
           </motion.button>
         </div>
