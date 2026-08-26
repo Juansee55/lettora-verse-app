@@ -608,6 +608,8 @@ const AdvancedWritePage = () => {
         </div>
       </div>
 
+      <input type="file" ref={fileInputRef} onChange={handleCoverUpload} accept="image/*" className="hidden" />
+
       {/* Local recovery */}
       {hasLocalDraft && !focusMode && (
         <div className="mx-4 mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-3 py-2.5 flex items-center gap-3">
@@ -624,7 +626,6 @@ const AdvancedWritePage = () => {
       {!focusMode && (bookId || setupStep === 3) && <div className="border-b border-border bg-card/50">
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Cover thumbnail */}
-          <input type="file" ref={fileInputRef} onChange={handleCoverUpload} accept="image/*" className="hidden" />
           <div
             onClick={() => fileInputRef.current?.click()}
             className="w-12 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 cursor-pointer border border-border"
