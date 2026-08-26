@@ -139,7 +139,10 @@ export default function FreeBookReader() {
 
   const paragraphs = useMemo(() => {
     if (!text) return [];
-    return text.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+    const normalized = text.replace(/[ \t]+\n/g, "\n").trim();
+    return (normalized.includes("\n\n") ? normalized.split(/\n\s*\n/) : normalized.split(/\n+/))
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean);
   }, [text]);
 
   const submitRating = async (stars: number) => {
@@ -209,7 +212,7 @@ export default function FreeBookReader() {
           ) : paragraphs.length === 0 ? (
             <p className="text-muted-foreground">No hay contenido legible disponible todavía.</p>
           ) : (
-            paragraphs.map((paragraph, index) => <p key={`${book.id}-${index}`} className="mb-5 whitespace-pre-line">{paragraph}</p>)
+            paragraphs.map((paragraph, index) => <p key={`${book.id}-${index}`} className="mb-6 leading-[1.85] break-words">{paragraph}</p>)
           )}
         </article>
 

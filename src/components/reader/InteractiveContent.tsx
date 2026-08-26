@@ -17,7 +17,15 @@ const InteractiveContent = ({ content, chapterId, fontSize, lineHeight, fontFami
   const [activeParagraph, setActiveParagraph] = useState<number | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
 
-  const paragraphs = content.split("\n").filter(p => p.trim().length > 0);
+  const normalizedContent = content
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+  const paragraphs = (normalizedContent.includes("\n\n")
+    ? normalizedContent.split(/\n\s*\n/)
+    : normalizedContent.split(/\n+/))
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
 
   useEffect(() => {
     fetchCommentCounts();
@@ -45,7 +53,7 @@ const InteractiveContent = ({ content, chapterId, fontSize, lineHeight, fontFami
           <div key={index} className="group relative">
             <p
               style={{ fontSize: `${fontSize}px`, lineHeight, fontFamily, textAlign: textAlign as any }}
-              className="leading-relaxed py-1"
+              className="leading-relaxed py-1.5 mb-4 last:mb-0 break-words"
               dangerouslySetInnerHTML={{ __html: paragraph }}
             />
             <button

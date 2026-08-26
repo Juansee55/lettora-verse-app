@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import BookConfigSection from "@/components/write/BookConfigSection";
 import FormattingToolbar, { type WritingFormat } from "@/components/write/FormattingToolbar";
 import SagaWorkspace from "@/components/write/SagaWorkspace";
+import BookCollaboratorsModal from "@/components/books/BookCollaboratorsModal";
 
 interface Chapter {
   id: string;
@@ -111,8 +112,12 @@ const AdvancedWritePage = () => {
   const [hasLocalDraft, setHasLocalDraft] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [wordGoal, setWordGoal] = useState(1000);
+  const [setupStep, setSetupStep] = useState<1 | 2 | 3>(bookId ? 3 : 1);
+  const [tagInput, setTagInput] = useState("");
   const [sagaId, setSagaId] = useState<string | null>(null);
   const [parentSagaId, setParentSagaId] = useState<string | null>(searchParams.get("sagaId"));
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
 
   const localDraftKey = `lettora.writer.v1.${bookId || "new"}`;
   const activeChapter = chapters.find(c => c.id === activeChapterId) || chapters[0];
@@ -233,6 +238,7 @@ const AdvancedWritePage = () => {
       return;
     }
 
+    setIsAuthor(bookData.author_id === user.id);
     setTitle(bookData.title);
     setDescription(bookData.description || "");
     setGenre(bookData.genre || "Romance");
@@ -341,6 +347,22 @@ const AdvancedWritePage = () => {
   const updateWordGoal = (value: string) => {
     const nextGoal = Number(value);
     if (Number.isFinite(nextGoal)) setWordGoal(Math.min(100000, Math.max(100, nextGoal)));
+  };
+
+  const addWriterTag = () => {
+    const nextTag = tagInput.trim().toLowerCase().replace(/[^a-záéíóúñü0-9]/gi, "");
+    if (nextTag && !tags.includes(nextTag) && tags.length < 5) {
+      setTags((current) => [...current, nextTag]);
+      setTagInput("");
+    }
+  };
+
+  const continueSetup = () => {
+    if (setupStep === 1 && !title.trim()) {
+      toast({ title: "Añade un título", description: "El título ayuda a identificar tu proyecto.", variant: "destructive" });
+      return;
+    }
+    setSetupStep((current) => Math.min(3, current + 1) as 1 | 2 | 3);
   };
 
   const addChapter = () => {
@@ -599,7 +621,7 @@ const AdvancedWritePage = () => {
       )}
 
       {/* Book Info Bar */}
-      {!focusMode && <div className="border-b border-border bg-card/50">
+      {!focusMode && (bookId || setupStep === 3) && <div className="border-b border-border bg-card/50">
         <div className="px-4 py-3 flex items-center gap-3">
           {/* Cover thumbnail */}
           <input type="file" ref={fileInputRef} onChange={handleCoverUpload} accept="image/*" className="hidden" />
@@ -657,7 +679,7 @@ const AdvancedWritePage = () => {
       </div>}
 
       {/* Chapter Navigation Strip */}
-      {!focusMode && <div className="border-b border-border bg-background">
+      {!focusMode && (bookId || setupStep === 3) && <div className="border-b border-border bg-background">
         <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto">
           {chapters.map((chapter) => (
                       <button
@@ -693,6 +715,69 @@ const AdvancedWritePage = () => {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Editor */}
         <main className="flex-1 overflow-y-auto">
+          {!bookId && setupStep < 3 ? (
+            <div className="max-w-xl mx-auto px-5 py-10">
+              <div className="mb-8 text-center">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-primary font-semibold">Nuevo proyecto</p>
+                <h2 className="mt-2 text-[28px] font-display font-bold">Construye tu historia por etapas</h2>
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">Primero define la identidad del libro, después prepara su ficha y finalmente entra al manuscrito.</p>
+              </div>
+              <div className="flex items-center gap-2 mb-7">
+                {["Identidad", "Ficha", "Manuscrito"].map((label, index) => {
+                  const step = index + 1;
+                  const active = step === setupStep;
+                  const complete = step < setupStep;
+                  return (
+                    <div key={label} className="flex items-center gap-2 flex-1 last:flex-none">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold ${active || complete ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{complete ? "✓" : step}</span>
+                      <span className={`hidden sm:block text-[11px] font-medium ${active ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+                      {step < 3 && <span className="h-px flex-1 bg-border" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {setupStep === 1 && (
+                <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-primary" /></div>
+                    <div><h3 className="text-[17px] font-semibold">1. Identidad de la obra</h3><p className="text-[12px] text-muted-foreground">Elige cómo quieres que se presente.</p></div>
+                  </div>
+                  <label className="text-[12px] font-semibold text-muted-foreground">Título</label>
+                  <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="El título de tu libro o novela" className="mt-2 h-12 rounded-2xl text-[17px]" />
+                  <p className="mt-2 text-[11px] text-muted-foreground">Podrás editarlo después desde la ficha del proyecto.</p>
+                  <div className="mt-5 flex items-center gap-3 rounded-2xl bg-muted/40 p-3">
+                    <div className="w-12 h-16 rounded-xl bg-background flex items-center justify-center overflow-hidden border border-border flex-shrink-0">
+                      {coverPreview ? <img src={coverPreview} alt="Vista previa de portada" className="w-full h-full object-cover" /> : <Image className="w-5 h-5 text-muted-foreground" />}
+                    </div>
+                    <div className="flex-1"><p className="text-[13px] font-semibold">Portada</p><p className="text-[11px] text-muted-foreground">Añádela ahora o cuando tengas una versión definitiva.</p></div>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-xl bg-primary/10 text-primary px-3 py-2 text-[12px] font-semibold">Elegir</button>
+                  </div>
+                </section>
+              )}
+
+              {setupStep === 2 && (
+                <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center"><Sparkles className="w-5 h-5 text-violet-500" /></div>
+                    <div><h3 className="text-[17px] font-semibold">2. Ficha editorial</h3><p className="text-[12px] text-muted-foreground">Dale contexto a tus futuros lectores.</p></div>
+                  </div>
+                  <label className="text-[12px] font-semibold text-muted-foreground">Descripción o sinopsis</label>
+                  <Textarea autoFocus value={description} onChange={(e) => setDescription(e.target.value)} placeholder="¿De qué trata esta obra? ¿Qué encontrará el lector?" className="mt-2 min-h-[150px] rounded-2xl resize-none text-[15px] leading-relaxed" />
+                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div><label className="text-[12px] font-semibold text-muted-foreground">Género</label><select value={genre} onChange={(e) => setGenre(e.target.value)} className="mt-2 w-full h-11 rounded-xl border border-input bg-background px-3 text-[13px]"><option value="Romance">Romance</option>{genres.filter((item) => item !== "Romance").map((item) => <option key={item} value={item}>{item}</option>)}</select></div>
+                    <div><label className="text-[12px] font-semibold text-muted-foreground">Etiquetas</label><div className="mt-2 flex gap-2"><Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addWriterTag(); } }} placeholder="#fantasía" className="h-11 rounded-xl" /><Button type="button" variant="ios-ghost" size="icon" onClick={addWriterTag} disabled={!tagInput.trim()}><Plus className="w-4 h-4" /></Button></div></div>
+                  </div>
+                  {tags.length > 0 && <div className="flex flex-wrap gap-2 mt-3">{tags.map((tag) => <button type="button" key={tag} onClick={() => setTags((current) => current.filter((item) => item !== tag))} className="rounded-full bg-primary/10 text-primary px-3 py-1 text-[11px] font-medium">#{tag} ×</button>)}</div>}
+                </section>
+              )}
+
+              <div className="mt-6 flex items-center justify-between gap-3">
+                <button type="button" onClick={() => setupStep === 1 ? navigate(-1) : setSetupStep(1)} className="px-4 py-2.5 rounded-xl text-[13px] font-semibold text-muted-foreground hover:bg-muted">{setupStep === 1 ? "Cancelar" : "Atrás"}</button>
+                <Button type="button" onClick={continueSetup} className="rounded-xl px-5">{setupStep === 1 ? "Continuar con la ficha" : "Abrir manuscrito"}<ChevronDown className="w-4 h-4 ml-2 -rotate-90" /></Button>
+              </div>
+            </div>
+          ) : (
           <div className="max-w-3xl mx-auto px-5 py-6">
             {sagaId && !focusMode && (
               <div className="md:hidden mb-5">
@@ -704,7 +789,7 @@ const AdvancedWritePage = () => {
                 />
               </div>
             )}
-            {!focusMode && (
+            {!focusMode && (bookId || setupStep === 3) && (
               <div className="md:hidden mb-5 rounded-2xl border border-border bg-card/60 p-3 space-y-3">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Configuración del proyecto</p>
                 <Input
@@ -720,6 +805,11 @@ const AdvancedWritePage = () => {
                     <span className={`w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${isSaga ? "translate-x-4" : ""}`} />
                   </span>
                 </button>
+                {bookId && isAuthor && (
+                  <button type="button" onClick={() => setShowCollaborators(true)} className="w-full flex items-center gap-2 rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold">
+                    <Users className="w-4 h-4" /> Gestionar colaboradores
+                  </button>
+                )}
               </div>
             )}
             {/* Chapter Title */}
@@ -777,6 +867,7 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
               </div>
             )}
           </div>
+          )}
         </main>
 
         {/* Notes Side Panel */}
@@ -889,6 +980,11 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
                     setRequestVerification={setRequestVerification}
                   />
                 </div>
+                {bookId && isAuthor && (
+                  <button type="button" onClick={() => setShowCollaborators(true)} className="w-full mt-4 flex items-center gap-2 rounded-xl bg-primary/10 text-primary px-3 py-2.5 text-[13px] font-semibold hover:bg-primary/15 active:scale-[0.98] transition-transform">
+                    <Users className="w-4 h-4" /> Gestionar colaboradores
+                  </button>
+                )}
                 <SagaWorkspace
                   sagaId={sagaId}
                   currentBookId={bookId}
@@ -900,6 +996,15 @@ La primera línea es siempre la más importante. ¿Qué quieres que sienta el le
           )}
         </AnimatePresence>
       </div>
+
+      {bookId && isAuthor && (
+        <BookCollaboratorsModal
+          isOpen={showCollaborators}
+          onClose={() => setShowCollaborators(false)}
+          bookId={bookId}
+          bookTitle={title || "Libro sin título"}
+        />
+      )}
 
       {/* Chapter Management Sheet */}
       <AnimatePresence>
