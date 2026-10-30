@@ -22,6 +22,7 @@ import PromotionsSection from "@/components/promotions/PromotionsSection";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import LettoraMark from "@/components/brand/LettoraMark";
+import { HalloweenSectionBadge } from "@/components/HalloweenAtmosphere";
 import { Button } from "@/components/ui/button";
 
 interface HomeBook {
@@ -189,6 +190,10 @@ const Home = () => {
           </div>
         </div>
       </header>
+
+      <div className="px-4 pt-3">
+        <HalloweenSectionBadge>historias para una noche encantada</HalloweenSectionBadge>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-24">

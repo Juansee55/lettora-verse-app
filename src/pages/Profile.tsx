@@ -25,6 +25,7 @@ import {
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import AccountSwitcher from "@/components/account/AccountSwitcher";
 import { useMultiAccount } from "@/hooks/useMultiAccount";
+import { HalloweenSectionBadge } from "@/components/HalloweenAtmosphere";
 
 
 interface Profile {
@@ -272,6 +273,10 @@ const ProfilePage = () => {
           </div>
         </div>
       </header>
+
+      <div className="px-4 pt-3">
+        <HalloweenSectionBadge>perfil encantado</HalloweenSectionBadge>
+      </div>
 
       {/* Profile Cover / Background */}
       {equippedItems.background && (

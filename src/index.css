@@ -356,6 +356,85 @@
     background: hsl(var(--background) / 0.45);
     border-bottom-color: hsl(0 0% 100% / 0.08);
   }
+
+  /* ═══════ Lettora Halloween season ═══════ */
+  .halloween-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .halloween-orb {
+    position: absolute;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 9999px;
+    filter: blur(52px);
+    opacity: .12;
+  }
+  .halloween-orb-one { top: 8%; left: -8rem; background: hsl(26 96% 58%); }
+  .halloween-orb-two { right: -9rem; bottom: 16%; background: hsl(278 82% 65%); }
+  .halloween-deco {
+    position: absolute;
+    color: hsl(28 95% 57% / .34);
+    font-family: Georgia, serif;
+    text-shadow: 0 0 18px hsl(28 95% 57% / .2);
+  }
+  .halloween-deco-bat { top: 14%; right: 5%; font-size: 1.1rem; letter-spacing: -.18em; transform: rotate(-7deg); }
+  .halloween-deco-moon { top: 32%; left: 2%; color: hsl(278 82% 65% / .28); font-size: 2.3rem; }
+  .halloween-deco-ghost { right: 3%; bottom: 28%; color: hsl(278 82% 65% / .2); font-size: 2rem; transform: rotate(12deg); }
+  .halloween-deco-star { left: 9%; bottom: 20%; color: hsl(28 95% 57% / .3); font-size: 1.15rem; }
+  .halloween-season-pill {
+    position: absolute;
+    top: 4.4rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .7rem;
+    border: 1px solid hsl(28 95% 57% / .2);
+    border-radius: 9999px;
+    color: hsl(28 82% 44%);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 24px hsl(28 70% 35% / .08), inset 0 1px 0 hsl(0 0% 100% / .55);
+  }
+  .halloween-pumpkin { display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; border-radius: .35rem; color: hsl(28 95% 52%); font-size: 1rem; }
+  .halloween-sparkle { color: hsl(278 82% 62%); }
+  .halloween-section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+    width: fit-content;
+    padding: .34rem .65rem;
+    border: 1px solid hsl(28 95% 57% / .2);
+    border-radius: 9999px;
+    background: linear-gradient(120deg, hsl(28 95% 57% / .12), hsl(278 82% 65% / .1));
+    color: hsl(28 72% 42%);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .halloween-badge-icon { color: hsl(278 82% 62%); }
+  .halloween-badge-pumpkin { color: hsl(28 95% 54%); }
+  .dark .halloween-season-pill, .dark .halloween-section-badge { color: hsl(32 100% 76%); }
+  .dark .halloween-deco { opacity: .9; }
+  @media (max-width: 640px) {
+    .halloween-season-pill { top: 3.8rem; right: .65rem; transform: scale(.9); transform-origin: top right; }
+    .halloween-deco-bat { top: 18%; right: -1%; }
+    .halloween-deco-ghost { right: -1%; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .halloween-season-pill { animation: halloween-float 4.5s ease-in-out infinite; }
+    .halloween-deco-bat { animation: halloween-drift 7s ease-in-out infinite; }
+    .halloween-deco-star { animation: halloween-twinkle 2.8s ease-in-out infinite; }
+  }
+  @keyframes halloween-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes halloween-drift { 0%, 100% { transform: translate(0, 0) rotate(-7deg); } 50% { transform: translate(-8px, 5px) rotate(4deg); } }
+  @keyframes halloween-twinkle { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: .9; transform: scale(1.25); } }
 }
 
 /* Custom Scrollbar */
