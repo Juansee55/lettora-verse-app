@@ -195,6 +195,29 @@ const Home = () => {
         <HalloweenSectionBadge>historias para una noche encantada</HalloweenSectionBadge>
       </div>
 
+      <div className="px-4 pt-3">
+        <motion.button
+          type="button"
+          onClick={() => navigate("/news")}
+          whileTap={{ scale: 0.985 }}
+          className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[22px] border border-primary/20 bg-gradient-to-br from-primary/[0.13] via-card/90 to-fuchsia-500/[0.1] p-3.5 text-left shadow-[0_16px_35px_-25px_hsl(var(--primary)/0.8)] transition-all hover:border-primary/35 hover:shadow-[0_18px_40px_-24px_hsl(var(--primary)/0.9)]"
+          aria-label="Entrar al canal de Lettora"
+        >
+          <span className="absolute -right-6 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl transition-transform duration-500 group-hover:scale-125" aria-hidden="true" />
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+            <MessageCircle className="h-5 w-5" />
+          </span>
+          <span className="relative min-w-0 flex-1">
+            <span className="flex items-center gap-2 text-[14px] font-bold text-foreground">
+              canal de Lettora
+              <span className="rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">staff online</span>
+            </span>
+            <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">noticias del equipo, actualizaciones y reacciones de la comunidad</span>
+          </span>
+          <ChevronRight className="relative h-5 w-5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+        </motion.button>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <Loader2 className="w-7 h-7 animate-spin text-primary" />

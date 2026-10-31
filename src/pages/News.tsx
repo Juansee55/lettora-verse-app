@@ -13,6 +13,10 @@ import {
   Sparkles,
   User,
   Wrench,
+  Heart,
+  Flame,
+  PartyPopper,
+  Gem,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +56,9 @@ const NewsPage = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [selectedNewsId, setSelectedNewsId] = useState<string | null>(null);
+  const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, string[]>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -81,12 +88,17 @@ const NewsPage = () => {
 
     const adminIds = [...new Set(rows.map((item) => item.created_by).filter(Boolean))];
     const newsIds = rows.map((item) => item.id);
-    const [{ data: profiles }, { data: comments }] = await Promise.all([
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+    const [{ data: profiles }, { data: comments }, { data: reactions }] = await Promise.all([
       supabase.from("profiles").select("id, display_name, username, avatar_url").in("id", adminIds),
       (supabase.from("comments" as any)
         .select("commentable_id")
         .eq("commentable_type", "news")
         .in("commentable_id", newsIds) as any),
+      (supabase.from("news_reactions" as any)
+        .select("news_id, user_id, reaction_type")
+        .in("news_id", newsIds) as any),
     ]);
 
     const profileMap: Record<string, NewsItem["admin_profile"]> = {};
@@ -96,9 +108,49 @@ const NewsPage = () => {
       counts[comment.commentable_id] = (counts[comment.commentable_id] || 0) + 1;
     });
 
+    const reactionSummary: Record<string, Record<string, number>> = {};
+    const mine: Record<string, string[]> = {};
+    ((reactions || []) as { news_id: string; user_id: string; reaction_type: string }[]).forEach((reaction) => {
+      reactionSummary[reaction.news_id] ||= {};
+      reactionSummary[reaction.news_id][reaction.reaction_type] = (reactionSummary[reaction.news_id][reaction.reaction_type] || 0) + 1;
+      if (reaction.user_id === user?.id) mine[reaction.news_id] = [...(mine[reaction.news_id] || []), reaction.reaction_type];
+    });
+
     setCommentCounts(counts);
+    setReactionCounts(reactionSummary);
+    setUserReactions(mine);
     setNews(rows.map((item) => ({ ...item, admin_profile: profileMap[item.created_by] || null })));
     setLoading(false);
+  };
+
+  const toggleReaction = async (newsId: string, reactionType: string) => {
+    if (!currentUserId) {
+      toast({ title: "inicia sesión para reaccionar", description: "las reacciones están disponibles para la comunidad." });
+      return;
+    }
+    const active = (userReactions[newsId] || []).includes(reactionType);
+    setUserReactions((previous) => ({
+      ...previous,
+      [newsId]: active
+        ? (previous[newsId] || []).filter((reaction) => reaction !== reactionType)
+        : [...(previous[newsId] || []), reactionType],
+    }));
+    setReactionCounts((previous) => ({
+      ...previous,
+      [newsId]: {
+        ...(previous[newsId] || {}),
+        [reactionType]: Math.max(0, (previous[newsId]?.[reactionType] || 0) + (active ? -1 : 1)),
+      },
+    }));
+
+    const query = supabase.from("news_reactions" as any);
+    const result = active
+      ? await (query.delete().eq("news_id", newsId).eq("user_id", currentUserId).eq("reaction_type", reactionType) as any)
+      : await (query.insert({ news_id: newsId, user_id: currentUserId, reaction_type: reactionType }) as any);
+    if (result.error) {
+      toast({ title: "no se pudo guardar la reacción", description: "inténtalo de nuevo en un momento.", variant: "destructive" });
+      void fetchNews();
+    }
   };
 
   useEffect(() => {
@@ -211,6 +263,33 @@ const NewsPage = () => {
                     </div>
                     <h2 className="mt-3 font-display text-[22px] font-bold leading-tight">{item.title}</h2>
                     <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{item.description}</p>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-2">
+                      <span className="px-1.5 text-[11px] font-semibold text-muted-foreground">reaccionar</span>
+                      {[
+                        { type: "like", emoji: "❤️", Icon: Heart },
+                        { type: "love", emoji: "💜", Icon: Gem },
+                        { type: "fire", emoji: "🔥", Icon: Flame },
+                        { type: "wow", emoji: "🎉", Icon: PartyPopper },
+                      ].map(({ type, emoji, Icon }) => {
+                        const active = (userReactions[item.id] || []).includes(type);
+                        const count = reactionCounts[item.id]?.[type] || 0;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => void toggleReaction(item.id, type)}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95 ${active ? "border-primary/40 bg-primary/12 text-primary shadow-sm" : "border-border/50 bg-card/70 text-muted-foreground hover:border-primary/25 hover:text-foreground"}`}
+                            aria-label={`Reaccionar con ${type}`}
+                            aria-pressed={active}
+                          >
+                            <span aria-hidden="true">{emoji}</span>
+                            <Icon className="h-3 w-3" />
+                            {count > 0 && <span>{count}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
 
                     <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/50 pt-4">
                       <div className="flex min-w-0 items-center gap-2">
