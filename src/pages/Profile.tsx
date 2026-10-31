@@ -303,7 +303,7 @@ const ProfilePage = () => {
       <div className={`px-4 ${equippedItems.background ? "pt-0 -mt-10" : "pt-5"}`}>
         <div className="flex items-start gap-5">
           {/* Avatar with seasonal Halloween frame */}
-          <div className={userRole === "admin" ? "admin-frame-premium rounded-[2rem]" : userRole === "moderator" ? "mod-frame rounded-[2rem]" : ""}>
+          <div className="relative z-10">
             <HalloweenProfileEffect
               enabled={halloweenEnabled}
               onToggle={toggleHalloweenFrame}
