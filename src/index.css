@@ -422,9 +422,9 @@
   .halloween-badge-pumpkin { color: hsl(28 95% 54%); }
   .halloween-profile-effect { display: flex; flex-direction: column; align-items: center; gap: .55rem; min-width: 7.5rem; }
   .halloween-avatar-frame { position: relative; width: 5.7rem; height: 5.7rem; display: grid; place-items: center; }
+  /* the seasonal frame uses small floating details, never a giant ring around the avatar */
   .halloween-avatar-frame.is-active::before,
-  .halloween-avatar-frame.is-active::after { content: ""; position: absolute; inset: .1rem; border-radius: 35% 65% 58% 42% / 45% 38% 62% 55%; background: conic-gradient(from 20deg, hsl(28 96% 57%), hsl(322 84% 66%), hsl(278 82% 65%), hsl(28 96% 57%)); box-shadow: 0 0 0 .18rem hsl(0 0% 100% / .8), 0 0 1.4rem hsl(28 96% 57% / .4); animation: halloween-frame-morph 5s ease-in-out infinite, halloween-frame-glow 2.8s ease-in-out infinite; }
-  .halloween-avatar-frame.is-active::after { inset: .28rem; background: transparent; border: 1px dashed hsl(44 100% 76% / .9); box-shadow: none; animation: halloween-frame-spin 12s linear infinite; }
+  .halloween-avatar-frame.is-active::after { content: none; display: none; }
   .halloween-avatar-photo { position: relative; z-index: 2; width: 4.65rem; height: 4.65rem; overflow: hidden; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, hsl(278 82% 60%), hsl(28 96% 56%)); color: white; font-size: 1.5rem; font-weight: 800; }
   .halloween-avatar-photo.is-active { box-shadow: 0 .6rem 1.2rem hsl(278 82% 35% / .2); }
   .halloween-frame-orbit { position: absolute; z-index: 3; inset: -.15rem; pointer-events: none; }
