@@ -29,7 +29,6 @@ import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useSectionAnalytics } from "@/hooks/useSectionAnalytics";
 import OfflineOverlay from "@/components/pwa/OfflineOverlay";
 import OnboardingManager from "@/components/onboarding/OnboardingManager";
-import HalloweenAtmosphere from "@/components/HalloweenAtmosphere";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -173,7 +172,6 @@ const AppContent = () => {
   return (
     <>
       <OfflineOverlay isOffline={isOffline} />
-      <HalloweenAtmosphere />
       <OnboardingManager userId={user?.id ?? null} />
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>

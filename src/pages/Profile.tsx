@@ -25,8 +25,6 @@ import {
 import QRCodeModal from "@/components/qr/QRCodeModal";
 import AccountSwitcher from "@/components/account/AccountSwitcher";
 import { useMultiAccount } from "@/hooks/useMultiAccount";
-import { HalloweenSectionBadge } from "@/components/HalloweenAtmosphere";
-import HalloweenProfileEffect from "@/components/profile/HalloweenProfileEffect";
 
 
 interface Profile {
@@ -89,7 +87,6 @@ const ProfilePage = () => {
   const [savedAccounts, setSavedAccounts] = useState<{ email: string; addedAt: string }[]>([]);
   const [currentEmail, setCurrentEmail] = useState<string>("");
   const [savingVisibility, setSavingVisibility] = useState(false);
-  const [halloweenEnabled, setHalloweenEnabled] = useState(false);
   const { levelData } = useUserLevel(currentUserId);
   const { premiumData } = usePremium(currentUserId);
   const { savedAccounts: multiAccounts, removeAccount } = useMultiAccount();
@@ -109,7 +106,6 @@ const ProfilePage = () => {
       }
       setCurrentUserId(user.id);
       setCurrentEmail(user.email || "");
-      setHalloweenEnabled(localStorage.getItem(`lettora:halloween-frame:${user.id}`) === "true");
 
       // Profile creation is best-effort: a permissions/trigger problem must not
       // leave the whole profile page in an infinite loading state.
@@ -181,19 +177,6 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleHalloweenFrame = () => {
-    if (!currentUserId) return;
-    setHalloweenEnabled((current) => {
-      const next = !current;
-      localStorage.setItem(`lettora:halloween-frame:${currentUserId}`, String(next));
-      toast({
-        title: next ? "marco de halloween activado" : "marco de halloween desactivado",
-        description: next ? "tu perfil ya tiene su hechizo especial" : "tu perfil volvió a su estilo habitual",
-      });
-      return next;
-    });
   };
 
   const toggleAdminVisibility = async () => {
@@ -290,10 +273,6 @@ const ProfilePage = () => {
         </div>
       </header>
 
-      <div className="px-4 pt-3">
-        <HalloweenSectionBadge>perfil encantado</HalloweenSectionBadge>
-      </div>
-
       {/* Profile Cover / Background */}
       {equippedItems.background && (
         <div className={`h-24 ${equippedItems.background}`} />
@@ -302,16 +281,27 @@ const ProfilePage = () => {
       {/* Profile Info */}
       <div className={`px-4 ${equippedItems.background ? "pt-0 -mt-10" : "pt-5"}`}>
         <div className="flex items-start gap-5">
-          {/* Avatar with seasonal Halloween frame */}
-          <div className="relative z-10">
-            <HalloweenProfileEffect
-              enabled={halloweenEnabled}
-              onToggle={toggleHalloweenFrame}
-              avatarUrl={profile?.avatar_url}
-              fallback={profile?.display_name?.[0]?.toUpperCase() || "?"}
-              existingFrameClassName={equippedItems.frame}
-            />
-          </div>
+          {/* Avatar with Frame */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`relative ${
+              userRole === "admin" ? "admin-frame-premium" : userRole === "moderator" ? "mod-frame" : ""
+            }`}
+          >
+            <div className={`w-20 h-20 rounded-full overflow-hidden ring-2 ring-background ${equippedItems.frame || "bg-gradient-hero"}`}>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-primary-foreground">
+                  {profile?.display_name?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
+            </div>
+            {equippedItems.frame && !userRole && (
+              <div className={`absolute -inset-1 rounded-full ${equippedItems.frame} pointer-events-none`} />
+            )}
+          </motion.div>
 
           {/* Stats */}
           <div className="flex-1 flex justify-around pt-2">

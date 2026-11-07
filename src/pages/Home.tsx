@@ -22,8 +22,6 @@ import PromotionsSection from "@/components/promotions/PromotionsSection";
 import TopMicrostories from "@/components/microstories/TopMicrostories";
 import IOSBottomNav from "@/components/navigation/IOSBottomNav";
 import LettoraMark from "@/components/brand/LettoraMark";
-import { HalloweenSectionBadge } from "@/components/HalloweenAtmosphere";
-import HalloweenHomeDecorations from "@/components/home/HalloweenHomeDecorations";
 import { Button } from "@/components/ui/button";
 
 interface HomeBook {
@@ -193,10 +191,6 @@ const Home = () => {
       </header>
 
       <div className="px-4 pt-3">
-        <HalloweenSectionBadge>historias para una noche encantada</HalloweenSectionBadge>
-      </div>
-
-      <div className="px-4 pt-3">
         <motion.button
           type="button"
           onClick={() => navigate("/news")}
@@ -217,10 +211,6 @@ const Home = () => {
           </span>
           <ChevronRight className="relative h-5 w-5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
         </motion.button>
-      </div>
-
-      <div className="px-4 pt-3">
-        <HalloweenHomeDecorations onChannel={() => navigate("/news")} onExplore={() => navigate("/explore")} />
       </div>
 
       {loading ? (

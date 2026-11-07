@@ -13,7 +13,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { HalloweenSectionBadge } from "@/components/HalloweenAtmosphere";
 
 interface Conversation {
   id: string;
@@ -216,11 +215,6 @@ const ChatsPage = () => {
           </div>
         </div>
       </div>
-
-      <div className="px-4 pt-3">
-        <HalloweenSectionBadge>mensajes desde el otro lado</HalloweenSectionBadge>
-      </div>
-
 
       {/* Content */}
       <div>
